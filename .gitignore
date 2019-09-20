@@ -102,3 +102,14 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+deps/deps.jl
+*.pyc
+*.lst
+\.*
+.*
+__pycache_
+$*
