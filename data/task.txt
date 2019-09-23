@@ -1,0 +1,1 @@
+par=RES_min            rng=RESquota!a5:b34          rdim=1

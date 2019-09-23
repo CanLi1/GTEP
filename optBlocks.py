@@ -6,7 +6,7 @@
 
 from pyomo.environ import *
 import math
-import deterministic.readData_det as readData_det
+import readData
 
 
 def create_model(stages, time_periods, t_per_stage, max_iter):
@@ -48,7 +48,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         m.rnew: subset of potential renewable generators
         m.told: subset of existing thermal generators
         m.tnew: subset of potential thermal generators
-
+        
         m.j: clusters of potential storage unit
 
         m.d: set of representative days
@@ -62,34 +62,28 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     m.r = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
     m.i = Set(initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old', 'wind-old',
                           'wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new',
-                          'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new'], ordered=True)
-    # 'nuc-st-old', 'nuc-st-new',
+                          'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new', 'nuc-st-old', 'nuc-st-new'], ordered=True)
     m.th = Set(within=m.i, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new',
                                        'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
-                                       'ng-ct-new'], ordered=True)
-    # 'nuc-st-old', 'nuc-st-new',
+                                       'ng-ct-new', 'nuc-st-old', 'nuc-st-new'], ordered=True)
     m.rn = Set(within=m.i, initialize=['pv-old', 'pv-new', 'csp-new', 'wind-old', 'wind-new'], ordered=True)
     m.co = Set(within=m.th, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new'], ordered=True)
     m.ng = Set(within=m.th, initialize=['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
                                         'ng-ct-new'], ordered=True)
-    # m.nu = Set(within=m.th, initialize=['nuc-st-old', 'nuc-st-new'], ordered=True)
+    m.nu = Set(within=m.th, initialize=['nuc-st-old', 'nuc-st-new'], ordered=True)
     m.pv = Set(within=m.rn, initialize=['pv-old', 'pv-new'], ordered=True)
     m.csp = Set(within=m.rn, initialize=['csp-new'], ordered=True)
     m.wi = Set(within=m.rn, initialize=['wind-old', 'wind-new'], ordered=True)
     m.old = Set(within=m.i, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old',
-                                        'wind-old'], ordered=True)
-    # 'nuc-st-old',
-    m.new = Set(within=m.i, initialize=['wind-new', 'pv-new', 'csp-new', 'coal-igcc-new',
+                                        'wind-old', 'nuc-st-old'], ordered=True)
+    m.new = Set(within=m.i, initialize=['wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'nuc-st-new',
                                         'coal-igcc-ccs-new', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new'], ordered=True)
-    # 'nuc-st-new',
     m.rold = Set(within=m.old, initialize=['pv-old', 'wind-old'], ordered=True)
     m.rnew = Set(within=m.new, initialize=['wind-new', 'pv-new', 'csp-new'], ordered=True)
-    m.told = Set(within=m.old, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old'],
+    m.told = Set(within=m.old, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'nuc-st-old'],
                  ordered=True)
-    # 'nuc-st-old',
-    m.tnew = Set(within=m.new, initialize=['coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new',
+    m.tnew = Set(within=m.new, initialize=['coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new', 'nuc-st-new',
                                            'ng-cc-ccs-new', 'ng-ct-new'], ordered=True)
-    # 'nuc-st-new',
     m.j = Set(initialize=['Li_ion', 'Lead_acid', 'Flow'], ordered=True)
 
     m.d = Set(initialize=['spring', 'summer', 'fall', 'winter'], ordered=True)
@@ -113,7 +107,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     m.k = Set(within=m.iter, dimen=1, ordered=True)
 
     # ################################## Import parameters ############################################
-    m.Ng_old = Param(m.i, m.r, default=0, initialize=readData_det.Ng_old)
+    m.Ng_old = Param(m.i, m.r, default=0, initialize=readData.Ng_old)
 
     def i_r_filter(m, i, r):
         return i in m.new or (i in m.old and m.Ng_old[i, r] != 0)
@@ -132,7 +126,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
     '''
     Parameter notation
-
+    
     m.L: load demand in region r in sub-period s of representative day d of year t (MW)
     m.n_d: weight of representative day d
     m.L_max: peak load in year t (MW)
@@ -186,59 +180,59 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     m.storage_lifetime: storage lifetime (years)
     '''
 
-    m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.L)
-    m.n_d = Param(m.d, default=0, initialize=readData_det.n_ss)
+    m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData.L)
+    m.n_d = Param(m.d, default=0, initialize=readData.n_ss)
     # m.L_max = Param(m.t_stage, default=0, mutable=True)
-    m.L_max = Param(m.t, default=0, initialize=readData_det.L_max)
-    m.cf = Param(m.i, m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.cf)
-    m.Qg_np = Param(m.i_r, default=0, initialize=readData_det.Qg_np)
-    m.Ng_max = Param(m.i_r, default=0, initialize=readData_det.Ng_max)
-    m.Qinst_UB = Param(m.i, m.t, default=0, initialize=readData_det.Qinst_UB)
-    m.LT = Param(m.i, initialize=readData_det.LT, default=0)
-    m.Tremain = Param(m.t, default=0, initialize=readData_det.Tremain)
-    m.Ng_r = Param(m.old, m.r, m.t, default=0, initialize=readData_det.Ng_r)
-    m.q_v = Param(m.i, default=0, initialize=readData_det.q_v)
-    m.Pg_min = Param(m.i, default=0, initialize=readData_det.Pg_min)
-    m.Ru_max = Param(m.i, default=0, initialize=readData_det.Ru_max)
-    m.Rd_max = Param(m.i, default=0, initialize=readData_det.Rd_max)
-    m.f_start = Param(m.i, default=0, initialize=readData_det.f_start)
-    m.C_start = Param(m.i, default=0, initialize=readData_det.C_start)
-    m.frac_spin = Param(m.i, default=0, initialize=readData_det.frac_spin)
-    m.frac_Qstart = Param(m.i, default=0, initialize=readData_det.frac_Qstart)
-    m.t_loss = Param(m.r, m.r, default=0, initialize=readData_det.t_loss)
-    m.t_up = Param(m.r, m.r, default=0, initialize=readData_det.t_up)
-    m.dist = Param(m.r, m.r, default=0, initialize=readData_det.dist)
-    m.if_ = Param(m.t, default=0, initialize=readData_det.if_)
-    m.ED = Param(m.t, default=0, initialize=readData_det.ED)
-    m.Rmin = Param(m.t, default=0, initialize=readData_det.Rmin)
-    m.hr = Param(m.i_r, default=0, initialize=readData_det.hr)
-    m.P_fuel = Param(m.i, m.t, default=0, initialize=readData_det.P_fuel)
-    # m.P_fuel = Param(m.i, m.t_stage, default=0, mutable=True)
-    m.EF_CO2 = Param(m.i, default=0, initialize=readData_det.EF_CO2)
-    m.FOC = Param(m.i, m.t, default=0, initialize=readData_det.FOC)
-    m.VOC = Param(m.i, m.t, default=0, initialize=readData_det.VOC)
-    m.CCm = Param(m.i, default=0, initialize=readData_det.CCm)
-    m.DIC = Param(m.i, m.t, default=0, initialize=readData_det.DIC)
-    m.LEC = Param(m.i, default=0, initialize=readData_det.LEC)
-    m.PEN = Param(m.t, default=0, initialize=readData_det.PEN)
-    m.PENc = Param(default=0, initialize=readData_det.PENc)
-    # m.tx_CO2 = Param(m.t, default=0, initialize=readData_det.tx_CO2)
-    m.tx_CO2 = Param(m.t_stage, default=0, mutable=True)
-    m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
-    m.hs = Param(initialize=readData_det.hs, default=0)
-    m.ir = Param(initialize=readData_det.ir, default=0)
+    m.L_max = Param(m.t, default=0, initialize=readData.L_max)
+    m.cf = Param(m.i, m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData.cf)
+    m.Qg_np = Param(m.i_r, default=0, initialize=readData.Qg_np)
+    m.Ng_max = Param(m.i_r, default=0, initialize=readData.Ng_max)
+    m.Qinst_UB = Param(m.i, m.t, default=0, initialize=readData.Qinst_UB)
+    m.LT = Param(m.i, initialize=readData.LT, default=0)
+    m.Tremain = Param(m.t, default=0, initialize=readData.Tremain)
+    m.Ng_r = Param(m.old, m.r, m.t, default=0, initialize=readData.Ng_r)
+    m.q_v = Param(m.i, default=0, initialize=readData.q_v)
+    m.Pg_min = Param(m.i, default=0, initialize=readData.Pg_min)
+    m.Ru_max = Param(m.i, default=0, initialize=readData.Ru_max)
+    m.Rd_max = Param(m.i, default=0, initialize=readData.Rd_max)
+    m.f_start = Param(m.i, default=0, initialize=readData.f_start)
+    m.C_start = Param(m.i, default=0, initialize=readData.C_start)
+    m.frac_spin = Param(m.i, default=0, initialize=readData.frac_spin)
+    m.frac_Qstart = Param(m.i, default=0, initialize=readData.frac_Qstart)
+    m.t_loss = Param(m.r, m.r, default=0, initialize=readData.t_loss)
+    m.t_up = Param(m.r, m.r, default=0, initialize=readData.t_up)
+    m.dist = Param(m.r, m.r, default=0, initialize=readData.dist)
+    m.if_ = Param(m.t, default=0, initialize=readData.if_)
+    m.ED = Param(m.t, default=0, initialize=readData.ED)
+    m.Rmin = Param(m.t, default=0, initialize=readData.Rmin)
+    m.hr = Param(m.i_r, default=0, initialize=readData.hr)
+    # m.P_fuel = Param(m.i, m.t, default=0, initialize=readData.P_fuel)
+    m.P_fuel = Param(m.i, m.t_stage, default=0, mutable=True)
+    m.EF_CO2 = Param(m.i, default=0, initialize=readData.EF_CO2)
+    m.FOC = Param(m.i, m.t, default=0, initialize=readData.FOC)
+    m.VOC = Param(m.i, m.t, default=0, initialize=readData.VOC)
+    m.CCm = Param(m.i, default=0, initialize=readData.CCm)
+    m.DIC = Param(m.i, m.t, default=0, initialize=readData.DIC)
+    m.LEC = Param(m.i, default=0, initialize=readData.LEC)
+    m.PEN = Param(m.t, default=0, initialize=readData.PEN)
+    m.PENc = Param(default=0, initialize=readData.PENc)
+    m.tx_CO2 = Param(m.t, default=0, initialize=readData.tx_CO2)
+    # m.tx_CO2 = Param(m.t_stage, default=0, mutable=True)
+    m.RES_min = Param(m.t, default=0, initialize=readData.RES_min)
+    m.hs = Param(initialize=readData.hs, default=0)
+    m.ir = Param(initialize=readData.ir, default=0)
 
     # Storage
-    m.storage_inv_cost = Param(m.j, m.t, default=0, initialize=readData_det.storage_inv_cost)
-    m.P_min_charge = Param(m.j, default=0, initialize=readData_det.P_min_charge)
-    m.P_max_charge = Param(m.j, default=0, initialize=readData_det.P_max_charge)
-    m.P_min_discharge = Param(m.j, default=0, initialize=readData_det.P_min_discharge)
-    m.P_max_discharge = Param(m.j, default=0, initialize=readData_det.P_max_discharge)
-    m.min_storage_cap = Param(m.j, default=0, initialize=readData_det.min_storage_cap)
-    m.max_storage_cap = Param(m.j, default=0, initialize=readData_det.max_storage_cap)
-    m.eff_rate_charge = Param(m.j, default=0, initialize=readData_det.eff_rate_charge)
-    m.eff_rate_discharge = Param(m.j, default=0, initialize=readData_det.eff_rate_discharge)
-    m.storage_lifetime = Param(m.j, default=0, initialize=readData_det.storage_lifetime)
+    m.storage_inv_cost = Param(m.j, m.t, default=0, initialize=readData.storage_inv_cost)
+    m.P_min_charge = Param(m.j, default=0, initialize=readData.P_min_charge)
+    m.P_max_charge = Param(m.j, default=0, initialize=readData.P_max_charge)
+    m.P_min_discharge = Param(m.j, default=0, initialize=readData.P_min_discharge)
+    m.P_max_discharge = Param(m.j, default=0, initialize=readData.P_max_discharge)
+    m.min_storage_cap = Param(m.j, default=0, initialize=readData.min_storage_cap)
+    m.max_storage_cap = Param(m.j, default=0, initialize=readData.max_storage_cap)
+    m.eff_rate_charge = Param(m.j, default=0, initialize=readData.eff_rate_charge)
+    m.eff_rate_discharge = Param(m.j, default=0, initialize=readData.eff_rate_discharge)
+    m.storage_lifetime = Param(m.j, default=0, initialize=readData.storage_lifetime)
 
     # Block of Equations per time period
     def planning_block_rule(b, stage):
@@ -251,7 +245,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
         def bound_Pflow(_b, r, r_, t, d, s):
             if r_ != r:
-                return 0, readData_det.t_up[r, r_]
+                return 0, readData.t_up[r, r_]
             else:
                 return 0, 0
 
@@ -445,8 +439,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.nso_prev = Var(m.j, m.r, within=NonNegativeReals)
 
         def obj_rule(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
-                                                              + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
+            return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t, stage]
+                                                              + m.EF_CO2[i] * m.tx_CO2[t] * m.hr[i, r]) * _b.P[
                                                                  i, r, t, d, s]
                                                              for i, r in m.i_r)
                                        for d in m.d for s in m.hours) + sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
@@ -454,8 +448,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
                                    + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
                                          for th, r in m.th_r)
                                    + sum(m.n_d[d] * m.hs * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
-                                         * (m.f_start[th] * m.P_fuel[th, t]
-                                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, stage] + m.C_start[th])
+                                         * (m.f_start[th] * m.P_fuel[th, t, stage]
+                                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t] + m.C_start[th])
                                          for th, r in m.th_r for d in m.d for s in m.hours)
                                    + sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
                                          for rnew, r in m.rn_r if rnew in m.rnew)

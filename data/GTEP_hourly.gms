@@ -36,7 +36,7 @@ display i, th, rn, co, ng, nu, PV, CSP, wi, old, new, rold, rnew, told, tnew;
 ALIAS (i,ii);
 
 SETS
-         t       time periods (years)    /1*30/
+         t       time periods (years)    /1*3/
          ss      season                  /spring, summer, fall, winter/
          s       subperiods
 ;
