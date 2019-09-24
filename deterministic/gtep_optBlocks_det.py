@@ -57,6 +57,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
         m.t: set of time periods
 
+        m.l set of transmission lines
+
         m.stage: set of stages in the scenario tree
     '''
     m.r = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
@@ -104,6 +106,11 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
     m.t = RangeSet(time_periods)
 
+    m.l = RangeSet(66)
+
+    m.l_old = Set(within=m.l)
+    m.l_new = Set(within=m.l)
+
     m.stages = RangeSet(stages)
 
     t_stage = [(t, stage) for stage in m.stages for t in t_per_stage[stage]]
@@ -133,6 +140,18 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
     m.th_r = Set(initialize=m.th * m.r, filter=th_r_filter, ordered=True)
 
+    #if there is a transmission line between region 
+    def l_rr_filter(m, l, r, rr):
+        return (r == readData_det.tielines[l-1]['Near Area Name']) and (rr == readData_det.tielines[l-1]['Far Area Name'])
+    m.l_rr = Set(initialize=m.l * m.r * m.r, filter=l_rr_filter, ordered=True)    
+
+    def l_er_filter(m, l, r):
+        return r == readData_det.tielines[l-1]['Far Area Name']
+    m.l_er = Set(initialize=m.l*m.r, filter=l_er_filter, ordered=True)
+
+    def l_sr_filter(m, l, r):
+        return r == readData_det.tielines[l-1]['Near Area Name']
+    m.l_sr = Set(initialize=m.l*m.r, filter=l_sr_filter, ordered=True)    
     '''
     Parameter notation
 
@@ -187,15 +206,16 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     m.eff_rate_charge: efficiency rate to charge energy in storage unit j
     m.eff_rate_discharge: efficiency rate to discharge energy in storage unit j
     m.storage_lifetime: storage lifetime (years)
+    m.susceptance susceptance of transmission line l [Siemenns]
     '''
 
-    # m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.L)
-    m.L = Param(m.r, m.t, m.d, m.hours, default=0, initialize=readData_det.L, mutable=True) 
+# m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.L)
+    m.L = Param(m.r, m.t, m.d, m.hours, default=0, initialize=readData_det.L_by_scenario[0], mutable=True) 
     m.n_d = Param(m.d, default=0, initialize=readData_det.n_ss)
     # m.L_max = Param(m.t_stage, default=0, mutable=True)
     m.L_max = Param(m.t, default=0, initialize=readData_det.L_max)
     # m.cf = Param(m.i, m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.cf)
-    m.cf = Param(m.i, m.r, m.t, m.d, m.hours, mutable=True, default=0, initialize=readData_det.cf)
+    m.cf = Param(m.i, m.r, m.t, m.d, m.hours, mutable=True, initialize=readData_det.cf_by_scenario[0])
     m.Qg_np = Param(m.i_r, default=0, initialize=readData_det.Qg_np)
     m.Ng_max = Param(m.i_r, default=0, initialize=readData_det.Ng_max)
     m.Qinst_UB = Param(m.i, m.t, default=0, initialize=readData_det.Qinst_UB)
@@ -227,11 +247,25 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     m.LEC = Param(m.i, default=0, initialize=readData_det.LEC)
     m.PEN = Param(m.t, default=0, initialize=readData_det.PEN)
     m.PENc = Param(default=0, initialize=readData_det.PENc)
-    # m.tx_CO2 = Param(m.t, default=0, initialize=readData_det.tx_CO2)
-    m.tx_CO2 = Param(m.t_stage, default=0, mutable=True)
+    m.tx_CO2 = Param(m.t, m.stages, default=0, mutable=True)   
+    for t in m.t:
+        if t == 1:
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
+        else:
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
     m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
     m.hs = Param(initialize=readData_det.hs, default=0)
     m.ir = Param(initialize=readData_det.ir, default=0)
+
+    #transmission
+    m.suceptance = Param(m.l, initialize=0, mutable=True)
+    for i in range(len(readData_det.tielines)):
+        m.suceptance[i+1] = readData_det.tielines[i]['B']
+
+    m.line_capacity = Param(m.l, initialize=0, mutable=True)
+    for i in range(len(readData_det.tielines)):
+        m.line_capacity[i+1] = readData_det.tielines[i]['Capacity']    
+
 
     # Storage
     m.storage_inv_cost = Param(m.j, m.t, default=0, initialize=readData_det.storage_inv_cost)
@@ -254,11 +288,9 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
             else:
                 return 0, m.Qg_np[i, r] * m.Ng_max[i, r]
 
-        def bound_Pflow(_b, r, r_, t, d, s):
-            if r_ != r:
-                return 0, readData_det.t_up[r, r_]
-            else:
-                return 0, 0
+        def bound_Pflow(_b, l, t, d, s):
+             return -m.line_capacity[l], m.line_capacity[l]
+
 
         def bound_o_rn(_b, rn, r, t):
             if rn in m.rold:
@@ -358,14 +390,23 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.p_storage_level: ending state of charge of storage in region r, day d, hour h, year t [MWh]
         b.p_storage_level_end_hour: ending state of charge of storage in region r, day d, hour h, year t [MWh]
         b.nsb: Number of storage units of type j installed in region r, year t (relaxed to continuous)
-        m.nso: Number of storage units of type j operational in region r, year t (relaxed to continuous)
-        m.nsr: Number of storage units of type j retired in region r, year t (relaxed to continuous)
+        b.nso: Number of storage units of type j operational in region r, year t (relaxed to continuous)
+        b.nsr: Number of storage units of type j retired in region r, year t (relaxed to continuous)
+        b.ntb Whether new transmission line l is built in time period t
+        b.nte whether transmission line l exist in time period t 
+        b.theta
         '''
+
+        b.ntb = Var(m.l_new, t_per_stage[stage], within=Binary)
+        b.nte = Var(m.l_new, t_per_stage[stage], within=Binary)
+        b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=(-3.14159, 3.14159))
+        b.nte_prev = Var(m.l_new, domain=Binary)
+
 
         b.P = Var(m.i_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals, bounds=bound_P)
         b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.RES_def = Var(t_per_stage[stage], within=NonNegativeReals)
-        b.P_flow = Var(m.r, m.r, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
+        b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
         b.Q_spin = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.Q_Qstart = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.ngr_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_r_rn, domain=NonNegativeReals)
@@ -449,6 +490,41 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
         b.nso_prev = Var(m.j, m.r, within=NonNegativeReals)
 
+        ####################### add constraints related to transmission ####################### 
+        def dc_power_flow_old(_b, l, t, d, s):
+            return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])
+        b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
+
+        def dc_power_flow_new_lo(_b, l, t, d, s):
+            return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
+            (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])\
+            >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]
+        b.dc_power_flow_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lo)
+
+        def dc_power_flow_new_up(_b, l, t, d, s):
+            return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
+            (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])\
+            <= (1- _b.nte[l, t]) * 5 * m.line_capacity[l]
+        b.dc_power_flow_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_up)        
+
+        def power_flow_bounds_new_lo(_b, l, t, d, s):
+            return _b.P_flow[l, t, d, s] >= - m.line_capacity[l] * _b.nte[l, t]
+        b.power_flow_bounds_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo)
+
+        def power_flow_bounds_new_up(_b, l, t, d, s):
+            return _b.P_flow[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
+        b.power_flow_bounds_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up)
+
+        def transmission_line_balance(_b, l, t):
+            if t == 1:
+                return _b.nte[l, t] == _b.ntb[l, t]
+            elif t != t_per_stage[stage][0]:
+                return _b.nte[l,t] == _b.nte[l, t-1] + _b.ntb[l, t]
+            else:
+                return _b.nte[l,t] ==  _b.nte_prev[l] + _b.ntb[l, t]
+        b.transmission_line_balance = Constraint(m.l_new, t_per_stage[stage], rule=transmission_line_balance)                 
+
+        ####################### end constraints related to transmission ####################### 
         def obj_rule(_b):
             return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
@@ -509,8 +585,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
         def en_bal(_b, r, t, d, s):
             return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
-                   + sum(_b.P_flow[r_, r, t, d, s] * (1 - m.t_loss[r, r_] * m.dist[r, r_]) -
-                         _b.P_flow[r, r_, t, d, s] for r_ in m.r if r_ != r) \
+                   + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
+                         sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
                    + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
                    == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]
 
@@ -697,6 +773,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.link_equal2 = ConstraintList()
 
         b.link_equal3 = ConstraintList()
+
+        b.link_equal4 = ConstraintList()
 
         b.fut_cost = ConstraintList()
 

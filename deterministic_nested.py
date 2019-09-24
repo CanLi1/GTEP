@@ -16,7 +16,7 @@ import csv
 
 from scenarioTree import create_scenario_tree
 import deterministic.readData_det as readData_det
-import deterministic.optBlocks_det as b
+import deterministic.gtep_optBlocks_det as b
 from forward import forward_pass
 from backward_SDDiP import backward_pass
 
@@ -96,6 +96,7 @@ m.ngo_rn_par = Param(m.rn_r, m.stages, default=0, initialize=0, mutable=True)
 m.ngo_th_par = Param(m.th_r, m.stages, default=0, initialize=0, mutable=True)
 m.nso_par = Param(m.j, m.r, m.stages, default=0, initialize=0, mutable=True)
 m.nsb_par = Param(m.j, m.r, m.stages, default=0, initialize=0, mutable=True)
+m.nte_par = Param(m.l_new, m.stages, default=0, initialize=0, mutable=True)
 
 # Parameters to compute upper and lower bounds
 mean = {}
@@ -128,7 +129,12 @@ for stage in m.stages:
         for (j, r) in j_r:
             m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
                                                  m.Bl[stage-1].nso[j, r, t_per_stage[stage-1][-1]]))
+
+        for l in m.l_new:
+            m.Bl[stage].link_equal4.add(expr=(m.Bl[stage].nte_prev[l] ==
+                                                 m.Bl[stage-1].nte[l, t_per_stage[stage-1][-1]]))
 m.obj = Objective(expr=0, sense=minimize)
+
 for stage in m.stages:
     m.Bl[stage].obj.deactivate()
     m.obj.expr += m.Bl[stage].obj.expr
