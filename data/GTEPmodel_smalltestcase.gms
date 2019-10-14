@@ -31,7 +31,7 @@ SETS     i_r(i,r)  mapping set between regions and clusters;
 ALIAS (i,ii);
 
 SETS
-         t       time periods (years) /1*5/
+         t       time periods (years) /1*15/
          ss      season
          s       subperiods
 ;
@@ -97,7 +97,7 @@ display i_r;
 
 Execute_unload 'GTEP_data.gdx';
 
-Execute "gdx2sqlite -i GTEP_data.gdx -o GTEP_data.db";
+Execute "gdx2sqlite -i GTEP_data.gdx -o GTEP_data_15years.db";
 
 
 

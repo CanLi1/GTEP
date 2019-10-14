@@ -452,7 +452,79 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.nso = Var(m.j, m.r, t_per_stage[stage], within=NonNegativeReals)
 
         b.nso_prev = Var(m.j, m.r, within=NonNegativeReals)
+      
+        def variable_operating_cost(_b):
+            return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
+                                                              + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
+                                                                 i, r, t, d, s]
+                                                             for i, r in m.i_r)
+                                       for d in m.d for s in m.hours) )   for t in t_per_stage[stage])* 10 ** (-9)
+        b.variable_operating_cost = Expression(rule=variable_operating_cost)
 
+
+        def fixed_operating_cost(_b):
+            return sum(m.if_[t] * (sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
+                                                                            _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
+                                   + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
+                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-9)
+        b.fixed_operating_cost = Expression(rule=fixed_operating_cost)
+
+
+        def startup_cost(_b):
+            return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
+                                         * (m.f_start[th] * m.P_fuel[th, t]
+                                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, stage] + m.C_start[th])
+                                   for th, r in m.th_r for d in m.d for s in m.hours))   for t in t_per_stage[stage])* 10 ** (-9)
+        b.startup_cost = Expression(rule=startup_cost)
+
+        def renewable_generator_cost(_b):
+            return sum(m.if_[t] * (sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
+                                         for rnew, r in m.rn_r if rnew in m.rnew))   for t in t_per_stage[stage])* 10 ** (-9)
+        b.renewable_generator_cost = Expression(rule=renewable_generator_cost)
+
+
+
+        def thermal_generator_cost(_b):
+            return sum(m.if_[t] * (sum(m.DIC[tnew, t] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[tnew, r, t]
+                                         for tnew, r in m.th_r if tnew in m.tnew))   for t in t_per_stage[stage])* 10 ** (-9)
+        b.thermal_generator_cost = Expression(rule=thermal_generator_cost)
+
+        def extending_renewable_generator_cost(_b):
+            return sum(m.if_[t] * (sum(m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
+                                         for rn, r in m.rn_r))   for t in t_per_stage[stage])* 10 ** (-9)
+        b.extending_renewable_generator_cost = Expression(rule=extending_renewable_generator_cost)
+
+
+        def extending_thermal_generator_cost(_b):
+            return sum(m.if_[t] * (sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
+                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-9)
+        b.extending_thermal_generator_cost = Expression(rule=extending_thermal_generator_cost)
+
+
+        def storage_investment_cost(_b):
+            return sum(m.if_[t] * (sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
+                                         for j in m.j for r in m.r))   for t in t_per_stage[stage])* 10 ** (-9)  
+        b.storage_investment_cost = Expression(rule=storage_investment_cost)       
+        
+        def penalty_cost(_b):
+            return sum(m.if_[t] * (m.PEN[t] * _b.RES_def[t]
+                                   + m.PENc * sum(_b.cu[r, t, d, s]
+                                                  for r in m.r for d in m.d for s in m.hours))   for t in t_per_stage[stage])  * 10 ** (-9)
+
+        def renewable_capacity(_b):
+            return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) 
+        b.renewable_capacity = Expression(rule=renewable_capacity)
+
+        def thermal_capacity(_b):
+            return sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th)   
+        b.thermal_capacity = Expression(rule=thermal_capacity)
+
+        def total_capacity(_b):
+            return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
+                   + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th)
+        b.total_capacity = Expression(rule=total_capacity)
+
+        b.penalty_cost = Expression(rule=penalty_cost)  
         def obj_rule(_b):
             return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[

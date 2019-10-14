@@ -17,6 +17,7 @@ import csv
 from scenarioTree import create_scenario_tree
 import deterministic.readData_det as readData_det
 import deterministic.gtep_optBlocks_det as b
+# import deterministic.optBlocks_det as b
 from forward import forward_pass
 from backward_SDDiP import backward_pass
 
@@ -28,7 +29,7 @@ curPath = os.path.abspath(os.path.curdir)
 curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_5years.db')
+filepath = os.path.join(curPath, 'data/GTEP_data_5years.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
@@ -141,13 +142,79 @@ for stage in m.stages:
 
 
 # solve relaxed model
-a = TransformationFactory("core.relax_integrality")
-a.apply_to(m)
+# a = TransformationFactory("core.relax_integrality")
+# a.apply_to(m)
 
 opt = SolverFactory("cplex")
-# opt.options['mipgap'] = 0.01
-# opt.solve(m, tee=True)
+opt.options['mipgap'] = 0.01
+opt.solve(m, tee=True)
+variable_operating_cost = []
+fixed_operating_cost =[]
+startup_cost = []
+thermal_generator_cost = []
+extending_thermal_generator_cost = []
+renewable_generator_cost = []
+extending_renewable_generator_cost = []
+storage_investment_cost = []
+penalty_cost = []
+renewable_capacity = []
+thermal_capacity = []
+total_capacity = []
+transmission_line_cost = []
+for stage in m.stages:
+    variable_operating_cost.append(m.Bl[stage].variable_operating_cost.expr())
+    fixed_operating_cost.append(m.Bl[stage].fixed_operating_cost.expr())
+    startup_cost.append(m.Bl[stage].startup_cost.expr())
+    thermal_generator_cost.append(m.Bl[stage].thermal_generator_cost.expr())
+    extending_thermal_generator_cost.append(m.Bl[stage].extending_thermal_generator_cost.expr())
+    renewable_generator_cost.append(m.Bl[stage].renewable_generator_cost.expr())
+    extending_renewable_generator_cost.append(m.Bl[stage].extending_renewable_generator_cost.expr())
+    storage_investment_cost.append(m.Bl[stage].storage_investment_cost.expr())
+    penalty_cost.append(m.Bl[stage].penalty_cost.expr())
+    renewable_capacity.append(m.Bl[stage].renewable_capacity.expr())
+    thermal_capacity.append(m.Bl[stage].thermal_capacity.expr())
+    total_capacity.append(m.Bl[stage].total_capacity.expr())
+    transmission_line_cost.append(m.Bl[stage].transmission_line_cost.expr())
 
+print("variable_operating_cost")
+print(variable_operating_cost)
+print(sum(variable_operating_cost))
+print("fixed_operating_cost")
+print(fixed_operating_cost)
+print(sum(fixed_operating_cost))
+print("startup_cost")
+print(startup_cost)
+print(sum(startup_cost))
+print("thermal_generator_cost")
+print(thermal_generator_cost)
+print(sum(thermal_generator_cost))
+print("extending_thermal_generator_cost")
+print(extending_thermal_generator_cost)
+print(sum(extending_thermal_generator_cost))
+print("renewable_generator_cost")
+print(renewable_generator_cost)
+print(sum(renewable_generator_cost))
+print("extending_renewable_generator_cost")
+print(extending_renewable_generator_cost)
+print(sum(extending_renewable_generator_cost))
+print("storage_investment_cost")
+print(storage_investment_cost)
+print(sum(storage_investment_cost))
+print("penalty_cost")
+print(penalty_cost)
+print(sum(penalty_cost))
+print("renewable_capacity")
+print(renewable_capacity)
+print(sum(renewable_capacity))
+print("thermal_capacity")
+print(thermal_capacity)
+print(sum(thermal_capacity))
+print("total_capacity")
+print(total_capacity)
+print(sum(total_capacity))
+print("transmission_line_cost")
+print(transmission_line_cost)
+print(sum(transmission_line_cost))
 #solve with nested benders
 # for stage in m.stages:
 #     if stage != 1:
