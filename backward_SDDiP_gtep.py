@@ -3,7 +3,7 @@ __author__ = "Cristiana L. Lara"
 from pyomo.environ import *
 
 
-def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r):
+def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r, l_new):
     if stage == n_stages:
         bl.alphafut.fix(0)
     else:
@@ -12,13 +12,15 @@ def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r):
     # Solve the model
     opt = SolverFactory('gurobi')
     opt.options['relax_integrality'] = 1
-    opt.options['timelimit'] = 400
+    opt.options['timelimit'] = 600
     opt.options['threads'] = 6
-    opt.solve(bl, tee=True)#, save_results=False)#
-
+    results = opt.solve(bl, tee=True)#, save_results=False)#
+    print("termination condition")
+    print(results.solver.termination_condition)
     mltp_o_rn = {}
     mltp_o_th = {}
     mltp_so = {}
+    mltp_te = {}
 
     if stage != 1:
         # Get Lagrange multiplier from linking equality
@@ -35,8 +37,11 @@ def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r):
             i = j_r[j_r_index][0]
             j = j_r[j_r_index][1]
             mltp_so[i, j] = - bl.dual[bl.link_equal3[j_r_index + 1]]
+        for l_index in range(len(l_new)):
+            l = l_new[l_index]
+            mltp_te[l] = - bl.dual[bl.link_equal4[l_index + 1]]            
 
     # Get optimal value
     cost = bl.obj()
 
-    return mltp_o_rn, mltp_o_th, mltp_so, cost
+    return mltp_o_rn, mltp_o_th, mltp_so, mltp_te, cost
