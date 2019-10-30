@@ -558,7 +558,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.obj = Objective(rule=obj_rule, sense=minimize)
 
         def min_RN_req(_b, t):
-            return sum(m.n_d[d] * m.hs * sum(_b.P[rn, r, t, d, s] - _b.cu[r, t, d, s] for rn, r in m.i_r if rn in m.rn) \
+            return sum(m.n_d[d] * m.hs * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
                        for d in m.d for s in m.hours) \
                    + _b.RES_def[t] >= m.RES_min[t] * m.ED[t]
 
