@@ -506,9 +506,9 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
         temp_line = {}
         temp_line['Near Area Name'] = areaMap[tielines_df.iat[i,0]]
         temp_line['Far Area Name'] = areaMap[tielines_df.iat[i,1]]
-        temp_line['Capacity'] = tielines_df.iat[i,2]
-        temp_line['X'] = tielines_df.iat[i,3]
-        temp_line['R'] = tielines_df.iat[i,4]
+        temp_line['Capacity'] = float(tielines_df.iat[i,2])
+        temp_line['X'] = float(tielines_df.iat[i,3])
+        temp_line['R'] = float(tielines_df.iat[i,4])
         temp_line['Voltage'] = tielines_df.iat[i,5]
         temp_line['B'] = - temp_line['X'] / (temp_line['X'] * temp_line['X'] + temp_line['R'] *  temp_line['R']) * 100
         temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]

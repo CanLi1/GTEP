@@ -411,7 +411,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.nte = Var(m.l_new, t_per_stage[stage], within=Binary)
         b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)
 
-        b.nte_prev = Var(m.l_new, domain=Binary)
+        b.nte_prev = Var(m.l_new, bounds=(0,1), domain=NonNegativeReals)
         b.P = Var(m.i_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals, bounds=bound_P)
         b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.RES_def = Var(t_per_stage[stage], within=NonNegativeReals)
@@ -421,48 +421,69 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.Q_spin = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.Q_Qstart = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.ngr_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_r_rn, domain=NonNegativeReals)
+        # for t in t_per_stage[stage]:
+        #     if t == 1:
+        #         for rnew, r in m.rn_r:
+        #             if rnew in m.rnew:
+        #                 b.ngr_rn[rnew, r, t].fix(0.0)
+        #     else:
+        #         for rnew, r in m.rn_r:
+        #             if rnew in m.rnew:
+        #                 b.ngr_rn[rnew, r, t].unfix()
+
+        #rnew does not occur in the logic constraints
         for t in t_per_stage[stage]:
-            if t == 1:
-                for rnew, r in m.rn_r:
-                    if rnew in m.rnew:
-                        b.ngr_rn[rnew, r, t].fix(0.0)
-            else:
-                for rnew, r in m.rn_r:
-                    if rnew in m.rnew:
-                        b.ngr_rn[rnew, r, t].unfix()
+            for rnew, r in m.rn_r:
+                if rnew in m.rnew:
+                    b.ngr_rn[rnew, r, t].fix(0.0)
+      
 
         b.nge_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_e_rn, domain=NonNegativeReals)
+        # for t in t_per_stage[stage]:
+        #     if t == 1:
+        #         for rnew, r in m.rn_r:
+        #             if rnew in m.rnew:
+        #                 b.nge_rn[rnew, r, t].fix(0.0)
+        #     else:
+        #         for rnew, r in m.rn_r:
+        #             if rnew in m.rnew:
+        #                 b.nge_rn[rnew, r, t].unfix()
         for t in t_per_stage[stage]:
-            if t == 1:
-                for rnew, r in m.rn_r:
-                    if rnew in m.rnew:
-                        b.nge_rn[rnew, r, t].fix(0.0)
-            else:
-                for rnew, r in m.rn_r:
-                    if rnew in m.rnew:
-                        b.nge_rn[rnew, r, t].unfix()
+            for rnew, r in m.rn_r:
+                if rnew in m.rnew:
+                    b.nge_rn[rnew, r, t].fix(0.0)
 
         b.ngr_th = Var(m.th_r, t_per_stage[stage], bounds=bound_r_th, domain=NonNegativeIntegers)
+        # for t in t_per_stage[stage]:
+        #     if t == 1:
+        #         for tnew, r in m.th_r:
+        #             if tnew in m.tnew:
+        #                 b.ngr_th[tnew, r, t].fix(0.0)
+        #     else:
+        #         for tnew, r in m.th_r:
+        #             if tnew in m.tnew:
+        #                 b.ngr_th[tnew, r, t].unfix()
         for t in t_per_stage[stage]:
-            if t == 1:
-                for tnew, r in m.th_r:
-                    if tnew in m.tnew:
-                        b.ngr_th[tnew, r, t].fix(0.0)
-            else:
-                for tnew, r in m.th_r:
-                    if tnew in m.tnew:
-                        b.ngr_th[tnew, r, t].unfix()
+            for tnew, r in m.th_r:
+                if tnew in m.tnew:
+                    b.ngr_th[tnew, r, t].fix(0.0)
+      
 
         b.nge_th = Var(m.th_r, t_per_stage[stage], bounds=bound_e_th, domain=NonNegativeIntegers)
+        # for t in t_per_stage[stage]:
+        #     if t == 1:
+        #         for tnew, r in m.th_r:
+        #             if tnew in m.tnew:
+        #                 b.nge_th[tnew, r, t].fix(0.0)
+        #     else:
+        #         for tnew, r in m.th_r:
+        #             if tnew in m.tnew:
+        #                 b.nge_th[tnew, r, t].unfix()
         for t in t_per_stage[stage]:
-            if t == 1:
-                for tnew, r in m.th_r:
-                    if tnew in m.tnew:
-                        b.nge_th[tnew, r, t].fix(0.0)
-            else:
-                for tnew, r in m.th_r:
-                    if tnew in m.tnew:
-                        b.nge_th[tnew, r, t].unfix()
+            for tnew, r in m.th_r:
+                if tnew in m.tnew:
+                    b.nge_th[tnew, r, t].fix(0.0)
+
         b.u = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)
         b.su = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)
         b.sd = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)

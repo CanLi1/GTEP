@@ -1,6 +1,6 @@
 import cplex
 
-c = cplex.Cplex("temp.lp")
+c = cplex.Cplex("relax.lp")
 idx = c.long_annotations.add('cpxBendersPartition', 0)
 objtype = c.long_annotations.object_type.variable
 
