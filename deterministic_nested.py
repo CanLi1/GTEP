@@ -144,12 +144,12 @@ for stage in m.stages:
 
 
 # # solve relaxed model
-a = TransformationFactory("core.relax_integrality")
-a.apply_to(m)
+# a = TransformationFactory("core.relax_integrality")
+# a.apply_to(m)
 
-opt = SolverFactory("cplex")
-opt.options['mipgap'] = 0.01
-opt.solve(m, tee=True)
+# opt = SolverFactory("cplex")
+# opt.options['mipgap'] = 0.01
+# opt.solve(m, tee=True)
 
 # solve with nested benders
 # for stage in m.stages:

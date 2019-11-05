@@ -171,30 +171,46 @@ opt = SolverFactory("cplex_persistent")
 
 opt.set_instance(m)
 opt.set_benders_annotation()
-opt.set_benders_strategy(2)
+opt.set_benders_strategy(1)
 
 #set master variables 
-for stage in m.stages:
-    for t in t_per_stage[stage]:
-        # print('stage', stage, 't_prev', t_prev)
-        for (rn, r) in m.rn_r:
-            opt.set_master_variable(m.Bl[stage].ngo_rn[rn, r, t])
-            opt.set_master_variable(m.Bl[stage].ngb_rn[rn, r, t])
-            opt.set_master_variable(m.Bl[stage].nge_rn[rn, r, t])
-            opt.set_master_variable(m.Bl[stage].ngr_rn[rn, r, t])
-        for (th, r) in m.th_r:
-            opt.set_master_variable(m.Bl[stage].ngo_th[th, r, t]  )
-            opt.set_master_variable(m.Bl[stage].ngb_th[th, r, t]  )
-            opt.set_master_variable(m.Bl[stage].nge_th[th, r, t]  )
-            opt.set_master_variable(m.Bl[stage].ngr_th[th, r, t]  )            
-        for (j, r) in j_r:
-            opt.set_master_variable(m.Bl[stage].nso[j, r, t])
-            opt.set_master_variable(m.Bl[stage].nsb[j, r, t])
-            opt.set_master_variable(m.Bl[stage].nsr[j, r, t])
+investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
+for v in m.component_objects(Var):
+    if v.getname() in investment_vars:
+        print("investment_vars")
+        for index in v:
+            print(index)
+            opt.set_master_variable(v[index])
+# for stage in m.stages:
+#     for t in t_per_stage[stage]:
+#         # print('stage', stage, 't_prev', t_prev)
+#         for (rn, r) in m.rn_r:
+#             opt.set_master_variable(m.Bl[stage].ngo_rn[rn, r, t])
+#             opt.set_master_variable(m.Bl[stage].ngb_rn[rn, r, t])
+#             opt.set_master_variable(m.Bl[stage].nge_rn[rn, r, t])
+#             opt.set_master_variable(m.Bl[stage].ngr_rn[rn, r, t])
+#         for (th, r) in m.th_r:
+#             opt.set_master_variable(m.Bl[stage].ngo_th[th, r, t]  )
+#             opt.set_master_variable(m.Bl[stage].ngb_th[th, r, t]  )
+#             opt.set_master_variable(m.Bl[stage].nge_th[th, r, t]  )
+#             opt.set_master_variable(m.Bl[stage].ngr_th[th, r, t]  )            
+#         for (j, r) in j_r:
+#             opt.set_master_variable(m.Bl[stage].nso[j, r, t])
+#             opt.set_master_variable(m.Bl[stage].nsb[j, r, t])
+#             opt.set_master_variable(m.Bl[stage].nsr[j, r, t])
 
-        for l in m.l_new:
-            opt.set_master_variable(m.Bl[stage].nte[l, t])
-            opt.set_master_variable(m.Bl[stage].ntb[l, t])
+#         for l in m.l_new:
+#             opt.set_master_variable(m.Bl[stage].nte[l, t])
+#             opt.set_master_variable(m.Bl[stage].ntb[l, t])
+#set subproblems
+operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+map_d = {'fall':3, 'summer':2, 'spring':1, 'winter':4}
+for v in m.component_objects(Var):
+    if v.getname() in operating_vars:
+        for index in v:
+            t = index[-3]
+            opt.set_subproblem_variable(v[index], t)
+
 
 opt.solve(m, tee=True)
 
@@ -264,75 +280,84 @@ for stage in m.stages:
 upper_bound_obj = 0.0
 lopt = SolverFactory("cplex")
 lopt.options['mipgap'] = 0.01
+ub_time = 0.0 
+a = time.time()
 for stage in m.stages:
-    lopt.solve(m.Bl[stage], tee=True)
-    upper_bound_obj += m.Bl[stage].obj.value 
+    results = lopt.solve(m.Bl[stage], tee=True)
+    upper_bound_obj += m.Bl[stage].obj.expr()
+b = time.time()
+ub_time = b - a 
+print("ub time")
+print(ub_time)
+
+print("benders results")
+print(opt.results)
 
 
-# variable_operating_cost = []
-# fixed_operating_cost =[]
-# startup_cost = []
-# thermal_generator_cost = []
-# extending_thermal_generator_cost = []
-# renewable_generator_cost = []
-# extending_renewable_generator_cost = []
-# storage_investment_cost = []
-# penalty_cost = []
-# renewable_capacity = []
-# thermal_capacity = []
-# total_capacity = []
-# transmission_line_cost = []
-# for stage in m.stages:
-#     variable_operating_cost.append(m.Bl[stage].variable_operating_cost.expr())
-#     fixed_operating_cost.append(m.Bl[stage].fixed_operating_cost.expr())
-#     startup_cost.append(m.Bl[stage].startup_cost.expr())
-#     thermal_generator_cost.append(m.Bl[stage].thermal_generator_cost.expr())
-#     extending_thermal_generator_cost.append(m.Bl[stage].extending_thermal_generator_cost.expr())
-#     renewable_generator_cost.append(m.Bl[stage].renewable_generator_cost.expr())
-#     extending_renewable_generator_cost.append(m.Bl[stage].extending_renewable_generator_cost.expr())
-#     storage_investment_cost.append(m.Bl[stage].storage_investment_cost.expr())
-#     penalty_cost.append(m.Bl[stage].penalty_cost.expr())
-#     renewable_capacity.append(m.Bl[stage].renewable_capacity.expr())
-#     thermal_capacity.append(m.Bl[stage].thermal_capacity.expr())
-#     total_capacity.append(m.Bl[stage].total_capacity.expr())
-#     transmission_line_cost.append(m.Bl[stage].transmission_line_cost.expr())
+variable_operating_cost = []
+fixed_operating_cost =[]
+startup_cost = []
+thermal_generator_cost = []
+extending_thermal_generator_cost = []
+renewable_generator_cost = []
+extending_renewable_generator_cost = []
+storage_investment_cost = []
+penalty_cost = []
+renewable_capacity = []
+thermal_capacity = []
+total_capacity = []
+transmission_line_cost = []
+for stage in m.stages:
+    variable_operating_cost.append(m.Bl[stage].variable_operating_cost.expr())
+    fixed_operating_cost.append(m.Bl[stage].fixed_operating_cost.expr())
+    startup_cost.append(m.Bl[stage].startup_cost.expr())
+    thermal_generator_cost.append(m.Bl[stage].thermal_generator_cost.expr())
+    extending_thermal_generator_cost.append(m.Bl[stage].extending_thermal_generator_cost.expr())
+    renewable_generator_cost.append(m.Bl[stage].renewable_generator_cost.expr())
+    extending_renewable_generator_cost.append(m.Bl[stage].extending_renewable_generator_cost.expr())
+    storage_investment_cost.append(m.Bl[stage].storage_investment_cost.expr())
+    penalty_cost.append(m.Bl[stage].penalty_cost.expr())
+    renewable_capacity.append(m.Bl[stage].renewable_capacity.expr())
+    thermal_capacity.append(m.Bl[stage].thermal_capacity.expr())
+    total_capacity.append(m.Bl[stage].total_capacity.expr())
+    transmission_line_cost.append(m.Bl[stage].transmission_line_cost.expr())
 
-# print("variable_operating_cost")
-# print(variable_operating_cost)
-# print(sum(variable_operating_cost))
-# print("fixed_operating_cost")
-# print(fixed_operating_cost)
-# print(sum(fixed_operating_cost))
-# print("startup_cost")
-# print(startup_cost)
-# print(sum(startup_cost))
-# print("thermal_generator_cost")
-# print(thermal_generator_cost)
-# print(sum(thermal_generator_cost))
-# print("extending_thermal_generator_cost")
-# print(extending_thermal_generator_cost)
-# print(sum(extending_thermal_generator_cost))
-# print("renewable_generator_cost")
-# print(renewable_generator_cost)
-# print(sum(renewable_generator_cost))
-# print("extending_renewable_generator_cost")
-# print(extending_renewable_generator_cost)
-# print(sum(extending_renewable_generator_cost))
-# print("storage_investment_cost")
-# print(storage_investment_cost)
-# print(sum(storage_investment_cost))
-# print("penalty_cost")
-# print(penalty_cost)
-# print(sum(penalty_cost))
-# print("renewable_capacity")
-# print(renewable_capacity)
-# print(sum(renewable_capacity))
-# print("thermal_capacity")
-# print(thermal_capacity)
-# print(sum(thermal_capacity))
-# print("total_capacity")
-# print(total_capacity)
-# print(sum(total_capacity))
-# print("transmission_line_cost")
-# print(transmission_line_cost)
-# print(sum(transmission_line_cost))
+print("variable_operating_cost")
+print(variable_operating_cost)
+print(sum(variable_operating_cost))
+print("fixed_operating_cost")
+print(fixed_operating_cost)
+print(sum(fixed_operating_cost))
+print("startup_cost")
+print(startup_cost)
+print(sum(startup_cost))
+print("thermal_generator_cost")
+print(thermal_generator_cost)
+print(sum(thermal_generator_cost))
+print("extending_thermal_generator_cost")
+print(extending_thermal_generator_cost)
+print(sum(extending_thermal_generator_cost))
+print("renewable_generator_cost")
+print(renewable_generator_cost)
+print(sum(renewable_generator_cost))
+print("extending_renewable_generator_cost")
+print(extending_renewable_generator_cost)
+print(sum(extending_renewable_generator_cost))
+print("storage_investment_cost")
+print(storage_investment_cost)
+print(sum(storage_investment_cost))
+print("penalty_cost")
+print(penalty_cost)
+print(sum(penalty_cost))
+print("renewable_capacity")
+print(renewable_capacity)
+print(sum(renewable_capacity))
+print("thermal_capacity")
+print(thermal_capacity)
+print(sum(thermal_capacity))
+print("total_capacity")
+print(total_capacity)
+print(sum(total_capacity))
+print("transmission_line_cost")
+print(transmission_line_cost)
+print(sum(transmission_line_cost))
