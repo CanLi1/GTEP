@@ -29,25 +29,25 @@ curPath = os.path.abspath(os.path.curdir)
 curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
-filepath = os.path.join(curPath, 'data/GTEP_data_5years.db')
+filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 5  # number od stages in the scenario tree
+n_stages = 15  # number od stages in the scenario tree
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
 
 # time_periods = 10
-time_periods = 5
+time_periods = 15
 set_time_periods = range(1, time_periods + 1)
 # t_per_stage = {1:[1], 2:[2], 3:[3]}
 # t_per_stage = {1: [1, 2], 2: [3, 4], 3: [5, 6], 4: [7, 8], 5: [9, 10]}
-t_per_stage = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5]}
+# t_per_stage = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5]}
 # t_per_stage = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7], 8: [8], 9: [9], 10: [10]}
-# t_per_stage = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7], 8: [8], 9: [9], 10: [10],
-#                11: [11], 12: [12], 13: [13], 14: [14], 15: [15]}
+t_per_stage = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7], 8: [8], 9: [9], 10: [10],
+               11: [11], 12: [12], 13: [13], 14: [14], 15: [15]}
 
 # Define parameters of the decomposition
 max_iter = 100
