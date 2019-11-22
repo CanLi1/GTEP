@@ -156,22 +156,25 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
 
     L_1 = {}
     L_2 = {}
-    growth_rate = 0.014
+    # growth_rate = 0.014
+    growth_rate_high = 0.15
+    growth_rate_medium = 0.05
+    growth_rate_low = 0.014
     for t in L_max:
         d_idx = 0
         for d in list_of_repr_days_per_scenario:
             s_idx = 0
             for s in list(L_NE_1.index):
-                L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] * (1 + growth_rate * (t-1))
-                L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] * (1 + growth_rate * (t-1))
-                L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
-                L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
-                L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
-                L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
-                L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
-                L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
-                L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
-                L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]* (1 + growth_rate * (t-1))
+                L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] * (1 + growth_rate_medium * (t-1))
+                L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] * (1 + growth_rate_low * (t-1))
+                L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
+                L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
+                L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
+                L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
                 s_idx += 1
             d_idx += 1
 
@@ -499,31 +502,51 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
                 'West':'West', 'Far West':'West', 'North':'Northeast', 'North Central':'Northeast'}
     CostPerMile = {115:500000, 161:600000, 230:959700, 500:1919450}
     TIC = {}
-    j= 1
-    for i in range(tielines_df.shape[0]):
-        if areaMap[tielines_df.iat[i,0]] == areaMap[tielines_df.iat[i,1]]:
-            continue
-        temp_line = {}
-        temp_line['Near Area Name'] = areaMap[tielines_df.iat[i,0]]
-        temp_line['Far Area Name'] = areaMap[tielines_df.iat[i,1]]
-        temp_line['Capacity'] = float(tielines_df.iat[i,2])
-        temp_line['X'] = float(tielines_df.iat[i,3])
-        temp_line['R'] = float(tielines_df.iat[i,4])
-        temp_line['Voltage'] = tielines_df.iat[i,5]
-        temp_line['B'] = - temp_line['X'] / (temp_line['X'] * temp_line['X'] + temp_line['R'] *  temp_line['R']) * 100
-        temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
-        temp_line['Cost'] = CostPerMile[temp_line['Voltage']] * temp_line['Distance']
-        if temp_line['Voltage'] > 200:
-            TIC[j] = temp_line['Cost']
-            all_tielines.append(temp_line)
-            j += 1
+    # j= 1
+    # for i in range(tielines_df.shape[0]):
+    #     if areaMap[tielines_df.iat[i,0]] == areaMap[tielines_df.iat[i,1]]:
+    #         continue
+    #     temp_line = {}
+    #     temp_line['Near Area Name'] = areaMap[tielines_df.iat[i,0]]
+    #     temp_line['Far Area Name'] = areaMap[tielines_df.iat[i,1]]
+    #     temp_line['Capacity'] = float(tielines_df.iat[i,2])
+    #     temp_line['X'] = float(tielines_df.iat[i,3])
+    #     temp_line['R'] = float(tielines_df.iat[i,4])
+    #     temp_line['Voltage'] = tielines_df.iat[i,5]
+    #     temp_line['B'] = - temp_line['X'] / (temp_line['X'] * temp_line['X'] + temp_line['R'] *  temp_line['R']) * 100
+    #     temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
+    #     temp_line['Cost'] = CostPerMile[temp_line['Voltage']] * temp_line['Distance']
+    #     if temp_line['Voltage'] > 300:
+    #         TIC[j] = temp_line['Cost']
+    #         all_tielines.append(temp_line)
+    #         j += 1
     
     # #try to aggregate the tie lines 
     # for i in range(len(temp_line)):
+    #make each area have lines with same properties
+    line = {'Capacity': 2020.0,  'B': 8467.24770417039}
+    lines_two_end = [('Coastal', 'South'), ('Coastal', 'Northeast'), ('South', 'Northeast'), ('South', 'West'),
+        ('West', 'Northeast'), ('West', 'Panhandle'), ('Northeast', 'Panhandle') ]
+    j = 1
+    for ends in lines_two_end:
+        for i in range(10):
+            temp_line = {}
+            temp_line['Near Area Name'] = ends[0]
+            temp_line['Far Area Name'] = ends[1]
+            temp_line['Capacity'] = float(line['Capacity'])
+            temp_line['B'] = line['B']
+            temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
+            temp_line['Cost'] = CostPerMile[500] * temp_line['Distance']
+            TIC[j] = temp_line['Cost']
+            all_tielines.append(temp_line)
+            j += 1
+
+
     tielines = all_tielines
 
     globals()["tielines"] = tielines    
     globals()["TIC"] = TIC   
+
     print('finished loading data')
 
 

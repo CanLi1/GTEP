@@ -62,7 +62,9 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         m.stage: set of stages in the scenario tree
     '''
     m.r = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
-    m.r_Panhandle = Set(initialize=['Northeast', 'West'], ordered=True)
+    m.r_no_ng = Set(initialize=['West', 'Panhandle'], ordered=True)
+    # m.r_no_wind = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
+
     # m.i = Set(initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old', 'wind-old',
     #                       'wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new',
     #                       'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new'], ordered=True)
@@ -127,7 +129,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     m.Ng_old = Param(m.i, m.r, default=0, initialize=readData_det.Ng_old)
 
     def i_r_filter(m, i, r):
-        return i in m.new or (i in m.old and m.Ng_old[i, r] != 0)
+        return (i in m.new ) or (i in m.old and m.Ng_old[i, r] != 0)
 
     m.i_r = Set(initialize=m.i * m.r, filter=i_r_filter, ordered=True)
 
@@ -218,7 +220,10 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     # m.cf = Param(m.i, m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.cf)
     m.cf = Param(m.i, m.r, m.t, m.d, m.hours, mutable=True, initialize=readData_det.cf_by_scenario[0])
     m.Qg_np = Param(m.i_r, default=0, initialize=readData_det.Qg_np)
-    m.Ng_max = Param(m.i_r, default=0, initialize=readData_det.Ng_max)
+    m.Ng_max = Param(m.i_r, default=0, initialize=readData_det.Ng_max, mutable=True)
+    for i,r in m.i_r:
+        if m.Ng_max[i,r].value > 20:
+            m.Ng_max[i,r].value = 20
     m.Qinst_UB = Param(m.i, m.t, default=0, initialize=readData_det.Qinst_UB)
     m.LT = Param(m.i, initialize=readData_det.LT, default=0)
     m.Tremain = Param(m.t, default=0, initialize=readData_det.Tremain)
@@ -254,7 +259,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         if t == 1:
             m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
         else:
-            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'L']
     m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
     m.hs = Param(initialize=readData_det.hs, default=0)
     m.ir = Param(initialize=readData_det.ir, default=0)
@@ -417,7 +422,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.RES_def = Var(t_per_stage[stage], within=NonNegativeReals)
         b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
         #power flow from Panhandle to region r_Panhandle
-        b.P_Panhandle = Var(m.r_Panhandle, t_per_stage[stage], m.d, m.hours, bounds=(0, 2512.8))
         b.Q_spin = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.Q_Qstart = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.ngr_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_r_rn, domain=NonNegativeReals)
@@ -504,6 +508,9 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
         b.ngb_th = Var(m.th_r, t_per_stage[stage], bounds=bound_b_th, domain=NonNegativeIntegers)
         for t in t_per_stage[stage]:
+            for i,r in m.i_r:
+                if i in m.ng and r in m.r_no_ng:
+                    b.ngb_th[i,r,t].fix(0.0)
             for told, r in m.th_r:
                 if told in m.told:
                     b.ngb_th[told, r, t].fix(0.0)
@@ -694,24 +701,24 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.inst_TH_UB = Constraint(m.tnew, t_per_stage[stage], rule=inst_TH_UB)
 
         def en_bal(_b, r, t, d, s):
-            if r == "Panhandle":
-                return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
-                       - sum(_b.P_Panhandle[rr, t, d, s]  for rr in m.r_Panhandle) \
-                       + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
-                       == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]
-            elif r in m.r_Panhandle:
-                 return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
-                        + sum(_b.P_Panhandle[rr, t, d, s]  for rr in m.r_Panhandle)\
-                       + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
-                             sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
-                       + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
-                       == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]               
-            else:
-                return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
-                       + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
-                             sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
-                       + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
-                       == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]                
+            # if r == "Panhandle":
+            #     return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
+            #            - sum(_b.P_Panhandle[rr, t, d, s]  for rr in m.r_Panhandle) \
+            #            + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
+            #            == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]
+            # elif r in m.r_Panhandle:
+            #      return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
+            #             + sum(_b.P_Panhandle[rr, t, d, s]  for rr in m.r_Panhandle)\
+            #            + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
+            #                  sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
+            #            + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
+            #            == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]               
+            # else:
+            return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
+                   + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
+                         sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
+                   + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
+                   == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]                
 
         b.en_bal = Constraint(m.r, t_per_stage[stage], m.d, m.hours, rule=en_bal)
 
