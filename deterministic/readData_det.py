@@ -50,9 +50,11 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
 
     conn.close()
 
+    time = 5
+
     globals()['hs'] = 1
     globals()['ir'] = 0.057
-    globals()['PENc'] = 0
+    globals()['PENc'] = 5000
     t_up['West', 'Coastal'] = 0
     t_up['Coastal', 'West'] = 0
     t_up['Coastal', 'Panhandle'] = 0
@@ -75,8 +77,8 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
                          ('Li_ion', 10): 741754.6519,
                          ('Li_ion', 11): 701857.294, ('Li_ion', 12): 665604.5808,
                          ('Li_ion', 13): 632766.397, ('Li_ion', 14): 603165.7101, ('Li_ion', 15): 576639.6204,
-                        # ('Li_ion', 16): 553012.1704, ('Li_ion', 17): 532079.791, ('Li_ion', 18): 513609.5149,
-                        # ('Li_ion', 19): 497347.4123, ('Li_ion', 20): 483032.4302,
+                        ('Li_ion', 16): 553012.1704, ('Li_ion', 17): 532079.791, ('Li_ion', 18): 513609.5149,
+                        ('Li_ion', 19): 497347.4123, ('Li_ion', 20): 483032.4302,
                         ('Lead_acid', 1): 4346125.294, 
                         ('Lead_acid', 2): 3857990.578, ('Lead_acid', 3): 3458901.946,
                         ('Lead_acid', 4): 3117666.824, ('Lead_acid', 5): 2818863.27,
@@ -85,8 +87,8 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
                          ('Lead_acid', 10): 1748369.467,
                          ('Lead_acid', 11): 1600168.567, ('Lead_acid', 12): 1471137.002,
                          ('Lead_acid', 13): 1360557.098, ('Lead_acid', 14): 1267402.114, ('Lead_acid', 15): 1190102.412,
-                        # ('Lead_acid', 16): 1126569.481, ('Lead_acid', 17): 1074464.42, ('Lead_acid', 18): 1031526.418,
-                        # ('Lead_acid', 19): 995794.3254, ('Lead_acid', 20): 965683.7645,
+                        ('Lead_acid', 16): 1126569.481, ('Lead_acid', 17): 1074464.42, ('Lead_acid', 18): 1031526.418,
+                        ('Lead_acid', 19): 995794.3254, ('Lead_acid', 20): 965683.7645,
                         ('Flow', 1): 4706872.908, 
                         ('Flow', 2): 3218220.336, ('Flow', 3): 2810526.973,
                         ('Flow', 4): 2555010.035, ('Flow', 5): 2362062.488,
@@ -95,9 +97,14 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
                          ('Flow', 10): 1740573.662
          , ('Flow', 11): 1651531.463, ('Flow', 12): 1570567.635,
                          ('Flow', 13): 1497136.957, ('Flow', 14): 1430839.31, ('Flow', 15): 1371321.436,
-                        # ('Flow', 16): 1318208.673, ('Flow', 17): 1271067.144, ('Flow', 18): 1229396.193,
-                        # ('Flow', 19): 1192645.164, ('Flow', 20): 1160243.518
+                        ('Flow', 16): 1318208.673, ('Flow', 17): 1271067.144, ('Flow', 18): 1229396.193,
+                        ('Flow', 19): 1192645.164, ('Flow', 20): 1160243.518
                         }
+    temp_dict = {}                        
+    for key in storage_inv_cost:                   
+        if key[1] <= time:
+            temp_dict[key] = storage_inv_cost[key]
+    storage_inv_cost = temp_dict
     globals()["storage_inv_cost"] = storage_inv_cost
 
     # Power rating [MW]
@@ -157,24 +164,47 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
     L_1 = {}
     L_2 = {}
     # growth_rate = 0.014
-    growth_rate_high = 0.15
-    growth_rate_medium = 0.05
+    growth_rate_high = 0.014
+    growth_rate_medium = 0.014
     growth_rate_low = 0.014
     for t in L_max:
         d_idx = 0
         for d in list_of_repr_days_per_scenario:
             s_idx = 0
             for s in list(L_NE_1.index):
-                L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] * (1 + growth_rate_medium * (t-1))
-                L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] * (1 + growth_rate_low * (t-1))
-                L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
-                L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
-                L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
-                L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
+                if t >= 15:
+                    L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] * (1 + growth_rate_medium * (t-1))
+                    L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] * (1 + growth_rate_low * (t-1))
+                    L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
+                    L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
+                    L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
+                    L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
+                else:
+                    # L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] 
+                    # L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] 
+                    # L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]
+                    # L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]
+                    # L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]
+                    # L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]
+                    # L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]
+                    # L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]
+                    # L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]
+                    # L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]   
+                    L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] * (1 + growth_rate_medium * (t-1))
+                    L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] * (1 + growth_rate_low * (t-1))
+                    L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
+                    L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
+                    L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
+                    L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
+                    L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))                                     
+
                 s_idx += 1
             d_idx += 1
 
@@ -439,9 +469,19 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
                        (12, 'L'): 0, (12, 'M'): 0.204, (12, 'H'): 0.408,
                        (13, 'L'): 0, (13, 'M'): 0.219, (13, 'H'): 0.438,
                        (14, 'L'): 0, (14, 'M'): 0.235, (14, 'H'): 0.469,
-                       (15, 'L'): 0, (15, 'M'): 0.250, (15, 'H'): 0.500
+                       (15, 'L'): 0, (15, 'M'): 0.250, (15, 'H'): 0.500,
+                       (16, 'L'): 0, (16, 'M'): 0.265, (16, 'H'): 0.500,
+                       (17, 'L'): 0, (17, 'M'): 0.280, (17, 'H'): 0.500,
+                       (18, 'L'): 0, (18, 'M'): 0.295, (18, 'H'): 0.500,
+                       (19, 'L'): 0, (19, 'M'): 0.310, (19, 'H'): 0.500,
+                       (20, 'L'): 0, (20, 'M'): 0.325, (20, 'H'): 0.500
                        }
-    
+    temp_dict = {}
+    for key in tx_CO2_scenario:
+        if key[0] <= time:
+            temp_dict[key] = tx_CO2_scenario[key]
+    tx_CO2_scenario = temp_dict
+
     tx_CO2 = {}
     for stage in stages:
         for t in t_per_stage[stage]:
@@ -453,43 +493,43 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
     globals()["tx_CO2"] = tx_CO2
 
     # Different scenarios for NG PRICE:
-    ng_price_scenarios = {(1, 'L'): 3.117563, (1, 'M'): 3.4014395, (1, 'H'): 4.249755,
-                          (2, 'L'): 2.976701, (2, 'M'): 3.357056, (2, 'H'): 4.188047,
-                          (3, 'L'): 2.974117, (3, 'M'): 3.4164015, (3, 'H'): 4.228118,
-                          (4, 'L'): 3.082466, (4, 'M'): 3.578708, (4, 'H'): 4.403251,
-                          (5, 'L'): 3.236482, (5, 'M'): 3.8122265, (5, 'H'): 4.745406,
-                          (6, 'L'): 3.394663, (6, 'M'): 3.9940535, (6, 'H'): 5.088468,
-                          (7, 'L'): 3.479183, (7, 'M'): 4.0682835, (7, 'H'): 5.442574,
-                          (8, 'L'): 3.504514, (8, 'M'): 4.117297, (8, 'H'): 5.565526,
-                          (9, 'L'): 3.498631, (9, 'M'): 4.188261, (9, 'H'): 5.82389,
-                          (10, 'L'): 3.490988, (10, 'M'): 4.219348, (10, 'H'): 5.905959,
-                          (11, 'L'): 3.483505, (11, 'M'): 4.250815, (11, 'H'): 5.955,
-                          (12, 'L'): 3.496959, (12, 'M'): 4.2411075, (12, 'H'): 6.013945,
-                          (13, 'L'): 3.534126, (13, 'M'): 4.3724575, (13, 'H'): 6.17547,
-                          (14, 'L'): 3.57645, (14, 'M'): 4.4414835, (14, 'H'): 6.240099,
-                          (15, 'L'): 3.585003, (15, 'M'): 4.47585855, (15, 'H'): 6.41513
-                          }
-    for t in range(1, 16):
-        ng_price_scenarios[t, 'H'] = 1.5 * ng_price_scenarios[t, 'H']
+    # ng_price_scenarios = {(1, 'L'): 3.117563, (1, 'M'): 3.4014395, (1, 'H'): 4.249755,
+    #                       (2, 'L'): 2.976701, (2, 'M'): 3.357056, (2, 'H'): 4.188047,
+    #                       (3, 'L'): 2.974117, (3, 'M'): 3.4164015, (3, 'H'): 4.228118,
+    #                       (4, 'L'): 3.082466, (4, 'M'): 3.578708, (4, 'H'): 4.403251,
+    #                       (5, 'L'): 3.236482, (5, 'M'): 3.8122265, (5, 'H'): 4.745406,
+    #                       (6, 'L'): 3.394663, (6, 'M'): 3.9940535, (6, 'H'): 5.088468,
+    #                       (7, 'L'): 3.479183, (7, 'M'): 4.0682835, (7, 'H'): 5.442574,
+    #                       (8, 'L'): 3.504514, (8, 'M'): 4.117297, (8, 'H'): 5.565526,
+    #                       (9, 'L'): 3.498631, (9, 'M'): 4.188261, (9, 'H'): 5.82389,
+    #                       (10, 'L'): 3.490988, (10, 'M'): 4.219348, (10, 'H'): 5.905959,
+    #                       (11, 'L'): 3.483505, (11, 'M'): 4.250815, (11, 'H'): 5.955,
+    #                       (12, 'L'): 3.496959, (12, 'M'): 4.2411075, (12, 'H'): 6.013945,
+    #                       (13, 'L'): 3.534126, (13, 'M'): 4.3724575, (13, 'H'): 6.17547,
+    #                       (14, 'L'): 3.57645, (14, 'M'): 4.4414835, (14, 'H'): 6.240099,
+    #                       (15, 'L'): 3.585003, (15, 'M'): 4.47585855, (15, 'H'): 6.41513
+    #                       }
+    # for t in range(1, 16):
+    #     ng_price_scenarios[t, 'H'] = 1.5 * ng_price_scenarios[t, 'H']
         
-    th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old',
-                     'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
-    ng_generators = ['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
-    # 'nuc-st-old', 'nuc-st-new',
+    # th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old',
+    #                  'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
+    # ng_generators = ['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
+    # # 'nuc-st-old', 'nuc-st-new',
     
-    P_fuel_scenarios = {}
-    for stage in stages:
-        for t in t_per_stage[stage]:
-            for i in th_generators:
-                if stage == 1:
-                    P_fuel_scenarios[i, t, stage, 'O'] = P_fuel[i, t]
-                else:
-                    for n in ['M']:
-                        if i in ng_generators:
-                            P_fuel_scenarios[i, t, stage, n] = ng_price_scenarios[t, n]
-                        else:
-                            P_fuel_scenarios[i, t, stage, n] = P_fuel[i, t]
-    globals()["P_fuel_scenarios"] = P_fuel_scenarios
+    # P_fuel_scenarios = {}
+    # for stage in stages:
+    #     for t in t_per_stage[stage]:
+    #         for i in th_generators:
+    #             if stage == 1:
+    #                 P_fuel_scenarios[i, t, stage, 'O'] = P_fuel[i, t]
+    #             else:
+    #                 for n in ['M']:
+    #                     if i in ng_generators:
+    #                         P_fuel_scenarios[i, t, stage, n] = ng_price_scenarios[t, n]
+    #                     else:
+    #                         P_fuel_scenarios[i, t, stage, n] = P_fuel[i, t]
+    # globals()["P_fuel_scenarios"] = P_fuel_scenarios
     # print(P_fuel_scenarios)
 
 
@@ -536,7 +576,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
             temp_line['Capacity'] = float(line['Capacity'])
             temp_line['B'] = line['B']
             temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
-            temp_line['Cost'] = CostPerMile[500] * temp_line['Distance']
+            temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
             TIC[j] = temp_line['Cost']
             all_tielines.append(temp_line)
             j += 1

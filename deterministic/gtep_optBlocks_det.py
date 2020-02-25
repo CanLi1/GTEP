@@ -9,7 +9,7 @@ import math
 import deterministic.readData_det as readData_det
 
 
-def create_model(stages, time_periods, t_per_stage, max_iter):
+def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
     m = ConcreteModel()
 
     # ################################## Declare of sets ##################################
@@ -221,9 +221,9 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
     m.cf = Param(m.i, m.r, m.t, m.d, m.hours, mutable=True, initialize=readData_det.cf_by_scenario[0])
     m.Qg_np = Param(m.i_r, default=0, initialize=readData_det.Qg_np)
     m.Ng_max = Param(m.i_r, default=0, initialize=readData_det.Ng_max, mutable=True)
-    for i,r in m.i_r:
-        if m.Ng_max[i,r].value > 20:
-            m.Ng_max[i,r].value = 20
+    # for i,r in m.i_r:
+    #     if m.Ng_max[i,r].value > 20:
+    #         m.Ng_max[i,r].value = 20
     m.Qinst_UB = Param(m.i, m.t, default=0, initialize=readData_det.Qinst_UB)
     m.LT = Param(m.i, initialize=readData_det.LT, default=0)
     m.Tremain = Param(m.t, default=0, initialize=readData_det.Tremain)
@@ -259,7 +259,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         if t == 1:
             m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
         else:
-            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'L']
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
     m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
     m.hs = Param(initialize=readData_det.hs, default=0)
     m.ir = Param(initialize=readData_det.ir, default=0)
@@ -297,6 +297,12 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
         def bound_Pflow(_b, l, t, d, s):
              return -m.line_capacity[l], m.line_capacity[l]
+        
+        def bound_Pflow_plus(_b, l, t, d, s):
+             return 0, m.line_capacity[l]             
+
+        def bound_Pflow_minus(_b, l, t, d, s):
+             return 0, m.line_capacity[l]
 
 
         def bound_o_rn(_b, rn, r, t):
@@ -414,13 +420,27 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
 
         b.ntb = Var(m.l_new, t_per_stage[stage], within=Binary)
         b.nte = Var(m.l_new, t_per_stage[stage], within=Binary)
-        b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)
-
         b.nte_prev = Var(m.l_new, bounds=(0,1), domain=NonNegativeReals)
+        #variables for different formulation of transmission 
+        if formulation == "standard":
+            b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)        
+            b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
+        elif formulation == "improved":
+            b.d_theta_plus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=(0, 3.14159))
+            b.d_theta_minus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=(0, 3.14159))
+            b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta) 
+            b.d_P_flow_plus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow_plus)
+            b.d_P_flow_minus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow_minus)
+            b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
+        elif formulation == "hull":
+            b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)        
+            b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)            
+            b.d_theta_1 = Var(m.l_new, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)        
+            b.d_theta_2 = Var(m.l_new, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)                   
         b.P = Var(m.i_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals, bounds=bound_P)
         b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.RES_def = Var(t_per_stage[stage], within=NonNegativeReals)
-        b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
+        
         #power flow from Panhandle to region r_Panhandle
         b.Q_spin = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.Q_Qstart = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
@@ -498,15 +518,20 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
                 b.sd[th, r, t, d, s].unfix()
         b.alphafut = Var(within=Reals, domain=NonNegativeReals)
 
-        b.ngo_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_o_rn, domain=NonNegativeReals)
-        b.ngb_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_b_rn, domain=NonNegativeReals)
+        # b.ngo_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_o_rn, domain=NonNegativeReals)
+        # b.ngb_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_b_rn, domain=NonNegativeReals)
+        b.ngo_rn = Var(m.rn_r, t_per_stage[stage], domain=NonNegativeReals)
+        b.ngb_rn = Var(m.rn_r, t_per_stage[stage],  domain=NonNegativeReals)
+
         for t in t_per_stage[stage]:
             for rold, r in m.rn_r:
                 if rold in m.rold:
                     b.ngb_rn[rold, r, t].fix(0.0)
 
-        b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
-        b.ngb_th = Var(m.th_r, t_per_stage[stage], bounds=bound_b_th, domain=NonNegativeIntegers)
+        # b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
+        # b.ngb_th = Var(m.th_r, t_per_stage[stage], bounds=bound_b_th, domain=NonNegativeIntegers)
+        b.ngo_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)
+        b.ngb_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)        
         for t in t_per_stage[stage]:
             for i,r in m.i_r:
                 if i in m.ng and r in m.r_no_ng:
@@ -530,29 +555,114 @@ def create_model(stages, time_periods, t_per_stage, max_iter):
         b.nso_prev = Var(m.j, m.r, within=NonNegativeReals)
 
         ####################### add constraints related to transmission ####################### 
-        def dc_power_flow_old(_b, l, t, d, s):
-            return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])
-        b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
+        if formulation == "standard":
+            def dc_power_flow_old(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])
+            b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
 
-        def dc_power_flow_new_lo(_b, l, t, d, s):
-            return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
-            (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])\
-            >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]
-        b.dc_power_flow_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lo)
+            def dc_power_flow_new_lo(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
+                (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])\
+                >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]
+            b.dc_power_flow_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lo)
 
-        def dc_power_flow_new_up(_b, l, t, d, s):
-            return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
-            (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])\
-            <= (1- _b.nte[l, t]) * 5 * m.line_capacity[l]
-        b.dc_power_flow_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_up)        
+            def dc_power_flow_new_up(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
+                (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])\
+                <= (1- _b.nte[l, t]) * 5 * m.line_capacity[l]
+            b.dc_power_flow_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_up)        
 
-        def power_flow_bounds_new_lo(_b, l, t, d, s):
-            return _b.P_flow[l, t, d, s] >= - m.line_capacity[l] * _b.nte[l, t]
-        b.power_flow_bounds_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo)
+            def power_flow_bounds_new_lo(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] >= - m.line_capacity[l] * _b.nte[l, t]
+            b.power_flow_bounds_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo)
 
-        def power_flow_bounds_new_up(_b, l, t, d, s):
-            return _b.P_flow[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
-        b.power_flow_bounds_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up)
+            def power_flow_bounds_new_up(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
+            b.power_flow_bounds_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up)
+        elif formulation == "improved":
+            def dc_power_flow_old(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])
+            b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
+
+            def dc_power_flow_new_lb1(_b, l, t, d, s):
+                return _b.d_P_flow_plus[l, t, d, s] - m.suceptance[l] * \
+                _b.d_theta_plus[l, t, d, s]\
+                >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]             
+            b.dc_power_flow_new_lb1 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lb1)
+            
+            def dc_power_flow_new_ub1(_b, l, t, d, s):
+                return _b.d_P_flow_plus[l, t, d, s] - m.suceptance[l] * \
+                _b.d_theta_plus[l, t, d, s]\
+                <= 0 
+            b.dc_power_flow_new_ub1 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_ub1)
+
+            def dc_power_flow_new_lb2(_b, l, t, d, s):
+                return _b.d_P_flow_minus[l, t, d, s] - m.suceptance[l] * \
+                _b.d_theta_minus[l, t, d, s]\
+                >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]             
+            b.dc_power_flow_new_lb2 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lb2)
+            
+            def dc_power_flow_new_ub2(_b, l, t, d, s):
+                return _b.d_P_flow_minus[l, t, d, s] - m.suceptance[l] * \
+                _b.d_theta_minus[l, t, d, s]\
+                <= 0 
+            b.dc_power_flow_new_ub2 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_ub2)    
+
+            def P_flow_def(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] == _b.d_P_flow_plus[l, t, d, s] - _b.d_P_flow_minus[l, t, d, s]
+            b.P_flow_def = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=P_flow_def)
+
+            def d_theta_def(_b, l, t, d, s):
+                return _b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - \
+                _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s] == _b.d_theta_plus[l, t, d, s] - _b.d_theta_minus[l, t, d, s]
+            b.d_theta_def = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_def)                
+
+            def d_power_flow_bounds_new_plus(_b, l, t, d, s):
+                return _b.d_P_flow_plus[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
+            b.d_power_flow_bounds_new_plus = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_power_flow_bounds_new_plus)
+
+            def d_power_flow_bounds_new_minus(_b, l, t, d, s):
+                return _b.d_P_flow_minus[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
+            b.d_power_flow_bounds_new_minus = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_power_flow_bounds_new_minus)                     
+        elif formulation == "hull":
+            def dc_power_flow_old(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s])
+            b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
+
+            def dc_power_flow_new(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
+                _b.d_theta_1[l, t, d, s]\
+                == 0 
+            b.dc_power_flow_new = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new)
+
+            def d_theta_1_bound_ub(_b, l, t, d, s):
+                return _b.d_theta_1[l, t, d, s] <= _b.nte[l, t] * 3.14159
+            b.d_theta_1_bound_ub = Constraint(m.l, t_per_stage[stage], m.d, m.hours, rule=d_theta_1_bound_ub)       
+
+            def d_theta_1_bound_lb(_b, l, t, d, s):
+                return _b.d_theta_1[l, t, d, s] >= - _b.nte[l, t] * 3.14159
+            b.d_theta_1_bound_lb = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_1_bound_lb)   
+
+            def d_theta_2_bound_ub(_b, l, t, d, s):
+                return _b.d_theta_2[l, t, d, s] <= (1-_b.nte[l, t]) * 3.14159
+            b.d_theta_2_bound_ub = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_2_bound_ub)       
+
+            def d_theta_2_bound_lb(_b, l, t, d, s):
+                return _b.d_theta_2[l, t, d, s] >= - (1- _b.nte[l, t]) * 3.14159
+            b.d_theta_2_bound_lb = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_2_bound_lb)  
+
+            def d_theta_aggregate(_b, l, t, d, s):
+                return _b.theta[readData_det.tielines[l-1]['Near Area Name'], t, d, s] - \
+                _b.theta[readData_det.tielines[l-1]['Far Area Name'], t, d, s] ==   _b.d_theta_1[l, t, d, s] +  _b.d_theta_2[l, t, d, s]       
+            b.d_theta_aggregate = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_aggregate)         
+
+            def power_flow_bounds_new_lo(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] >= - m.line_capacity[l] * _b.nte[l, t]
+            b.power_flow_bounds_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo)
+
+            def power_flow_bounds_new_up(_b, l, t, d, s):
+                return _b.P_flow[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
+            b.power_flow_bounds_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up)               
 
         def transmission_line_balance(_b, l, t):
             if t == 1:
