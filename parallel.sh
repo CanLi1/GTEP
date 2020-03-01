@@ -10,7 +10,7 @@
 #PBS -l mem=64gb
 
 # Set name of job
-#PBS -N standard 
+#PBS -N improved_benders_20years 
 
 # Use submission environment
 #PBS -V

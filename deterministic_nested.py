@@ -51,6 +51,7 @@ t_per_stage = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5]}
 
 # Define parameters of the decomposition
 max_iter = 100
+max_time = 36000
 opt_tol = 1  # %
 
 # ######################################################################################################################
@@ -91,7 +92,7 @@ stage_per_t = {t: k for k, v in t_per_stage.items() for t in v}
 # print(stage_per_t)
 
 # create blocks
-m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, "improved")
+m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, "standard")
 start_time = time.time()
 
 # Decomposition Parameters
@@ -170,6 +171,7 @@ for stage in m.stages:
 
 
 # Stochastic Dual Dynamic integer Programming Algorithm (SDDiP)
+relax_integrality = 1
 for iter_ in m.iter:
 
     # ####### Forward Pass ############################################################
@@ -192,7 +194,7 @@ for iter_ in m.iter:
     #     node = n[-1]
     #     m.tx_CO2[t, stage] = readData_det.tx_CO2[t, stage, node]
 
-    ngo_rn, ngo_th, nso, nte, cost = forward_pass(m.Bl[stage], rn_r, th_r, j_r, l_new, t_per_stage[stage])
+    ngo_rn, ngo_th, nso, nte, cost = forward_pass(m.Bl[stage], rn_r, th_r, j_r, l_new, t_per_stage[stage], relax_integrality)
 
     for t in t_per_stage[stage]:
         for (rn, r) in rn_r:
@@ -242,7 +244,7 @@ for iter_ in m.iter:
                     t_prev = t_per_stage[stage - 1][-1]
                     m.nte_par[l, stage] = nte_par_k[l, t_prev, parent_node[n], iter_]                    
 
-                ngo_rn, ngo_th, nso, nte, cost = forward_pass(m.Bl[stage], rn_r, th_r, j_r, l_new, t_per_stage[stage])
+                ngo_rn, ngo_th, nso, nte, cost = forward_pass(m.Bl[stage], rn_r, th_r, j_r, l_new, t_per_stage[stage], relax_integrality)
 
                 for t in t_per_stage[stage]:
                     for (rn, r) in rn_r:
@@ -368,10 +370,12 @@ for iter_ in m.iter:
     #     node = n[-1]
     #     m.tx_CO2[t, stage] = readData_det.tx_CO2[t, stage, node]
 
-    opt = SolverFactory('gurobi')
-    opt.options['timelimit'] = 500
-    opt.options['mipgap'] = 0.001
-    opt.solve(m.Bl[stage], tee=True)
+    opt = SolverFactory('cplex')
+    opt.options['timelimit'] = 1000
+    opt.options['mipgap'] = 0.0001
+    opt.options['threads'] = 1
+    opt.options['relax_integrality'] = 1
+    opt.solve(m.Bl[stage], tee=False)
     cost_backward[stage, n, iter_] = m.Bl[stage].obj()
 
     # Compute lower bound
@@ -405,17 +409,21 @@ for iter_ in m.iter:
 
     elapsed_time = time.time() - start_time
     print("CPU Time (s)", elapsed_time)
-
-    if if_converged[iter_]:
+    print(cost_UB)
+    print(cost_LB)
+    if (if_converged[iter_] or  iter_ == max_iter - 1 or elapsed_time > max_time ) and relax_integrality == 0:
         last_iter = iter_
-        break
+        break    
+    if if_converged[iter_] or iter_ == max_iter - 2 or elapsed_time > max_time:      
+      relax_integrality = 0
+
+
 
 elapsed_time = time.time() - start_time
-print("Upper Bound", cost_UB[last_iter])
+print("Upper Bound", cost_forward[last_iter])
 print("Lower Bound", cost_LB[last_iter])
-print("Optimality gap (%)", gap[last_iter])
+print("Optimality gap (%)", (cost_forward[last_iter]-cost_LB[last_iter])/ cost_forward[last_iter] * 100)
 print("CPU Time (s)", elapsed_time)
-
 variable_operating_cost = []
 fixed_operating_cost =[]
 startup_cost = []

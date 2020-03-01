@@ -113,3 +113,5 @@ deps/deps.jl
 .*
 __pycache_
 $*
+*.e*
+*.o*

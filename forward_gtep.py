@@ -4,14 +4,15 @@ __author__ = "Cristiana L. Lara"
 from pyomo.environ import *
 
 
-def forward_pass(bl, rn_r, th_r, j_r, l_new, time_period_stage):
+def forward_pass(bl, rn_r, th_r, j_r, l_new, time_period_stage, relax):
 
     # Solve the model
-    mipsolver = SolverFactory('gurobi')
+    mipsolver = SolverFactory('cplex')
     mipsolver.options['mipgap'] = 0.001
-    mipsolver.options['timelimit'] = 300
-    mipsolver.options['threads'] = 6
-    mipsolver.solve(bl, tee=True)
+    mipsolver.options['relax_integrality'] = relax
+    mipsolver.options['timelimit'] = 1000
+    mipsolver.options['threads'] = 1
+    mipsolver.solve(bl, tee=False)
 
     ngo_rn_par = {}
     ngo_th_par = {}

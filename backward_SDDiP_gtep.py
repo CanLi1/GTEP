@@ -10,11 +10,11 @@ def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r, l_new):
         bl.alphafut.unfix()
 
     # Solve the model
-    opt = SolverFactory('gurobi')
+    opt = SolverFactory('cplex')
     opt.options['relax_integrality'] = 1
     opt.options['timelimit'] = 600
-    opt.options['threads'] = 6
-    results = opt.solve(bl, tee=True)#, save_results=False)#
+    opt.options['threads'] = 1
+    results = opt.solve(bl, tee=False)#, save_results=False)#
     print("termination condition")
     print(results.solver.termination_condition)
     mltp_o_rn = {}
