@@ -374,13 +374,13 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
                     cf_2[i, 'Panhandle', t, d, s] = CF_wind_new_PH_2.iat[s_idx, d_idx]
                 s_idx += 1
             d_idx += 1
-    # wind_scale = {'Northeast':1/1.2, 'West':1.52/1.2, 'Coastal':1, 'South':1, 'Panhandle':1.52/1.2} #from 2019 ercot wind data
-    # solar_scale = {'Northeast':1, 'West':1.2, 'Coastal':1, 'South':1.1, 'Panhandle':1.1} #from NREL https://www.nrel.gov/gis/assets/images/solar-annual-ghi-2018-usa-scale-01.jpg
-    # for key in cf_1:
-    #     if key[0] in ['wind-new', 'wind-old']:
-    #         cf_1[key] = min(1, cf_1[key] * wind_scale[key[1]])
-    #     if key[0] in ['pv-old', 'pv-new']:
-    #         cf_1[key] = min(1, cf_1[key] * solar_scale[key[1]])
+    wind_scale = {'Northeast':1/1.2, 'West':1.52/1.2, 'Coastal':1, 'South':1, 'Panhandle':1.52/1.2} #from 2019 ercot wind data
+    solar_scale = {'Northeast':1, 'West':1.2, 'Coastal':1, 'South':1.1, 'Panhandle':1.1} #from NREL https://www.nrel.gov/gis/assets/images/solar-annual-ghi-2018-usa-scale-01.jpg
+    for key in cf_1:
+        if key[0] in ['wind-new', 'wind-old']:
+            cf_1[key] = min(1, cf_1[key] * wind_scale[key[1]])
+        if key[0] in ['pv-old', 'pv-new']:
+            cf_1[key] = min(1, cf_1[key] * solar_scale[key[1]])
     cf_by_scenario = [cf_1, cf_2]
 
     # print(cf_by_scenario)
@@ -584,7 +584,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
             temp_line['B'] = line['B']
             temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
             temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
-            TIC[j] = temp_line['Cost'] #* 0.3
+            TIC[j] = temp_line['Cost'] * 0.3
             all_tielines.append(temp_line)
             j += 1
 

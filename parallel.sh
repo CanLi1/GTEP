@@ -10,10 +10,10 @@
 #PBS -l mem=64gb
 
 # Set name of job
-#PBS -N improved_benders_20years 
+#PBS -N hull_nested_20years 
 
 # Use submission environment
 #PBS -V
 cd ~/work/GETP 
 source ~/python3.6/bin/activate
-python3 deterministic_benders.py
+python3 deterministic_nested.py
