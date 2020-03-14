@@ -100,12 +100,10 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
     # 'nuc-st-new',
     m.j = Set(initialize=['Li_ion', 'Lead_acid', 'Flow'], ordered=True)
 
-    m.d = Set(initialize=['spring', 'summer', 'fall', 'winter'], ordered=True)
+    m.d = RangeSet(readData_det.num_days)
     #  Misleading (seasons not used) but used because of structure of old data
 
-    m.hours = Set(initialize=['1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00',
-                              '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00',
-                              '22:00', '23:00', '24:00'], ordered=True)
+    m.hours = RangeSet(24)
 
     m.t = RangeSet(time_periods)
     nlines = len(readData_det.tielines)
@@ -261,7 +259,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         else:
             m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
     m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
-    m.hs = Param(initialize=readData_det.hs, default=0)
+    m.hs = Param(initialize=readData_det.hs, default=1)
     m.ir = Param(initialize=readData_det.ir, default=0)
 
     #transmission
@@ -512,7 +510,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.su = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)
         b.sd = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)
         for th, r, t, d, s in m.th_r * t_per_stage[stage] * m.d * m.hours:
-            if m.hours.ord(s) == 1:
+            if s == 1:
                 b.sd[th, r, t, d, s].fix(0.0)
             else:
                 b.sd[th, r, t, d, s].unfix()
@@ -532,13 +530,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         # b.ngb_th = Var(m.th_r, t_per_stage[stage], bounds=bound_b_th, domain=NonNegativeIntegers)
         b.ngo_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)
         b.ngb_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)        
-        for t in t_per_stage[stage]:
-            for i,r in m.i_r:
-                if i in m.ng and r in m.r_no_ng:
-                    b.ngb_th[i,r,t].fix(0.0)
-            for told, r in m.th_r:
-                if told in m.told:
-                    b.ngb_th[told, r, t].fix(0.0)
 
         b.ngo_rn_prev = Var(m.rn_r, bounds=bound_o_rn_prev, domain=NonNegativeReals)
         b.ngo_th_prev = Var(m.th_r, bounds=bound_o_th_prev, domain=NonNegativeReals)
@@ -547,7 +538,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.p_charged = Var(m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.p_discharged = Var(m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.p_storage_level = Var(m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
-        b.p_storage_level_end_hour = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
+        b.p_storage_level_end_hour = Var(m.j,m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.nsr = Var(m.j, m.r, t_per_stage[stage], within=NonNegativeReals)
         b.nsb = Var(m.j, m.r, t_per_stage[stage], within=NonNegativeReals)
         b.nso = Var(m.j, m.r, t_per_stage[stage], within=NonNegativeReals)
@@ -677,7 +668,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         #show costs breakdown 
       
         def variable_operating_cost(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
+            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
                                                                  i, r, t, d, s]
                                                              for i, r in m.i_r)
@@ -694,7 +685,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
 
 
         def startup_cost(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
+            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
                                          * (m.f_start[th] * m.P_fuel[th, t]
                                             + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, stage] + m.C_start[th])
                                    for th, r in m.th_r for d in m.d for s in m.hours))   for t in t_per_stage[stage])* 10 ** (-9)
@@ -752,7 +743,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.total_capacity = Expression(rule=total_capacity)                                                                                                                                 
 
         def obj_rule(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * m.hs * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
+            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
                                                                  i, r, t, d, s]
                                                              for i, r in m.i_r)
@@ -760,7 +751,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
                                                                             _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
                                    + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
                                          for th, r in m.th_r)
-                                   + sum(m.n_d[d] * m.hs * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
+                                   + sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
                                          * (m.f_start[th] * m.P_fuel[th, t]
                                             + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, stage] + m.C_start[th])
                                          for th, r in m.th_r for d in m.d for s in m.hours)
@@ -785,7 +776,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.obj = Objective(rule=obj_rule, sense=minimize)
 
         def min_RN_req(_b, t):
-            return sum(m.n_d[d] * m.hs * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
+            return sum(m.n_d[d] * 1.0000000 * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
                        for d in m.d for s in m.hours) \
                    + _b.RES_def[t] >= m.RES_min[t] * m.ED[t]
 
@@ -811,19 +802,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.inst_TH_UB = Constraint(m.tnew, t_per_stage[stage], rule=inst_TH_UB)
 
         def en_bal(_b, r, t, d, s):
-            # if r == "Panhandle":
-            #     return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
-            #            - sum(_b.P_Panhandle[rr, t, d, s]  for rr in m.r_Panhandle) \
-            #            + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
-            #            == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]
-            # elif r in m.r_Panhandle:
-            #      return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
-            #             + sum(_b.P_Panhandle[rr, t, d, s]  for rr in m.r_Panhandle)\
-            #            + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
-            #                  sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
-            #            + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
-            #            == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]               
-            # else:
             return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
                    + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
                          sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
@@ -850,7 +828,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.max_output = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, rule=max_output)
 
         def unit_commit1(_b, th, r, t, d, s, s_):
-            if m.hours.ord(s_) == m.hours.ord(s) - 1:
+            if s_ == s - 1:
                 return _b.u[th, r, t, d, s] == _b.u[th, r, t, d, s_] + _b.su[th, r, t, d, s] \
                        - _b.sd[th, r, t, d, s]
             return Constraint.Skip
@@ -858,19 +836,19 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.unit_commit1 = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, m.hours, rule=unit_commit1)
 
         def ramp_up(_b, th, r, t, d, s, s_):
-            if (th, r) in m.i_r and th in m.th and (m.hours.ord(s_) == m.hours.ord(s) - 1):
-                return _b.P[th, r, t, d, s] - _b.P[th, r, t, d, s_] <= m.Ru_max[th] * m.hs * \
+            if (th, r) in m.i_r and th in m.th and (s_ == s - 1):
+                return _b.P[th, r, t, d, s] - _b.P[th, r, t, d, s_] <= m.Ru_max[th] * 1.0000000 * \
                        m.Qg_np[th, r] * (_b.u[th, r, t, d, s] - _b.su[th, r, t, d, s]) + \
-                       max(m.Pg_min[th], m.Ru_max[th] * m.hs) * m.Qg_np[th, r] * _b.su[th, r, t, d, s]
+                       max(m.Pg_min[th], m.Ru_max[th] * 1.0000000) * m.Qg_np[th, r] * _b.su[th, r, t, d, s]
             return Constraint.Skip
 
         b.ramp_up = Constraint(m.th, m.r, t_per_stage[stage], m.d, m.hours, m.hours, rule=ramp_up)
 
         def ramp_down(_b, th, r, t, d, s, s_):
-            if m.hours.ord(s_) == m.hours.ord(s) - 1:
-                return _b.P[th, r, t, d, s_] - _b.P[th, r, t, d, s] <= m.Rd_max[th] * m.hs * \
+            if s_ == s - 1:
+                return _b.P[th, r, t, d, s_] - _b.P[th, r, t, d, s] <= m.Rd_max[th] * 1.0000000 * \
                        m.Qg_np[th, r] * (_b.u[th, r, t, d, s] - _b.su[th, r, t, d, s]) + \
-                       max(m.Pg_min[th], m.Rd_max[th] * m.hs) * m.Qg_np[th, r] * _b.sd[th, r, t, d, s]
+                       max(m.Pg_min[th], m.Rd_max[th] * 1.0000000) * m.Qg_np[th, r] * _b.sd[th, r, t, d, s]
             return Constraint.Skip
 
         b.ramp_down = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, m.hours, rule=ramp_down)
@@ -984,7 +962,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.max_storage_level = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=max_storage_level)
 
         def storage_balance(_b, j, r, t, d, s, s_):
-            if m.hours.ord(s_) == m.hours.ord(s) - 1 and m.hours.ord(s) > 1:
+            if s_ == s - 1 and s > 1:
                 return _b.p_storage_level[j, r, t, d, s] == _b.p_storage_level[j, r, t, d, s_] \
                        + m.eff_rate_charge[j] * _b.p_charged[j, r, t, d, s] \
                        - (1 / m.eff_rate_discharge[j]) * _b.p_discharged[j, r, t, d, s]
@@ -993,7 +971,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.storage_balance = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, m.hours, rule=storage_balance)
 
         def storage_balance_1HR(_b, j, r, t, d, s):
-            if m.hours.ord(s) == 1:
+            if s == 1:
                 return _b.p_storage_level[j, r, t, d, s] == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t] \
                        + m.eff_rate_charge[j] * _b.p_charged[j, r, t, d, s] \
                        - (1 / m.eff_rate_discharge[j]) * _b.p_discharged[j, r, t, d, s]
@@ -1002,7 +980,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.storage_balance_1HR = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=storage_balance_1HR)
 
         def storage_heuristic(_b, j, r, t, d, s):
-            if m.hours.ord(s) == m.hours.last():
+            if s == m.hours.last():
                 return _b.p_storage_level_end_hour[j, r, t, d, s] == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t]
             return Constraint.Skip
 

@@ -10,4 +10,6 @@ for t=4:12
 		end
 		CSV.write(string(t,"days/", k, ".csv"), a)
 	end
+	weights = DataFrame(hcat(collect(1:t),ts_clust_data.weights))
+	CSV.write(string(t,"days/weights.csv"), weights)
 end

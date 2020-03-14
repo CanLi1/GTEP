@@ -37,6 +37,7 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 n_stages = 20  # number od stages in the scenario tree
 formulation = "hull"
 outputfile = "nested_medium_tx_CO2_lowgrowthallregion_cheaplines_hull_benders_scaleCF.csv"
+num_days = 4
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}

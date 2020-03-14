@@ -30,13 +30,14 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 5  # number od stages in the scenario tree
-formulation = "improved"
-outputfile = "medium_tx_CO2_lowgrowthallregion_cheaplines_improved_benders_scaleCF.csv"
+n_stages = 20  # number od stages in the scenario tree
+formulation = "hull"
+outputfile = "4days_mediumtax_fullcostlines_hull.csv"
+num_days = 4
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
@@ -56,7 +57,7 @@ opt_tol = 1  # %
 
 # create scenarios and input data
 nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
-readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage)
+readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, num_days)
 sc_headers = list(sc_nodes.keys())
 
 # operating scenarios

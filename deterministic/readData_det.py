@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 
-def read_data(database_file, curPath, stages, n_stage, t_per_stage):
+def read_data(database_file, curPath, stages, n_stage, t_per_stage, num_days):
     print(os.path.exists(database_file))
     print(database_file)
     conn = sql.connect(database_file)
@@ -40,10 +40,10 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
                     d[str(row[0]), str(row[1]), str(row[2]), str(row[3]), str(row[4])] = row[5]
         return d
 
-    params = ['n_ss', 'L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
+    params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
               'Pg_min', 'Ru_max', 'Rd_max', 'f_start', 'C_start', 'frac_spin', 'frac_Qstart', 't_loss', 't_up', 'dist',
               'if_', 'ED', 'Rmin', 'hr', 'EF_CO2', 'FOC', 'VOC', 'CCm', 'DIC', 'LEC', 'PEN', 'tx_CO2',
-              'RES_min', 'P_fuel']  # , 'L', 'cf',
+              'RES_min', 'P_fuel']  
 
     for p in params:
         globals()[p] = process_param(p)
@@ -136,33 +136,28 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
     ####################################################################################################################
 
     # Operational uncertainty data
-    list_of_repr_days_per_scenario = ['spring', 'summer', 'fall', 'winter']
+    globals()['num_days'] = num_days
+    list_of_repr_days_per_scenario = list(range(1,(num_days+1)))
+    n_ss = {}
+    weights = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/weights.csv'), index_col=0, header=0).iloc[:, :1]
+    for s in range(num_days):
+        n_ss[s+1] = weights.iat[s,0]
+    globals()['n_ss'] = n_ss
     # Misleading (seasons not used) but used because of structure of old data
-
     # ############ LOAD ############
-    L_NE_1 = pd.read_csv(os.path.join(curPath, 'data/L_Northeast.csv'), index_col=0, header=0).iloc[:, :4]
+    L_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/L_Northeast_2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     L_NE_1.columns = list_of_repr_days_per_scenario
-    L_NE_2 = pd.read_csv(os.path.join(curPath, 'data/L_Northeast.csv'), index_col=0, header=0).iloc[:, 4:]
-    L_NE_2.columns = list_of_repr_days_per_scenario
-    L_W_1 = pd.read_csv(os.path.join(curPath, 'data/L_West.csv'), index_col=0, header=0).iloc[:, :4]
+    L_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/L_West_2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     L_W_1.columns = list_of_repr_days_per_scenario
-    L_W_2 = pd.read_csv(os.path.join(curPath, 'data/L_West.csv'), index_col=0, header=0).iloc[:, 4:]
-    L_W_2.columns = list_of_repr_days_per_scenario
-    L_C_1 = pd.read_csv(os.path.join(curPath, 'data/L_Coastal.csv'), index_col=0, header=0).iloc[:, :4]
+    L_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/L_Coastal_2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     L_C_1.columns = list_of_repr_days_per_scenario
-    L_C_2 = pd.read_csv(os.path.join(curPath, 'data/L_Coastal.csv'), index_col=0, header=0).iloc[:, 4:]
-    L_C_2.columns = list_of_repr_days_per_scenario
-    L_S_1 = pd.read_csv(os.path.join(curPath, 'data/L_South.csv'), index_col=0, header=0).iloc[:, :4]
+    L_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/L_South_2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     L_S_1.columns = list_of_repr_days_per_scenario
-    L_S_2 = pd.read_csv(os.path.join(curPath, 'data/L_South.csv'), index_col=0, header=0).iloc[:, 4:]
-    L_S_2.columns = list_of_repr_days_per_scenario
-    L_PH_1 = pd.read_csv(os.path.join(curPath, 'data/L_Panhandle.csv'), index_col=0, header=0).iloc[:, :4]
+    L_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/L_South_2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days].multiply(0)
     L_PH_1.columns = list_of_repr_days_per_scenario
-    L_PH_2 = pd.read_csv(os.path.join(curPath, 'data/L_Panhandle.csv'), index_col=0, header=0).iloc[:, 4:]
-    L_PH_2.columns = list_of_repr_days_per_scenario
+
 
     L_1 = {}
-    L_2 = {}
     # growth_rate = 0.014
     growth_rate_high = 0.014
     growth_rate_medium = 0.014
@@ -171,217 +166,122 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
         d_idx = 0
         for d in list_of_repr_days_per_scenario:
             s_idx = 0
-            for s in list(L_NE_1.index):
+            for ss in list(L_NE_1.index):
+                s = int(ss)
                 if t >= 15:
                     L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] * (1 + growth_rate_medium * (t-1))
                     L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] * (1 + growth_rate_low * (t-1))
                     L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
                     L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
                     L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
-                    L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
-                    L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
-                    L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                    L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                    L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
                 else:
-                    # L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] 
-                    # L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] 
-                    # L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]
-                    # L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]
-                    # L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]
-                    # L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]
-                    # L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]
-                    # L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]
-                    # L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]
-                    # L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]   
                     L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx, d_idx] * (1 + growth_rate_medium * (t-1))
                     L_1['West', t, d, s] = L_W_1.iat[s_idx, d_idx] * (1 + growth_rate_low * (t-1))
                     L_1['Coastal', t, d, s] = L_C_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
                     L_1['South', t, d, s] = L_S_1.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                    L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
-                    L_2['Northeast', t, d, s] = L_NE_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))
-                    L_2['West', t, d, s] = L_W_2.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))
-                    L_2['Coastal', t, d, s] = L_C_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                    L_2['South', t, d, s] = L_S_2.iat[s_idx, d_idx]* (1 + growth_rate_high * (t-1))
-                    L_2['Panhandle', t, d, s] = L_PH_2.iat[s_idx, d_idx]* (1 + growth_rate_medium * (t-1))                                     
+                    L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx, d_idx]* (1 + growth_rate_low * (t-1))                                 
 
                 s_idx += 1
             d_idx += 1
 
-    L_by_scenario = [L_1, L_2]
+    L_by_scenario = [L_1]
     # print(L_by_scenario)
     globals()["L_by_scenario"] = L_by_scenario
 
     # ############ CAPACITY FACTOR ############
     # -> solar CSP
-    CF_CSP_NE_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_Northeast.csv'), index_col=0, header=0
-                              ).iloc[:, :4]
+    CF_CSP_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Northeast_CSP2012-ercot.csv'), index_col=0, header=0
+                              ).iloc[:, :num_days]
     CF_CSP_NE_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_NE_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_Northeast.csv'), index_col=0, header=0
-                              ).iloc[:, 4:]
-    CF_CSP_NE_2.columns = list_of_repr_days_per_scenario
-    CF_CSP_W_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_West.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_CSP_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_West_CSP2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_CSP_W_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_W_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_West.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_CSP_W_2.columns = list_of_repr_days_per_scenario
-    CF_CSP_C_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_Coastal.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_CSP_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Coastal_CSP2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_CSP_C_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_C_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_Coastal.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_CSP_C_2.columns = list_of_repr_days_per_scenario
-    CF_CSP_S_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_South.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_CSP_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_South_CSP2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_CSP_S_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_S_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_South.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_CSP_S_2.columns = list_of_repr_days_per_scenario
-    CF_CSP_PH_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_Panhandle.csv'), index_col=0, header=0
-                              ).iloc[:, :4]
+    CF_CSP_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Panhandle_CSP2012-ercot.csv'), index_col=0, header=0
+                              ).iloc[:, :num_days]
     CF_CSP_PH_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_PH_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_CSP_Panhandle.csv'), index_col=0, header=0
-                              ).iloc[:, 4:]
-    CF_CSP_PH_2.columns = list_of_repr_days_per_scenario
 
     # -> solar PVSAT
-    CF_PV_NE_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_Northeast.csv'), index_col=0, header=0
-                             ).iloc[:, :4]
+    CF_PV_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Northeast_PV2012-ercot.csv'), index_col=0, header=0
+                             ).iloc[:, :num_days]
     CF_PV_NE_1.columns = list_of_repr_days_per_scenario
-    CF_PV_NE_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_Northeast.csv'), index_col=0, header=0
-                             ).iloc[:, 4:]
-    CF_PV_NE_2.columns = list_of_repr_days_per_scenario
-    CF_PV_W_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_West.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_PV_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_West_PV2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_PV_W_1.columns = list_of_repr_days_per_scenario
-    CF_PV_W_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_West.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_PV_W_2.columns = list_of_repr_days_per_scenario
-    CF_PV_C_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_Coastal.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_PV_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Coastal_PV2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_PV_C_1.columns = list_of_repr_days_per_scenario
-    CF_PV_C_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_Coastal.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_PV_C_2.columns = list_of_repr_days_per_scenario
-    CF_PV_S_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_South.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_PV_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_South_PV2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_PV_S_1.columns = list_of_repr_days_per_scenario
-    CF_PV_S_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_South.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_PV_S_2.columns = list_of_repr_days_per_scenario
-    CF_PV_PH_1 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_Panhandle.csv'), index_col=0, header=0
-                             ).iloc[:, :4]
+    CF_PV_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Panhandle_PV2012-ercot.csv'), index_col=0, header=0
+                             ).iloc[:, :num_days]
     CF_PV_PH_1.columns = list_of_repr_days_per_scenario
-    CF_PV_PH_2 = pd.read_csv(os.path.join(curPath, 'data/CF_solar_PVSAT_Panhandle.csv'), index_col=0, header=0
-                             ).iloc[:, 4:]
-    CF_PV_PH_2.columns = list_of_repr_days_per_scenario
 
     # -> wind (old turbines)
-    CF_wind_NE_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_Northeast.csv'), index_col=0, header=0
-                               ).iloc[:, :4]
+    CF_wind_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Northeast_wind2012-ercot.csv'), index_col=0, header=0
+                               ).iloc[:, :num_days]
     CF_wind_NE_1.columns = list_of_repr_days_per_scenario
-    CF_wind_NE_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_Northeast.csv'), index_col=0, header=0
-                               ).iloc[:, 4:]
-    CF_wind_NE_2.columns = list_of_repr_days_per_scenario
-    CF_wind_W_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_West.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_wind_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_West_wind2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_wind_W_1.columns = list_of_repr_days_per_scenario
-    CF_wind_W_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_West.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_wind_W_2.columns = list_of_repr_days_per_scenario
-    CF_wind_C_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_Coastal.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_wind_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Coastal_wind2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_wind_C_1.columns = list_of_repr_days_per_scenario
-    CF_wind_C_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_Coastal.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_wind_C_2.columns = list_of_repr_days_per_scenario
-    CF_wind_S_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_South.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_wind_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_South_wind2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_wind_S_1.columns = list_of_repr_days_per_scenario
-    CF_wind_S_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_South.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_wind_S_2.columns = list_of_repr_days_per_scenario
-    CF_wind_PH_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_Panhandle.csv'), index_col=0, header=0
-                               ).iloc[:, :4]
+    CF_wind_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Panhandle_wind2012-ercot.csv'), index_col=0, header=0
+                               ).iloc[:, :num_days]
     CF_wind_PH_1.columns = list_of_repr_days_per_scenario
-    CF_wind_PH_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_Panhandle.csv'), index_col=0, header=0
-                               ).iloc[:, 4:]
-    CF_wind_PH_2.columns = list_of_repr_days_per_scenario
 
     # -> wind new (new turbines)
-    CF_wind_new_NE_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_Northeast.csv'), index_col=0, header=0
-                                   ).iloc[:, :4]
+    CF_wind_new_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Northeast_wind2012-ercot.csv'), index_col=0, header=0
+                                   ).iloc[:, :num_days]
     CF_wind_new_NE_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_NE_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_Northeast.csv'), index_col=0, header=0
-                                   ).iloc[:, 4:]
-    CF_wind_new_NE_2.columns = list_of_repr_days_per_scenario
-    CF_wind_new_W_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_West.csv'), index_col=0, header=0).iloc[:, :4]
+    CF_wind_new_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_West_wind2012-ercot.csv'), index_col=0, header=0).iloc[:, :num_days]
     CF_wind_new_W_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_W_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_West.csv'), index_col=0, header=0).iloc[:, 4:]
-    CF_wind_new_W_2.columns = list_of_repr_days_per_scenario
-    CF_wind_new_C_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_Coastal.csv'), index_col=0, header=0
-                                  ).iloc[:, :4]
+    CF_wind_new_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Coastal_wind2012-ercot.csv'), index_col=0, header=0
+                                  ).iloc[:, :num_days]
     CF_wind_new_C_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_C_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_Coastal.csv'), index_col=0, header=0
-                                  ).iloc[:, 4:]
-    CF_wind_new_C_2.columns = list_of_repr_days_per_scenario
-    CF_wind_new_S_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_South.csv'), index_col=0, header=0
-                                  ).iloc[:, :4]
+    CF_wind_new_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_South_wind2012-ercot.csv'), index_col=0, header=0
+                                  ).iloc[:, :num_days]
     CF_wind_new_S_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_S_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_South.csv'), index_col=0, header=0
-                                  ).iloc[:, 4:]
-    CF_wind_new_S_2.columns = list_of_repr_days_per_scenario
-    CF_wind_new_PH_1 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_Panhandle.csv'), index_col=0, header=0
-                                   ).iloc[:, :4]
+    CF_wind_new_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/' + str(num_days) + 'days/CF_Panhandle_wind2012-ercot.csv'), index_col=0, header=0
+                                   ).iloc[:, :num_days]
     CF_wind_new_PH_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_PH_2 = pd.read_csv(os.path.join(curPath, 'data/CF_wind_new_Panhandle.csv'), index_col=0, header=0
-                                   ).iloc[:, 4:]
-    CF_wind_new_PH_2.columns = list_of_repr_days_per_scenario
+
 
     cf_1 = {}
-    cf_2 = {}
     for t in L_max:
         d_idx = 0
         for d in list_of_repr_days_per_scenario:
             s_idx = 0
-            for s in list(L_NE_1.index):
+            for ss in list(L_NE_1.index):
+                s = int(ss)
                 for i in ['csp-new']:
                     cf_1[i, 'Northeast', t, d, s] = CF_CSP_NE_1.iat[s_idx, d_idx]
                     cf_1[i, 'West', t, d, s] = CF_CSP_W_1.iat[s_idx, d_idx]
                     cf_1[i, 'Coastal', t, d, s] = CF_CSP_C_1.iat[s_idx, d_idx]
                     cf_1[i, 'South', t, d, s] = CF_CSP_S_1.iat[s_idx, d_idx]
                     cf_1[i, 'Panhandle', t, d, s] = CF_CSP_PH_1.iat[s_idx, d_idx]
-                    cf_2[i, 'Northeast', t, d, s] = CF_CSP_NE_2.iat[s_idx, d_idx]
-                    cf_2[i, 'West', t, d, s] = CF_CSP_W_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Coastal', t, d, s] = CF_CSP_C_2.iat[s_idx, d_idx]
-                    cf_2[i, 'South', t, d, s] = CF_CSP_S_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Panhandle', t, d, s] = CF_CSP_PH_2.iat[s_idx, d_idx]
                 for i in ['pv-old', 'pv-new']:
                     cf_1[i, 'Northeast', t, d, s] = CF_PV_NE_1.iat[s_idx, d_idx]
                     cf_1[i, 'West', t, d, s] = CF_PV_W_1.iat[s_idx, d_idx]
                     cf_1[i, 'Coastal', t, d, s] = CF_PV_C_1.iat[s_idx, d_idx]
                     cf_1[i, 'South', t, d, s] = CF_PV_S_1.iat[s_idx, d_idx]
                     cf_1[i, 'Panhandle', t, d, s] = CF_PV_PH_1.iat[s_idx, d_idx]
-                    cf_2[i, 'Northeast', t, d, s] = CF_PV_NE_2.iat[s_idx, d_idx]
-                    cf_2[i, 'West', t, d, s] = CF_PV_W_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Coastal', t, d, s] = CF_PV_C_2.iat[s_idx, d_idx]
-                    cf_2[i, 'South', t, d, s] = CF_PV_S_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Panhandle', t, d, s] = CF_PV_PH_2.iat[s_idx, d_idx]
                 for i in ['wind-old']:
                     cf_1[i, 'Northeast', t, d, s] = CF_wind_NE_1.iat[s_idx, d_idx]
                     cf_1[i, 'West', t, d, s] = CF_wind_W_1.iat[s_idx, d_idx]
                     cf_1[i, 'Coastal', t, d, s] = CF_wind_C_1.iat[s_idx, d_idx]
                     cf_1[i, 'South', t, d, s] = CF_wind_S_1.iat[s_idx, d_idx]
                     cf_1[i, 'Panhandle', t, d, s] = CF_wind_PH_1.iat[s_idx, d_idx]
-                    cf_2[i, 'Northeast', t, d, s] = CF_wind_NE_2.iat[s_idx, d_idx]
-                    cf_2[i, 'West', t, d, s] = CF_wind_W_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Coastal', t, d, s] = CF_wind_C_2.iat[s_idx, d_idx]
-                    cf_2[i, 'South', t, d, s] = CF_wind_S_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Panhandle', t, d, s] = CF_wind_PH_2.iat[s_idx, d_idx]
                 for i in ['wind-new']:
                     cf_1[i, 'Northeast', t, d, s] = CF_wind_new_NE_1.iat[s_idx, d_idx]
                     cf_1[i, 'West', t, d, s] = CF_wind_new_W_1.iat[s_idx, d_idx]
                     cf_1[i, 'Coastal', t, d, s] = CF_wind_new_C_1.iat[s_idx, d_idx]
                     cf_1[i, 'South', t, d, s] = CF_wind_new_S_1.iat[s_idx, d_idx]
                     cf_1[i, 'Panhandle', t, d, s] = CF_wind_new_PH_1.iat[s_idx, d_idx]
-                    cf_2[i, 'Northeast', t, d, s] = CF_wind_new_NE_2.iat[s_idx, d_idx]
-                    cf_2[i, 'West', t, d, s] = CF_wind_new_W_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Coastal', t, d, s] = CF_wind_new_C_2.iat[s_idx, d_idx]
-                    cf_2[i, 'South', t, d, s] = CF_wind_new_S_2.iat[s_idx, d_idx]
-                    cf_2[i, 'Panhandle', t, d, s] = CF_wind_new_PH_2.iat[s_idx, d_idx]
                 s_idx += 1
             d_idx += 1
-    wind_scale = {'Northeast':1/1.2, 'West':1.52/1.2, 'Coastal':1, 'South':1, 'Panhandle':1.52/1.2} #from 2019 ercot wind data
-    solar_scale = {'Northeast':1, 'West':1.2, 'Coastal':1, 'South':1.1, 'Panhandle':1.1} #from NREL https://www.nrel.gov/gis/assets/images/solar-annual-ghi-2018-usa-scale-01.jpg
-    for key in cf_1:
-        if key[0] in ['wind-new', 'wind-old']:
-            cf_1[key] = min(1, cf_1[key] * wind_scale[key[1]])
-        if key[0] in ['pv-old', 'pv-new']:
-            cf_1[key] = min(1, cf_1[key] * solar_scale[key[1]])
-    cf_by_scenario = [cf_1, cf_2]
+    cf_by_scenario = [cf_1]
 
     # print(cf_by_scenario)
     globals()["cf_by_scenario"] = cf_by_scenario
@@ -584,7 +484,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage):
             temp_line['B'] = line['B']
             temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
             temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
-            TIC[j] = temp_line['Cost'] * 0.3
+            TIC[j] = temp_line['Cost']# * 0.3
             all_tielines.append(temp_line)
             j += 1
 
