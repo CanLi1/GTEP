@@ -36,8 +36,9 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 
 n_stages = 20  # number od stages in the scenario tree
 formulation = "hull"
-outputfile = "4days_mediumtax_fullcostlines_hull.csv"
-num_days = 4
+outputfile = "10days_mediumtax_fullcostlines_hull.csv"
+num_days =10
+print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
@@ -173,6 +174,7 @@ import time
 opt = SolverFactory("cplex_persistent")
  
 opt.options['threads'] = 1
+opt.options['timelimit'] = 36000
 opt.set_instance(m)
 opt.set_benders_annotation()
 opt.set_benders_strategy(1)
@@ -289,7 +291,7 @@ for stage in m.stages:
 upper_bound_obj = 0.0
 lopt = SolverFactory("cplex")
 lopt.options['mipgap'] = 0.005
-opt.options['threads'] = 1
+lopt.options['threads'] = 1
 ub_time = 0.0 
 a = time.time()
 for stage in m.stages:

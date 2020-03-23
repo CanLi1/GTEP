@@ -529,7 +529,11 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         # b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
         # b.ngb_th = Var(m.th_r, t_per_stage[stage], bounds=bound_b_th, domain=NonNegativeIntegers)
         b.ngo_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)
-        b.ngb_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)        
+        b.ngb_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)     
+        for t in t_per_stage[stage]:
+            for th, r in m.th_r: 
+                if th in m.told:
+                    b.ngb_th[th, r, t].fix(0.0)           
 
         b.ngo_rn_prev = Var(m.rn_r, bounds=bound_o_rn_prev, domain=NonNegativeReals)
         b.ngo_th_prev = Var(m.th_r, bounds=bound_o_th_prev, domain=NonNegativeReals)

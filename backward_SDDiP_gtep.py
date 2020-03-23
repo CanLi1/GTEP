@@ -1,6 +1,7 @@
 __author__ = "Cristiana L. Lara"
 
 from pyomo.environ import *
+from pyomo.opt import SolverStatus, TerminationCondition
 
 
 def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r, l_new):
@@ -14,9 +15,13 @@ def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r, l_new):
     opt.options['relax_integrality'] = 1
     opt.options['timelimit'] = 600
     opt.options['threads'] = 1
-    results = opt.solve(bl, tee=False)#, save_results=False)#
+    results = opt.solve(bl, tee=False)# keepfiles=True)#, save_results=False)#
     print("termination condition")
     print(results.solver.termination_condition)
+    if results.solver.termination_condition != TerminationCondition.optimal:
+        results = opt.solve(bl, tee=True, keepfiles=True)
+        raise NameError('backward_pass nonoptimal')
+
     mltp_o_rn = {}
     mltp_o_th = {}
     mltp_so = {}

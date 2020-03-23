@@ -16,4 +16,4 @@
 #PBS -V
 cd ~/work/GETP 
 source ~/python3.6/bin/activate
-python3 deterministic_benders.py
+python3 fullspace.py

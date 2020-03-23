@@ -35,8 +35,8 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
 n_stages = 20  # number od stages in the scenario tree
-formulation = "hull"
-outputfile = "nested_medium_tx_CO2_lowgrowthallregion_cheaplines_hull_benders_scaleCF.csv"
+formulation = "standard"
+outputfile = "nested_4days_mediumtax_fullcostlines_standard.csv"
 num_days = 4
 stages = range(1, n_stages + 1)
 scenarios = ['M']
@@ -57,7 +57,7 @@ opt_tol = 1  # %
 
 # create scenarios and input data
 nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
-readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage)
+readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage,num_days)
 sc_headers = list(sc_nodes.keys())
 
 # operating scenarios
