@@ -8,7 +8,7 @@ with open("sensitivity_repndays.csv", 'w', newline='') as results_file:
 	fieldnames = ["day", "coal", "nuclear", "natural_gas", "wind", "solar", "transmission","obj"]
 	writer = csv.DictWriter(results_file, fieldnames=fieldnames)
 	writer.writeheader()	
-	for d in range(4,13):
+	for d in range(4,16):
 		result = pd.read_csv(str(d) + name, index_col=0, header=0).iloc[:, :]
 		coal = result.coal_capacity[19]
 		nuclear = result.nuclear_capacity[19]
