@@ -516,9 +516,9 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
                 b.sd[th, r, t, d, s].unfix()
         b.alphafut = Var(within=Reals, domain=NonNegativeReals)
 
-        # b.ngo_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_o_rn, domain=NonNegativeReals)
+        b.ngo_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_o_rn, domain=NonNegativeReals)
         # b.ngb_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_b_rn, domain=NonNegativeReals)
-        b.ngo_rn = Var(m.rn_r, t_per_stage[stage], domain=NonNegativeReals)
+        # b.ngo_rn = Var(m.rn_r, t_per_stage[stage], domain=NonNegativeReals)
         b.ngb_rn = Var(m.rn_r, t_per_stage[stage],  domain=NonNegativeReals)
 
         for t in t_per_stage[stage]:
@@ -526,9 +526,9 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
                 if rold in m.rold:
                     b.ngb_rn[rold, r, t].fix(0.0)
 
-        # b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
+        b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
         # b.ngb_th = Var(m.th_r, t_per_stage[stage], bounds=bound_b_th, domain=NonNegativeIntegers)
-        b.ngo_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)
+        # b.ngo_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)
         b.ngb_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)     
         for t in t_per_stage[stage]:
             for th, r in m.th_r: 

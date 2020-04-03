@@ -35,9 +35,9 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
 n_stages = 20  # number od stages in the scenario tree
-formulation = "hull"
-outputfile = "10days_mediumtax_fullcostlines_hull.csv"
-num_days =10
+formulation = "improved"
+outputfile = "15days_mediumtax_fullcostlines_improved.csv"
+num_days =15
 print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']

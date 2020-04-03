@@ -2,7 +2,7 @@ __author__ = "Cristiana L. Lara"
 
 
 from pyomo.environ import *
-
+from pyomo.opt import SolverStatus, TerminationCondition
 
 def forward_pass(bl, rn_r, th_r, j_r, l_new, time_period_stage, relax):
 
@@ -10,9 +10,14 @@ def forward_pass(bl, rn_r, th_r, j_r, l_new, time_period_stage, relax):
     mipsolver = SolverFactory('cplex')
     mipsolver.options['mipgap'] = 0.001
     mipsolver.options['relax_integrality'] = relax
-    mipsolver.options['timelimit'] = 1000
+    mipsolver.options['timelimit'] = 10000
     mipsolver.options['threads'] = 1
-    mipsolver.solve(bl, tee=False)
+    results = mipsolver.solve(bl, tee=False)
+    print("termination condition")
+    print(results.solver.termination_condition)
+    if results.solver.termination_condition != TerminationCondition.optimal:
+        results = mipsolver.solve(bl, tee=True, keepfiles=True)
+        raise NameError('forward_pass nonoptimal')
 
     ngo_rn_par = {}
     ngo_th_par = {}

@@ -13,7 +13,7 @@ def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r, l_new):
     # Solve the model
     opt = SolverFactory('cplex')
     opt.options['relax_integrality'] = 1
-    opt.options['timelimit'] = 600
+    opt.options['timelimit'] = 6000
     opt.options['threads'] = 1
     results = opt.solve(bl, tee=False)# keepfiles=True)#, save_results=False)#
     print("termination condition")

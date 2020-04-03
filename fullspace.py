@@ -30,15 +30,15 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 20  # number od stages in the scenario tree
-formulation = "hull"
-outputfile = "4days_mediumtax_fullcostlines_hull.csv"
-num_days =4
-print(formulation, outputfile, num_days)
+n_stages = 10  # number od stages in the scenario tree
+formulation = "standard"
+
+num_days = 4
+print(formulation, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
@@ -145,13 +145,17 @@ for stage in m.stages:
 
 
 # # solve relaxed model
-# a = TransformationFactory("core.relax_integrality")
-# a.apply_to(m)
+a = TransformationFactory("core.relax_integrality")
+a.apply_to(m)
 opt = SolverFactory("cplex")
 opt.options['mipgap'] = 0.001
 opt.options['TimeLimit'] = 36000
-opt.solve(m, tee=True)
-print(opt.results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
-print(opt.results.Solver[0]['Wall time'])
+opt.options['threads'] = 1
+# opt.options['LPMethod'] = 1
+results=opt.solve(m, tee=True)
+print(results)
+print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
+print(results.Solver[0]['Wall time'])
+# print(opt.options['LPMethod'])
 
 
