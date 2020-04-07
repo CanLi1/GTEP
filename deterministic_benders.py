@@ -43,7 +43,7 @@ stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
 
-# time_periods = 10
+
 time_periods = n_stages
 set_time_periods = range(1, time_periods + 1)
 t_per_stage = {}
@@ -59,56 +59,13 @@ opt_tol = 1  # %
 # create scenarios and input data
 nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, num_days)
-sc_headers = list(sc_nodes.keys())
 
-# operating scenarios
-prob_op = 1
-# print(operating_scenarios)
-
-# list of thermal generators:
-th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old', 'ng-cc-old', 'ng-st-old',
-                 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
-# 'nuc-st-old', 'nuc-st-new'
-
-# Shared data among processes
-ngo_rn_par_k = {}
-ngo_th_par_k = {}
-nso_par_k = {}
-nsb_par_k = {}
-nte_par_k = {}
-cost_forward = {}
-cost_scenario_forward = {}
-mltp_o_rn = {}
-mltp_o_th = {}
-mltp_so = {}
-mltp_te = {}
-cost_backward = {}
-if_converged = {}
-
-# Map stage by time_period
-stage_per_t = {t: k for k, v in t_per_stage.items() for t in v}
-
-
-# print(stage_per_t)
 
 # create blocks
 m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation)
 start_time = time.time()
 
-# Decomposition Parameters
-m.ngo_rn_par = Param(m.rn_r, m.stages, default=0, initialize=0, mutable=True)
-m.ngo_th_par = Param(m.th_r, m.stages, default=0, initialize=0, mutable=True)
-m.nso_par = Param(m.j, m.r, m.stages, default=0, initialize=0, mutable=True)
-m.nte_par = Param(m.l_new, m.stages, default=0, initialize=0, mutable=True)
 
-# Parameters to compute upper and lower bounds
-mean = {}
-std_dev = {}
-cost_tot_forward = {}
-cost_UB = {}
-cost_LB = {}
-gap = {}
-scenarios_iter = {}
 
 # converting sets to lists:
 rn_r = list(m.rn_r)
@@ -186,27 +143,7 @@ for v in m.component_objects(Var):
     if v.getname() in investment_vars:
         for index in v:
             opt.set_master_variable(v[index])
-# for stage in m.stages:
-#     for t in t_per_stage[stage]:
-#         # print('stage', stage, 't_prev', t_prev)
-#         for (rn, r) in m.rn_r:
-#             opt.set_master_variable(m.Bl[stage].ngo_rn[rn, r, t])
-#             opt.set_master_variable(m.Bl[stage].ngb_rn[rn, r, t])
-#             opt.set_master_variable(m.Bl[stage].nge_rn[rn, r, t])
-#             opt.set_master_variable(m.Bl[stage].ngr_rn[rn, r, t])
-#         for (th, r) in m.th_r:
-#             opt.set_master_variable(m.Bl[stage].ngo_th[th, r, t]  )
-#             opt.set_master_variable(m.Bl[stage].ngb_th[th, r, t]  )
-#             opt.set_master_variable(m.Bl[stage].nge_th[th, r, t]  )
-#             opt.set_master_variable(m.Bl[stage].ngr_th[th, r, t]  )            
-#         for (j, r) in j_r:
-#             opt.set_master_variable(m.Bl[stage].nso[j, r, t])
-#             opt.set_master_variable(m.Bl[stage].nsb[j, r, t])
-#             opt.set_master_variable(m.Bl[stage].nsr[j, r, t])
 
-#         for l in m.l_new:
-#             opt.set_master_variable(m.Bl[stage].nte[l, t])
-#             opt.set_master_variable(m.Bl[stage].ntb[l, t])
 #set subproblems
 operating_vars = []
 if formulation == "standard":
@@ -255,7 +192,6 @@ for stage in m.stages:
     m.Bl[stage].link_equal4.clear()
 
     for t in t_per_stage[stage]:
-        # print('stage', stage, 't_prev', t_prev)
         for (rn, r) in m.rn_r:
             value = m.Bl[stage].ngo_rn[rn, r, t].value
             m.Bl[stage].ngo_rn[rn, r, t].fix(value)
@@ -392,11 +328,6 @@ for stage in m.stages:
                         temp_power_flow[sr][er] += m.Bl[stage].P_flow[l,t,d,s].value * m.n_d[d] * pow(10,-6)
                     else:
                         temp_power_flow[er][sr] -= m.Bl[stage].P_flow[l,t,d,s].value * m.n_d[d] * pow(10,-6)
-    # for r in m.r_Panhandle:
-    #     for t in t_per_stage[stage]:
-    #         for d in m.d:
-    #             for s in m.hours:  
-    #                 temp_power_flow['Panhandle'][r]  += m.Bl[stage].P_Panhandle[r,t,d,s].value * m.n_d[d] * pow(10,-6)
     power_flow.append(temp_power_flow)
 
     
@@ -410,12 +341,6 @@ energy_region_dict ={"solar":solar_capacity_region,
 "natural gas": natural_gas_capacity_region,
 "wind":wind_capacity_region}
 with open('results/' + outputfile, 'w', newline='') as results_file:
-            # results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            # results_writer.writerow(["ratio_N ", self.ratio_N , " ratio_M " , self.ratio_M])
-            # results_writer.writerow(["best_UB_lo", self.best_UB_lo, "best_UB_up", self.best_UB_up])
-            # results_writer.writerow(["best binary", self.best_binary])
-            # results_writer.writerow(["is OA infeasible", self.is_OA_infeasible])
-            # results_writer.writerow(["post_analysis_time", self.post_analysis_time])
             fieldnames = ["Time", "variable_operating_cost",
                         "fixed_operating_cost",
                         "startup_cost",
@@ -480,14 +405,6 @@ with open('results/' + outputfile, 'w', newline='') as results_file:
                         new_row[key] = energy_region_dict[gen][r][i]
                 writer.writerow(new_row)
             results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            # for i in range(len(m.stages)):
-            #     results_writer.writerow([" "])
-            #     results_writer.writerow(["t=" + str(i+1), 'Northeast', 'West', 'Coastal', 'South', 'Panhandle'])
-            #     for r in m.r:
-            #         new_row = [r]
-            #         for rr in m.r:
-            #             new_row.append(power_flow[i][r][rr])
-            #         results_writer.writerow(new_row)
             #get the transmission line expansion 
             for stage in m.stages:                
                 for l in m.l_new:
@@ -496,7 +413,6 @@ with open('results/' + outputfile, 'w', newline='') as results_file:
                         results_writer.writerow(temp_row)
                  #get the peak demand network structure in the last year  
             last_stage = len(m.stages)                          
-            # m.L = Param(m.r, m.t, m.d, m.hours, default=0, initialize=readData_det.L_by_scenario[0], mutable=True) 
             largest_d, largest_s =  0, 0
             largest_load = 0.0
             for r in m.r:

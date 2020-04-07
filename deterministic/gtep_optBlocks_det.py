@@ -1,6 +1,6 @@
-# Generation and Transmission Expansion Planning (Multi-stage Stochastic Integer Programming)
+# Generation and Transmission Expansion Planning 
 # IDAES project
-# author: Cristiana L. Lara
+# author: Can Li 
 # date: 10/09/2017
 # Model available at http://www.optimization-online.org/DB_FILE/2017/08/6162.pdf
 
@@ -16,7 +16,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
     '''
         Set Notation:
         m.r: regions
-
         m.i: generators
         m.th: thermal generators
         m.rn: renewable generators
@@ -57,25 +56,20 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
 
         m.t: set of time periods
 
-        m.l set of transmission lines
+        m.l: set of transmission lines
+        m.l_old: set of existing transmission lines
+        m.l_new: set of prospective transmission lines
 
         m.stage: set of stages in the scenario tree
     '''
     m.r = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
-    m.r_no_ng = Set(initialize=['West', 'Panhandle'], ordered=True)
-    # m.r_no_wind = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
 
-    # m.i = Set(initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old', 'wind-old',
-    #                       'wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new',
-    #                       'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new'], ordered=True)
     m.i = Set(initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old', 'wind-old',
                           'wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new',
                           'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-old','nuc-st-new'], ordered=True)
-    # 'nuc-st-old', 'nuc-st-new',
     m.th = Set(within=m.i, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new',
                                        'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
                                        'ng-ct-new','nuc-st-old', 'nuc-st-new'], ordered=True)
-    # 'nuc-st-old', 'nuc-st-new',
     m.rn = Set(within=m.i, initialize=['pv-old', 'pv-new', 'csp-new', 'wind-old', 'wind-new'], ordered=True)
     m.co = Set(within=m.th, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new'], ordered=True)
     m.ng = Set(within=m.th, initialize=['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
@@ -86,18 +80,15 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
     m.wi = Set(within=m.rn, initialize=['wind-old', 'wind-new'], ordered=True)
     m.old = Set(within=m.i, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old',
                                         'wind-old','nuc-st-old'], ordered=True)
-    # 'nuc-st-old',
     m.new = Set(within=m.i, initialize=['wind-new', 'pv-new', 'csp-new', 'coal-igcc-new',
                                         'coal-igcc-ccs-new', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new'], ordered=True)
-    # 'nuc-st-new',
     m.rold = Set(within=m.old, initialize=['pv-old', 'wind-old'], ordered=True)
     m.rnew = Set(within=m.new, initialize=['wind-new', 'pv-new', 'csp-new'], ordered=True)
     m.told = Set(within=m.old, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old','nuc-st-old'],
                  ordered=True)
-    # 'nuc-st-old',
+
     m.tnew = Set(within=m.new, initialize=['coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new',
                                            'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new'], ordered=True)
-    # 'nuc-st-new',
     m.j = Set(initialize=['Li_ion', 'Lead_acid', 'Flow'], ordered=True)
 
     m.d = RangeSet(readData_det.num_days)
@@ -190,10 +181,13 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
     m.VOC: variable O&M cost of generator cluster i ($/MWh)
     m.CCm: capital cost multiplier of generator cluster i (unitless)
     m.DIC: discounted investment cost of generator cluster i in year t ($/MW)
+    m.TIC: investment cost of tranmission line l ($)
     m.LEC: life extension cost for generator cluster i (fraction of the investment cost of corresponding new generator)
     m.PEN: penalty for not meeting renewable energy quota target during year t ($/MWh)
     m.PENc: penalty for curtailment during year t ($/MWh)
     m.tx_CO2: carbon tax in year t ($/kg CO2)
+    m.susceptance susceptance of transmission line l [Siemenns]
+    m.line_capacity capacity of transmission line l (MW)
     m.RES_min: minimum renewable energy production requirement during year t (fraction of annual energy demand)
     m.hs: duration of sub-period s (hours)
     m.ir: interest rate
@@ -207,7 +201,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
     m.eff_rate_charge: efficiency rate to charge energy in storage unit j
     m.eff_rate_discharge: efficiency rate to discharge energy in storage unit j
     m.storage_lifetime: storage lifetime (years)
-    m.susceptance susceptance of transmission line l [Siemenns]
+
     '''
 
 # m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.L)
@@ -219,9 +213,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
     m.cf = Param(m.i, m.r, m.t, m.d, m.hours, mutable=True, initialize=readData_det.cf_by_scenario[0])
     m.Qg_np = Param(m.i_r, default=0, initialize=readData_det.Qg_np)
     m.Ng_max = Param(m.i_r, default=0, initialize=readData_det.Ng_max, mutable=True)
-    # for i,r in m.i_r:
-    #     if m.Ng_max[i,r].value > 20:
-    #         m.Ng_max[i,r].value = 20
     m.Qinst_UB = Param(m.i, m.t, default=0, initialize=readData_det.Qinst_UB)
     m.LT = Param(m.i, initialize=readData_det.LT, default=0)
     m.Tremain = Param(m.t, default=0, initialize=readData_det.Tremain)
@@ -383,6 +374,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.cu: curtailment slack generation in region r during sub-period s of representative day d of year t (MW)
         b.RES_def: de􏰂cit from renewable energy quota target during year t (MWh)
         b.P_flow: power transfer from region r to region r̸=r during sub-period s of representative day d of year t (MW)
+        b.d_P_flow_plus: nonnegative variable, power flow from the sending end of transmission line l, s(l), to the receiving end of line l, r(l) during sub-period s of representative day d of year t (MW)
+        b.d_P_flow_minus: nonnegative variable, power flow from the receiving end of transmission line l, r(l), to the sending end of line l, s(l) during sub-period s of representative day d of year t (MW)        
         b.Q_spin:spinning reserve capacity of generation cluster i in region r during sub-period s of representative day 
             d of year t (MW)
         b.Q_Qstart: quick-start capacity reserve of generation cluster i in region r during sub-period s of 
@@ -411,9 +404,13 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.nsb: Number of storage units of type j installed in region r, year t (relaxed to continuous)
         b.nso: Number of storage units of type j operational in region r, year t (relaxed to continuous)
         b.nsr: Number of storage units of type j retired in region r, year t (relaxed to continuous)
-        b.ntb Whether new transmission line l is built in time period t
-        b.nte whether transmission line l exist in time period t 
-        b.theta
+        b.ntb: Whether new transmission line l is built in time period t
+        b.nte: whether transmission line l exist in time period t 
+        b.theta: voltage angle at region r during sub-period s of representative day d of year t
+        b.d_theta_plus: nonnegative variable, angle difference between the angles at sending end and receiving end of transmission line l during sub-period s of representative day d of year t (MW)
+        b.d_theta_minus: nonnegative variable, angle difference between the angles at receiving end and sending end of transmission line l during sub-period s of representative day d of year t (MW)
+        b.d_theta_1: disaggregated variable in the hull formulation, angle difference between the angles at sending end and receiving end of transmission line l during sub-period s of representative day d of year t (MW) if the transmission line l exists in year t
+        b.d_theta_2: disaggregated variable in the hull formulation, angle difference between the angles at sending end and receiving end of transmission line l during sub-period s of representative day d of year t (MW) if the transmission line l does not exist in year t
         '''
 
         b.ntb = Var(m.l_new, t_per_stage[stage], within=Binary)
@@ -438,20 +435,10 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.P = Var(m.i_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals, bounds=bound_P)
         b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.RES_def = Var(t_per_stage[stage], within=NonNegativeReals)
-        
-        #power flow from Panhandle to region r_Panhandle
         b.Q_spin = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.Q_Qstart = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.ngr_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_r_rn, domain=NonNegativeReals)
-        # for t in t_per_stage[stage]:
-        #     if t == 1:
-        #         for rnew, r in m.rn_r:
-        #             if rnew in m.rnew:
-        #                 b.ngr_rn[rnew, r, t].fix(0.0)
-        #     else:
-        #         for rnew, r in m.rn_r:
-        #             if rnew in m.rnew:
-        #                 b.ngr_rn[rnew, r, t].unfix()
+
 
         #rnew does not occur in the logic constraints
         for t in t_per_stage[stage]:
@@ -461,30 +448,14 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
       
 
         b.nge_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_e_rn, domain=NonNegativeReals)
-        # for t in t_per_stage[stage]:
-        #     if t == 1:
-        #         for rnew, r in m.rn_r:
-        #             if rnew in m.rnew:
-        #                 b.nge_rn[rnew, r, t].fix(0.0)
-        #     else:
-        #         for rnew, r in m.rn_r:
-        #             if rnew in m.rnew:
-        #                 b.nge_rn[rnew, r, t].unfix()
+
         for t in t_per_stage[stage]:
             for rnew, r in m.rn_r:
                 if rnew in m.rnew:
                     b.nge_rn[rnew, r, t].fix(0.0)
 
         b.ngr_th = Var(m.th_r, t_per_stage[stage], bounds=bound_r_th, domain=NonNegativeIntegers)
-        # for t in t_per_stage[stage]:
-        #     if t == 1:
-        #         for tnew, r in m.th_r:
-        #             if tnew in m.tnew:
-        #                 b.ngr_th[tnew, r, t].fix(0.0)
-        #     else:
-        #         for tnew, r in m.th_r:
-        #             if tnew in m.tnew:
-        #                 b.ngr_th[tnew, r, t].unfix()
+
         for t in t_per_stage[stage]:
             for tnew, r in m.th_r:
                 if tnew in m.tnew:
@@ -492,15 +463,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
       
 
         b.nge_th = Var(m.th_r, t_per_stage[stage], bounds=bound_e_th, domain=NonNegativeIntegers)
-        # for t in t_per_stage[stage]:
-        #     if t == 1:
-        #         for tnew, r in m.th_r:
-        #             if tnew in m.tnew:
-        #                 b.nge_th[tnew, r, t].fix(0.0)
-        #     else:
-        #         for tnew, r in m.th_r:
-        #             if tnew in m.tnew:
-        #                 b.nge_th[tnew, r, t].unfix()
+
         for t in t_per_stage[stage]:
             for tnew, r in m.th_r:
                 if tnew in m.tnew:
@@ -517,8 +480,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         b.alphafut = Var(within=Reals, domain=NonNegativeReals)
 
         b.ngo_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_o_rn, domain=NonNegativeReals)
-        # b.ngb_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_b_rn, domain=NonNegativeReals)
-        # b.ngo_rn = Var(m.rn_r, t_per_stage[stage], domain=NonNegativeReals)
         b.ngb_rn = Var(m.rn_r, t_per_stage[stage],  domain=NonNegativeReals)
 
         for t in t_per_stage[stage]:
@@ -527,8 +488,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
                     b.ngb_rn[rold, r, t].fix(0.0)
 
         b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
-        # b.ngb_th = Var(m.th_r, t_per_stage[stage], bounds=bound_b_th, domain=NonNegativeIntegers)
-        # b.ngo_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)
         b.ngb_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)     
         for t in t_per_stage[stage]:
             for th, r in m.th_r: 

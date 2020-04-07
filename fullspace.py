@@ -35,7 +35,7 @@ print(curPath)
 filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
 n_stages = 10  # number od stages in the scenario tree
-formulation = "standard"
+formulation = "improved"
 
 num_days = 4
 print(formulation, num_days)
