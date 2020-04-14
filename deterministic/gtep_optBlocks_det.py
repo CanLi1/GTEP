@@ -6,7 +6,7 @@
 
 from pyomo.environ import *
 import math
-import deterministic.readData_det as readData_det
+import deterministic.readData_single as readData_det
 
 
 def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
@@ -959,6 +959,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
 
         b.fut_cost = ConstraintList()
 
-    m.Bl = Block([1], rule=planning_block_rule)
+    m.Bl = Block(m.stages, rule=planning_block_rule)
 
     return m

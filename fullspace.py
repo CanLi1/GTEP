@@ -30,11 +30,11 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 10  # number od stages in the scenario tree
+n_stages = 20  # number od stages in the scenario tree
 formulation = "improved"
 
 num_days = 4
@@ -157,5 +157,6 @@ print(results)
 print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
 print(results.Solver[0]['Wall time'])
 # print(opt.options['LPMethod'])
+
 
 
