@@ -138,7 +138,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
     globals()['num_days'] = 1
     list_of_repr_days_per_scenario = list(range(1,(1+1)))
     n_ss = {}
-    n_ss[1] = 1.0
+    n_ss[1] = 365
     globals()['n_ss'] = n_ss
     # Misleading (seasons not used) but used because of structure of old data
     # ############ LOAD ############

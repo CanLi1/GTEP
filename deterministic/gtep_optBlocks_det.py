@@ -625,7 +625,14 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
                 return _b.nte[l,t] == _b.nte[l, t-1] + _b.ntb[l, t]
             else:
                 return _b.nte[l,t] ==  _b.nte_prev[l] + _b.ntb[l, t]
-        b.transmission_line_balance = Constraint(m.l_new, t_per_stage[stage], rule=transmission_line_balance)                 
+        b.transmission_line_balance = Constraint(m.l_new, t_per_stage[stage], rule=transmission_line_balance)     
+
+        def symmetrybreaking_line(_b, l, t):
+            if l%10 != 1:
+                return _b.nte[l,t] >= _b.nte[l-1,t]
+            else:
+                return Constraint.Skip
+        b.symmetrybreaking_line = Constraint(m.l_new, t_per_stage[stage], rule=symmetrybreaking_line)
 
         ####################### end constraints related to transmission ####################### 
         #show costs breakdown 
@@ -944,7 +951,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
 
         def storage_heuristic(_b, j, r, t, d, s):
             if s == m.hours.last():
-                return _b.p_storage_level_end_hour[j, r, t, d, s] == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t]
+                return _b.p_storage_level[j, r, t, d, s] == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t]
             return Constraint.Skip
 
         b.storage_heuristic = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=storage_heuristic)
