@@ -27,7 +27,7 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
 n_stages = 20  # number od stages in the scenario tree
-formulation = "improved"
+formulation = "standard"
 
 
 stages = range(1, n_stages + 1)
@@ -67,7 +67,7 @@ for t in m.t:
 			fieldnames.append("nso["+j + ","+r+"," +  str(t) +"]")
 
 day_start = 21
-day_end = 41 
+day_end = 22 
 with open('repn_results/investment' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
 	writer = csv.DictWriter(results_file, fieldnames=fieldnames) 	
 	writer.writeheader()
@@ -97,7 +97,8 @@ with open('repn_results/investment' + str(day_start) + "-" + str(day_end) + '.cs
 					m.Bl[stage].link_equal2.add(expr=(m.Bl[stage].ngo_th_prev[th, r] ==
 														m.Bl[stage-1].ngo_th[th, r, t_per_stage[stage-1][-1]]  ))
 				for j in m.j:
-					m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
+					for r in m.r:
+						m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
 														 m.Bl[stage-1].nso[j, r, t_per_stage[stage-1][-1]]))
 
 				for l in m.l_new:
@@ -134,6 +135,15 @@ with open('repn_results/investment' + str(day_start) + "-" + str(day_end) + '.cs
 		# 	m.Bl[t].ntb.domain = Binary
 		opt = SolverFactory("cplex")
 		opt.options['threads'] = 1
+		opt.options['LPMethod'] = 4
+		opt.options['solutiontype'] =2 
+# 0	Automatic
+# 1	Primal Simplex
+# 2	Dual Simplex
+# 3	Network Simplex
+# 4	Barrier
+# 5	Sifting
+# 6	Concurrent		
 		results = opt.solve(m, tee=True)
 		# opt.set_instance(m)
 		# opt.set_benders_annotation()

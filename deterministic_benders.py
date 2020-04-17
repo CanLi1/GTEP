@@ -241,228 +241,228 @@ print("benders results")
 print(opt.results)
 
 
-# variable_operating_cost = []
-# fixed_operating_cost =[]
-# startup_cost = []
-# thermal_generator_cost = []
-# extending_thermal_generator_cost = []
-# renewable_generator_cost = []
-# extending_renewable_generator_cost = []
-# storage_investment_cost = []
-# penalty_cost = []
-# renewable_capacity = []
-# thermal_capacity = []
-# total_capacity = []
-# transmission_line_cost = []
-# solar_capacity = []
-# wind_capacity = []
-# nuclear_capacity = []
-# coal_capacity = []
-# natural_gas_capacity = []
-# solar_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
-# wind_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
-# nuclear_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
-# coal_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
-# natural_gas_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
-# power_flow = []
-# solar_energy_generated = []
-# wind_energy_generated = []
-# nuclear_energy_generated = []
-# coal_energy_generated = []
-# natural_gas_energy_generated = []
-# total_energy_generated = []
+variable_operating_cost = []
+fixed_operating_cost =[]
+startup_cost = []
+thermal_generator_cost = []
+extending_thermal_generator_cost = []
+renewable_generator_cost = []
+extending_renewable_generator_cost = []
+storage_investment_cost = []
+penalty_cost = []
+renewable_capacity = []
+thermal_capacity = []
+total_capacity = []
+transmission_line_cost = []
+solar_capacity = []
+wind_capacity = []
+nuclear_capacity = []
+coal_capacity = []
+natural_gas_capacity = []
+solar_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
+wind_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
+nuclear_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
+coal_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
+natural_gas_capacity_region = {'Northeast':[], 'West':[], 'Coastal':[], 'South':[], 'Panhandle':[]}
+power_flow = []
+solar_energy_generated = []
+wind_energy_generated = []
+nuclear_energy_generated = []
+coal_energy_generated = []
+natural_gas_energy_generated = []
+total_energy_generated = []
 
 
 
 
-# for stage in m.stages:
-#     variable_operating_cost.append(m.Bl[stage].variable_operating_cost.expr())
-#     fixed_operating_cost.append(m.Bl[stage].fixed_operating_cost.expr())
-#     startup_cost.append(m.Bl[stage].startup_cost.expr())
-#     thermal_generator_cost.append(m.Bl[stage].thermal_generator_cost.expr())
-#     extending_thermal_generator_cost.append(m.Bl[stage].extending_thermal_generator_cost.expr())
-#     renewable_generator_cost.append(m.Bl[stage].renewable_generator_cost.expr())
-#     extending_renewable_generator_cost.append(m.Bl[stage].extending_renewable_generator_cost.expr())
-#     storage_investment_cost.append(m.Bl[stage].storage_investment_cost.expr())
-#     penalty_cost.append(m.Bl[stage].penalty_cost.expr())
-#     renewable_capacity.append(m.Bl[stage].renewable_capacity.expr())
-#     thermal_capacity.append(m.Bl[stage].thermal_capacity.expr())
-#     total_capacity.append(m.Bl[stage].total_capacity.expr())
-#     transmission_line_cost.append(m.Bl[stage].transmission_line_cost.expr())
-#     coal_capacity.append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, r in m.i_r if th in m.co) )
-#     natural_gas_capacity.append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, r in m.i_r if th in m.ng) )
-#     nuclear_capacity.append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, r in m.i_r if th in m.nu) )
-#     solar_capacity.append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, r in m.i_r if (rn in m.pv or rn in m.csp)) )
-#     wind_capacity.append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, r in m.i_r if rn in m.wi) )
-#     for r in m.r:
-#         coal_capacity_region[r].append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for  th, rr in m.i_r if (rr==r and th in m.co) ))
-#         natural_gas_capacity_region[r].append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, rr in m.i_r if (rr==r and th in m.ng) ))
-#         nuclear_capacity_region[r].append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, rr in m.i_r if (rr==r  and th in m.nu) ))
-#         solar_capacity_region[r].append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, rr in m.i_r if (rr == r and (rn in m.pv or rn in m.csp))) )
-#         wind_capacity_region[r].append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, rr in m.i_r if( rr==r and rn in m.wi) ))
-#     total_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for (i,r)
-#      in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours))
-#     coal_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for 
-#         (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.co))
-#     natural_gas_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for
-#      (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.ng))
-#     nuclear_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for 
-#         (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.nu))
-#     solar_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for
-#      (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if (i in m.pv or i in m.csp)))
-#     wind_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for 
-#         (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.wi ))
-#     temp_power_flow = {}
-#     for r in m.r:
-#         temp_power_flow[r] = {}
-#         for rr in m.r:
-#             temp_power_flow[r][rr] = 0
-#     for l in m.l:
-#         for t in t_per_stage[stage]:
-#             for d in m.d:
-#                 for s in m.hours:
-#                     er = m.l_er[l][1]
-#                     sr = m.l_sr[l][1]
-#                     if m.Bl[stage].P_flow[l,t,d,s].value > 0:
-#                         temp_power_flow[sr][er] += m.Bl[stage].P_flow[l,t,d,s].value * m.n_d[d] * pow(10,-6)
-#                     else:
-#                         temp_power_flow[er][sr] -= m.Bl[stage].P_flow[l,t,d,s].value * m.n_d[d] * pow(10,-6)
-#     power_flow.append(temp_power_flow)
+for stage in m.stages:
+    variable_operating_cost.append(m.Bl[stage].variable_operating_cost.expr())
+    fixed_operating_cost.append(m.Bl[stage].fixed_operating_cost.expr())
+    startup_cost.append(m.Bl[stage].startup_cost.expr())
+    thermal_generator_cost.append(m.Bl[stage].thermal_generator_cost.expr())
+    extending_thermal_generator_cost.append(m.Bl[stage].extending_thermal_generator_cost.expr())
+    renewable_generator_cost.append(m.Bl[stage].renewable_generator_cost.expr())
+    extending_renewable_generator_cost.append(m.Bl[stage].extending_renewable_generator_cost.expr())
+    storage_investment_cost.append(m.Bl[stage].storage_investment_cost.expr())
+    penalty_cost.append(m.Bl[stage].penalty_cost.expr())
+    renewable_capacity.append(m.Bl[stage].renewable_capacity.expr())
+    thermal_capacity.append(m.Bl[stage].thermal_capacity.expr())
+    total_capacity.append(m.Bl[stage].total_capacity.expr())
+    transmission_line_cost.append(m.Bl[stage].transmission_line_cost.expr())
+    coal_capacity.append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, r in m.i_r if th in m.co) )
+    natural_gas_capacity.append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, r in m.i_r if th in m.ng) )
+    nuclear_capacity.append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, r in m.i_r if th in m.nu) )
+    solar_capacity.append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, r in m.i_r if (rn in m.pv or rn in m.csp)) )
+    wind_capacity.append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, r in m.i_r if rn in m.wi) )
+    for r in m.r:
+        coal_capacity_region[r].append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for  th, rr in m.i_r if (rr==r and th in m.co) ))
+        natural_gas_capacity_region[r].append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, rr in m.i_r if (rr==r and th in m.ng) ))
+        nuclear_capacity_region[r].append(sum(m.Qg_np[th, r] * m.Bl[stage].ngo_th[th, r, stage].value for th, rr in m.i_r if (rr==r  and th in m.nu) ))
+        solar_capacity_region[r].append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, rr in m.i_r if (rr == r and (rn in m.pv or rn in m.csp))) )
+        wind_capacity_region[r].append(sum(m.Qg_np[rn, r] * m.Bl[stage].ngo_rn[rn, r, stage].value  for rn, rr in m.i_r if( rr==r and rn in m.wi) ))
+    total_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for (i,r)
+     in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours))
+    coal_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for 
+        (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.co))
+    natural_gas_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for
+     (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.ng))
+    nuclear_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for 
+        (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.nu))
+    solar_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for
+     (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if (i in m.pv or i in m.csp)))
+    wind_energy_generated.append(sum(m.Bl[stage].P[i,r,t,d,s].value * m.n_d[d] * pow(10,-6) for 
+        (i,r) in m.i_r for t in t_per_stage[stage] for d in m.d for s in m.hours if i in m.wi ))
+    temp_power_flow = {}
+    for r in m.r:
+        temp_power_flow[r] = {}
+        for rr in m.r:
+            temp_power_flow[r][rr] = 0
+    for l in m.l:
+        for t in t_per_stage[stage]:
+            for d in m.d:
+                for s in m.hours:
+                    er = m.l_er[l][1]
+                    sr = m.l_sr[l][1]
+                    if m.Bl[stage].P_flow[l,t,d,s].value > 0:
+                        temp_power_flow[sr][er] += m.Bl[stage].P_flow[l,t,d,s].value * m.n_d[d] * pow(10,-6)
+                    else:
+                        temp_power_flow[er][sr] -= m.Bl[stage].P_flow[l,t,d,s].value * m.n_d[d] * pow(10,-6)
+    power_flow.append(temp_power_flow)
 
     
 
 
 
-# import csv
-# energy_region_dict ={"solar":solar_capacity_region,
-# "nuc":nuclear_capacity_region, 
-# "coal":coal_capacity_region,
-# "natural gas": natural_gas_capacity_region,
-# "wind":wind_capacity_region}
-# with open('results/' + outputfile, 'w', newline='') as results_file:
-#             fieldnames = ["Time", "variable_operating_cost",
-#                         "fixed_operating_cost",
-#                         "startup_cost",
-#                         "thermal_generator_cost",
-#                         "extending_thermal_generator_cost",
-#                         "renewable_generator_cost",
-#                         "extending_renewable_generator_cost",
-#                         "storage_investment_cost",
-#                         "penalty_cost",
-#                         "renewable_capacity",
-#                         "thermal_capacity",                        
-#                         "transmission_line_cost",
-#                         "coal_capacity",
-#                         "natural_gas_capacity",
-#                         "nuclear_capacity",
-#                         "solar_capacity",
-#                         "wind_capacity",
-#                         "total_capacity",
-#                         "power_flow",
-#                         "solar_energy_generated",
-#                         "wind_energy_generated",
-#                         "nuclear_energy_generated",
-#                         "coal_energy_generated",
-#                         "natural_gas_energy_generated",
-#                         "total_energy_generated"
-#                         ]
-#             for r in m.r:
-#                 for gen in ["coal", "natural gas", "nuc", "solar", "wind"]:
-#                     fieldnames.append(r+ " " + gen)
-#             writer = csv.DictWriter(results_file, fieldnames=fieldnames)
-#             writer.writeheader()
-#             for i in range(len(m.stages)):
-#                 new_row = {"Time":i + 1,
-#                     "variable_operating_cost":variable_operating_cost[i],
-#                     "fixed_operating_cost":fixed_operating_cost[i],
-#                     "startup_cost":startup_cost[i],
-#                     "thermal_generator_cost":thermal_generator_cost[i],
-#                     "extending_thermal_generator_cost":extending_thermal_generator_cost[i],
-#                     "renewable_generator_cost":renewable_generator_cost[i],
-#                     "extending_renewable_generator_cost":extending_renewable_generator_cost[i],
-#                     "storage_investment_cost":storage_investment_cost[i],
-#                     "penalty_cost":penalty_cost[i],
-#                     "renewable_capacity":renewable_capacity[i],
-#                     "thermal_capacity":thermal_capacity[i],
-#                     "total_capacity":total_capacity[i],
-#                     "transmission_line_cost":transmission_line_cost[i],
-#                     "coal_capacity":coal_capacity[i],
-#                     "natural_gas_capacity":natural_gas_capacity[i],
-#                     "nuclear_capacity":nuclear_capacity[i],
-#                     "solar_capacity":solar_capacity[i],
-#                     "wind_capacity":wind_capacity[i],
-#                     "power_flow":power_flow[i],
-#                     "solar_energy_generated":solar_energy_generated[i],
-#                     "wind_energy_generated":wind_energy_generated[i],
-#                     "nuclear_energy_generated":nuclear_energy_generated[i],
-#                     "coal_energy_generated":coal_energy_generated[i],
-#                     "natural_gas_energy_generated":natural_gas_energy_generated[i],
-#                     "total_energy_generated":total_energy_generated[i]}
-#                 for r in m.r:
-#                     for gen in ["coal", "natural gas", "nuc", "solar", "wind"]:
-#                         key = r+ " " + gen
-#                         new_row[key] = energy_region_dict[gen][r][i]
-#                 writer.writerow(new_row)
-#             results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#             #get the transmission line expansion 
-#             for stage in m.stages:                
-#                 for l in m.l_new:
-#                     if m.Bl[stage].ntb[l,stage].value > 0.1:
-#                         temp_row = [stage, readData_det.tielines[l-1]["Near Area Name"], readData_det.tielines[l-1]["Far Area Name"]]
-#                         results_writer.writerow(temp_row)
-#                  #get the peak demand network structure in the last year  
-#             last_stage = len(m.stages)                          
-#             largest_d, largest_s =  0, 0
-#             largest_load = 0.0
-#             for r in m.r:
-#                 for d in m.d:
-#                     for s in m.hours:
-#                         if m.L[r, last_stage,d,s].value > largest_load:
-#                             largest_load = m.L[r, last_stage,d,s].value
-#                             largest_d = d 
-#                             largest_s = s 
-#             #write down the load of each region 
-#             results_writer.writerow([" at last year ",  d, s])
-#             results_writer.writerow([" ", 'Northeast', 'West', 'Coastal', 'South', 'Panhandle'])
-#             results_writer.writerow(["load ", m.L["Northeast", last_stage, largest_d, largest_s].value, 
-#                 m.L["West", last_stage, largest_d, largest_s].value,m.L["Coastal", last_stage, largest_d, largest_s].value,
-#                 m.L["South", last_stage, largest_d, largest_s].value,m.L["Panhandle", last_stage, largest_d, largest_s].value])
-#             new_row = ["power generation"]
-#             for r in m.r:
-#                 new_row.append(sum(m.Bl[last_stage].P[i, r, last_stage, largest_d, largest_s].value for i,rr in m.i_r if rr==r))
-#             results_writer.writerow(new_row)
-#             new_row = ["power charged"]
-#             for r in m.r:
-#                 new_row.append(sum(m.Bl[last_stage].p_charged[j, r, last_stage, largest_d, largest_s].value for j in m.j)) 
-#             results_writer.writerow(new_row)
-#             new_row = ["power discharged"]    
-#             for r in m.r:
-#                 new_row.append(sum(m.Bl[last_stage].p_discharged[j, r, last_stage, largest_d, largest_s].value for j in m.j))     
-#             results_writer.writerow(new_row)
-#             new_row = ["transmission power "]
-#             for r in m.r:
-#                 temp_P = 0
-#                 for l in m.l:
-#                     er = m.l_er[l][1]
-#                     sr = m.l_sr[l][1]
-#                     if er == r:
-#                         temp_P += m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value
-#                     if sr == r:
-#                         temp_P -= m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value
-#                 new_row.append(temp_P)
-#             results_writer.writerow(new_row)
-#             new_row = ["curtailment "]
-#             for r in m.r:
-#                 new_row.append(m.Bl[last_stage].cu[r, last_stage, largest_d, largest_s].value)
-#             results_writer.writerow(new_row)
-#                #power transmission of each line 
-#             results_writer.writerow([])
-#             results_writer.writerow(["transmission at peak load "])
-#             for l in m.l:
-#                 if abs(m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value) > 0.1:
-#                     results_writer.writerow([readData_det.tielines[l-1]["Near Area Name"], readData_det.tielines[l-1]["Far Area Name"], m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value ])
-#             results_writer.writerow([])        
-#             results_writer.writerow(["ub_time", ub_time, "cplex benders time", opt.results['Solver'][0]['Wallclock time']])
-#             results_writer.writerow(["ub", upper_bound_obj, "lb", opt.results['Problem'][0]['Lower bound']])
+import csv
+energy_region_dict ={"solar":solar_capacity_region,
+"nuc":nuclear_capacity_region, 
+"coal":coal_capacity_region,
+"natural gas": natural_gas_capacity_region,
+"wind":wind_capacity_region}
+with open('results/' + outputfile, 'w', newline='') as results_file:
+            fieldnames = ["Time", "variable_operating_cost",
+                        "fixed_operating_cost",
+                        "startup_cost",
+                        "thermal_generator_cost",
+                        "extending_thermal_generator_cost",
+                        "renewable_generator_cost",
+                        "extending_renewable_generator_cost",
+                        "storage_investment_cost",
+                        "penalty_cost",
+                        "renewable_capacity",
+                        "thermal_capacity",                        
+                        "transmission_line_cost",
+                        "coal_capacity",
+                        "natural_gas_capacity",
+                        "nuclear_capacity",
+                        "solar_capacity",
+                        "wind_capacity",
+                        "total_capacity",
+                        "power_flow",
+                        "solar_energy_generated",
+                        "wind_energy_generated",
+                        "nuclear_energy_generated",
+                        "coal_energy_generated",
+                        "natural_gas_energy_generated",
+                        "total_energy_generated"
+                        ]
+            for r in m.r:
+                for gen in ["coal", "natural gas", "nuc", "solar", "wind"]:
+                    fieldnames.append(r+ " " + gen)
+            writer = csv.DictWriter(results_file, fieldnames=fieldnames)
+            writer.writeheader()
+            for i in range(len(m.stages)):
+                new_row = {"Time":i + 1,
+                    "variable_operating_cost":variable_operating_cost[i],
+                    "fixed_operating_cost":fixed_operating_cost[i],
+                    "startup_cost":startup_cost[i],
+                    "thermal_generator_cost":thermal_generator_cost[i],
+                    "extending_thermal_generator_cost":extending_thermal_generator_cost[i],
+                    "renewable_generator_cost":renewable_generator_cost[i],
+                    "extending_renewable_generator_cost":extending_renewable_generator_cost[i],
+                    "storage_investment_cost":storage_investment_cost[i],
+                    "penalty_cost":penalty_cost[i],
+                    "renewable_capacity":renewable_capacity[i],
+                    "thermal_capacity":thermal_capacity[i],
+                    "total_capacity":total_capacity[i],
+                    "transmission_line_cost":transmission_line_cost[i],
+                    "coal_capacity":coal_capacity[i],
+                    "natural_gas_capacity":natural_gas_capacity[i],
+                    "nuclear_capacity":nuclear_capacity[i],
+                    "solar_capacity":solar_capacity[i],
+                    "wind_capacity":wind_capacity[i],
+                    "power_flow":power_flow[i],
+                    "solar_energy_generated":solar_energy_generated[i],
+                    "wind_energy_generated":wind_energy_generated[i],
+                    "nuclear_energy_generated":nuclear_energy_generated[i],
+                    "coal_energy_generated":coal_energy_generated[i],
+                    "natural_gas_energy_generated":natural_gas_energy_generated[i],
+                    "total_energy_generated":total_energy_generated[i]}
+                for r in m.r:
+                    for gen in ["coal", "natural gas", "nuc", "solar", "wind"]:
+                        key = r+ " " + gen
+                        new_row[key] = energy_region_dict[gen][r][i]
+                writer.writerow(new_row)
+            results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            #get the transmission line expansion 
+            for stage in m.stages:                
+                for l in m.l_new:
+                    if m.Bl[stage].ntb[l,stage].value > 0.1:
+                        temp_row = [stage, readData_det.tielines[l-1]["Near Area Name"], readData_det.tielines[l-1]["Far Area Name"]]
+                        results_writer.writerow(temp_row)
+                 #get the peak demand network structure in the last year  
+            last_stage = len(m.stages)                          
+            largest_d, largest_s =  0, 0
+            largest_load = 0.0
+            for r in m.r:
+                for d in m.d:
+                    for s in m.hours:
+                        if m.L[r, last_stage,d,s].value > largest_load:
+                            largest_load = m.L[r, last_stage,d,s].value
+                            largest_d = d 
+                            largest_s = s 
+            #write down the load of each region 
+            results_writer.writerow([" at last year ",  d, s])
+            results_writer.writerow([" ", 'Northeast', 'West', 'Coastal', 'South', 'Panhandle'])
+            results_writer.writerow(["load ", m.L["Northeast", last_stage, largest_d, largest_s].value, 
+                m.L["West", last_stage, largest_d, largest_s].value,m.L["Coastal", last_stage, largest_d, largest_s].value,
+                m.L["South", last_stage, largest_d, largest_s].value,m.L["Panhandle", last_stage, largest_d, largest_s].value])
+            new_row = ["power generation"]
+            for r in m.r:
+                new_row.append(sum(m.Bl[last_stage].P[i, r, last_stage, largest_d, largest_s].value for i,rr in m.i_r if rr==r))
+            results_writer.writerow(new_row)
+            new_row = ["power charged"]
+            for r in m.r:
+                new_row.append(sum(m.Bl[last_stage].p_charged[j, r, last_stage, largest_d, largest_s].value for j in m.j)) 
+            results_writer.writerow(new_row)
+            new_row = ["power discharged"]    
+            for r in m.r:
+                new_row.append(sum(m.Bl[last_stage].p_discharged[j, r, last_stage, largest_d, largest_s].value for j in m.j))     
+            results_writer.writerow(new_row)
+            new_row = ["transmission power "]
+            for r in m.r:
+                temp_P = 0
+                for l in m.l:
+                    er = m.l_er[l][1]
+                    sr = m.l_sr[l][1]
+                    if er == r:
+                        temp_P += m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value
+                    if sr == r:
+                        temp_P -= m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value
+                new_row.append(temp_P)
+            results_writer.writerow(new_row)
+            new_row = ["curtailment "]
+            for r in m.r:
+                new_row.append(m.Bl[last_stage].cu[r, last_stage, largest_d, largest_s].value)
+            results_writer.writerow(new_row)
+               #power transmission of each line 
+            results_writer.writerow([])
+            results_writer.writerow(["transmission at peak load "])
+            for l in m.l:
+                if abs(m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value) > 0.1:
+                    results_writer.writerow([readData_det.tielines[l-1]["Near Area Name"], readData_det.tielines[l-1]["Far Area Name"], m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value ])
+            results_writer.writerow([])        
+            results_writer.writerow(["ub_time", ub_time, "cplex benders time", opt.results['Solver'][0]['Wallclock time']])
+            results_writer.writerow(["ub", upper_bound_obj, "lb", opt.results['Problem'][0]['Lower bound']])
 
 
