@@ -66,8 +66,8 @@ for t in m.t:
 		for r in m.r:
 			fieldnames.append("nso["+j + ","+r+"," +  str(t) +"]")
 
-day_start = 21
-day_end = 22 
+day_start = 301
+day_end = 366
 with open('repn_results/investment' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
 	writer = csv.DictWriter(results_file, fieldnames=fieldnames) 	
 	writer.writeheader()
