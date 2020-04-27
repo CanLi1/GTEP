@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 uthor: Can Li 
+=======
+# author: Can Li 
+>>>>>>> f6e96f3a1b64ac6c8ebe585d22c57d6908cb031f
 #utils for representative days selection
 from pyomo.environ import *
 import pandas as pd
@@ -172,7 +176,6 @@ def eval_investment_single_day(new_model, day, n_stages):
         opt.solve(new_model.Bl[i], tee=True)
         total_operating_cost += new_model.Bl[i].total_operating_cost.expr()
     return total_operating_cost
-
 
 
 

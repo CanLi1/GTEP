@@ -66,9 +66,9 @@ for t in m.t:
 		for r in m.r:
 			fieldnames.append("nso["+j + ","+r+"," +  str(t) +"]")
 
-day_start = 21
-day_end = 22 
-with open('repn_results/investment' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
+day_start = 1
+day_end = 366
+with open('repn_results/updateinvestment' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
 	writer = csv.DictWriter(results_file, fieldnames=fieldnames) 	
 	writer.writeheader()
 
@@ -134,7 +134,7 @@ with open('repn_results/investment' + str(day_start) + "-" + str(day_end) + '.cs
 		# for t in m.t:
 		# 	m.Bl[t].ntb.domain = Binary
 		opt = SolverFactory("cplex")
-		opt.options['threads'] = 1
+		opt.options['threads'] = 4
 		opt.options['LPMethod'] = 4
 		opt.options['solutiontype'] =2 
 # 0	Automatic
