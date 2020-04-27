@@ -6,10 +6,10 @@
 
 from pyomo.environ import *
 import math
-import deterministic.readData_single as readData_det
 
 
-def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
+
+def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readData_det):
     m = ConcreteModel()
 
     # ################################## Declare of sets ##################################
@@ -206,7 +206,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
 
 # m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.L)
     m.L = Param(m.r, m.t, m.d, m.hours, default=0, initialize=readData_det.L_by_scenario[0], mutable=True) 
-    m.n_d = Param(m.d, default=0, initialize=readData_det.n_ss)
+    m.n_d = Param(m.d, default=0, mutable=True, initialize=readData_det.n_ss)
     # m.L_max = Param(m.t_stage, default=0, mutable=True)
     m.L_max = Param(m.t, default=0, initialize=readData_det.L_max)
     # m.cf = Param(m.i, m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=readData_det.cf)
@@ -710,8 +710,44 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
         def total_capacity(_b):
             return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
                    + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th)
-        b.total_capacity = Expression(rule=total_capacity)                                                                                                                                 
+        b.total_capacity = Expression(rule=total_capacity)   
 
+        def total_investment_cost(_b):
+            return   sum(m.if_[t] * ( sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
+                                                                            _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
+                                   + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
+                                         for th, r in m.th_r)
+                                   + sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
+                                         for rnew, r in m.rn_r if rnew in m.rnew)
+                                   + sum(m.DIC[tnew, t] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[tnew, r, t]
+                                         for tnew, r in m.th_r if tnew in m.tnew)
+                                   + sum(m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
+                                         for rn, r in m.rn_r)
+                                   + sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
+                                         for th, r in m.th_r)
+                                  + sum(m.TIC[l] * _b.ntb[l, t] for l in m.l_new)
+                                   + sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
+                                         for j in m.j for r in m.r)
+                                   + m.PEN[t] * _b.RES_def[t] )
+                      for t in t_per_stage[stage]) \
+                   * 10 ** (-9)
+        b.total_investment_cost = Expression(rule=total_investment_cost)
+
+        def total_operating_cost(_b):
+             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
+                                                              + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
+                                                                 i, r, t, d, s]
+                                                             for i, r in m.i_r)
+                                       for d in m.d for s in m.hours) 
+                                   + sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
+                                         * (m.f_start[th] * m.P_fuel[th, t]
+                                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, stage] + m.C_start[th])
+                                         for th, r in m.th_r for d in m.d for s in m.hours)                                   
+                                   + m.PENc * sum(_b.cu[r, t, d, s]
+                                                  for r in m.r for d in m.d for s in m.hours) )
+                      for t in t_per_stage[stage]) \
+                   * 10 ** (-9)                                                                                                                       
+        b.total_operating_cost = Expression(rule=total_operating_cost)
         def obj_rule(_b):
             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
@@ -745,12 +781,12 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation):
 
         b.obj = Objective(rule=obj_rule, sense=minimize)
 
-        def min_RN_req(_b, t):
-            return sum(m.n_d[d] * 1.0000000 * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
-                       for d in m.d for s in m.hours) \
-                   + _b.RES_def[t] >= m.RES_min[t] * m.ED[t]
+        # def min_RN_req(_b, t):
+        #     return sum(m.n_d[d] * 1.0000000 * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
+        #                for d in m.d for s in m.hours) \
+        #            + _b.RES_def[t] >= m.RES_min[t] * m.ED[t]
 
-        b.min_RN_req = Constraint(t_per_stage[stage], rule=min_RN_req)
+        # b.min_RN_req = Constraint(t_per_stage[stage], rule=min_RN_req)
 
         def min_reserve(_b, t):
             return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \

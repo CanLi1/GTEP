@@ -10,12 +10,11 @@ import random
 from copy import deepcopy
 import os.path
 from pyomo.environ import *
-import pymp
 import csv
 
 
 from scenarioTree import create_scenario_tree
-import deterministic.readData_det as readData_det
+import deterministic.readData_days as readData_det
 import deterministic.gtep_optBlocks_det as b
 # import deterministic.optBlocks_det as b
 from forward_gtep import forward_pass
@@ -35,10 +34,10 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
 n_stages = 20  # number od stages in the scenario tree
-formulation = "improved"
+formulation = "standard"
 
-num_days = 4
-print(formulation, num_days)
+# num_days = 4
+# print(formulation, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
@@ -58,7 +57,11 @@ opt_tol = 1  # %
 
 # create scenarios and input data
 nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
-readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, num_days)
+
+#cluster 
+from cluster import *
+result = run_cluster(data=load_input_data(), method="kmedoid", n_clusters=1)
+readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 sc_headers = list(sc_nodes.keys())
 
 # operating scenarios
@@ -92,7 +95,7 @@ stage_per_t = {t: k for k, v in t_per_stage.items() for t in v}
 # print(stage_per_t)
 
 # create blocks
-m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation)
+m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
 start_time = time.time()
 
 # Decomposition Parameters
@@ -117,8 +120,8 @@ j_r = [(j, r) for j in m.j for r in m.r]
 l_new = list(m.l_new)
 
 # request the dual variables for all (locally) defined blocks
-for b in m.Bl.values():
-    b.dual = Suffix(direction=Suffix.IMPORT)
+for bloc in m.Bl.values():
+    bloc.dual = Suffix(direction=Suffix.IMPORT)
 
 # Add equality constraints (solve the full space)
 for stage in m.stages:
@@ -151,12 +154,30 @@ opt = SolverFactory("cplex")
 opt.options['mipgap'] = 0.001
 opt.options['TimeLimit'] = 36000
 opt.options['threads'] = 1
-# opt.options['LPMethod'] = 1
-results=opt.solve(m, tee=True)
-print(results)
-print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
-print(results.Solver[0]['Wall time'])
-# print(opt.options['LPMethod'])
+opt.options['LPMethod'] = 4
+opt.options['solutiontype'] =2 
+# # opt.options['LPMethod'] = 1
+results  = opt.solve(m, tee=True, keepfiles=True)
+# print(results)
+# print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
+# print(results.Solver[0]['Wall time'])
+# # print(opt.options['LPMethod'])
+
+# #==============fix the investment decisions and evaluate them ========================
+# #create a new model with a single representative day per year 
+import deterministic.readData_single as readData_single
+from util import * 
+readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
+new_model = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
+a = TransformationFactory("core.relax_integrality")
+a.apply_to(new_model)
+fix_investment(m, new_model)
+investment_cost = 0.0
+for i in m.stages:
+  investment_cost += m.Bl[i].total_investment_cost.expr()
+total_operating_cost = 0.0
+for day in range(1, 3):
+  total_operating_cost += eval_investment_single_day(new_model, day, n_stages) * 1/9
 
 
 

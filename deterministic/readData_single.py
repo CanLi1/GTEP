@@ -40,7 +40,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
                     d[str(row[0]), str(row[1]), str(row[2]), str(row[3]), str(row[4])] = row[5]
         return d
 
-    params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
+    params = [ 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
               'Pg_min', 'Ru_max', 'Rd_max', 'f_start', 'C_start', 'frac_spin', 'frac_Qstart', 't_loss', 't_up', 'dist',
               'if_', 'ED', 'Rmin', 'hr', 'EF_CO2', 'FOC', 'VOC', 'CCm', 'DIC', 'LEC', 'PEN', 'tx_CO2',
               'RES_min', 'P_fuel']  
@@ -159,7 +159,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
     growth_rate_high = 0.014
     growth_rate_medium = 0.014
     growth_rate_low = 0.014
-    for t in L_max:
+    for t in range(1, len(n_stage)+1):
         d_idx = 0
         for d in list_of_repr_days_per_scenario:
             s_idx = 0
@@ -181,6 +181,20 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
                 s_idx += 1
             d_idx += 1
 
+    L_max = {}
+    for t in range(1, len(n_stage)+1):
+        L_max[t] = 0 
+        for d in list_of_repr_days_per_scenario:
+            s_idx = 0
+            for ss in range(24):
+                s = ss + 1
+                L_max[t] =max(L_max[t],  L_1['Northeast', t, d, s] + L_1['West', t, d, s] + L_1['Coastal', t, d, s] + L_1['South', t, d, s] )
+                           
+
+    L_by_scenario = [L_1]
+    # print(L_by_scenario)
+    globals()["L_by_scenario"] = L_by_scenario
+    globals()["L_max"] = L_max
     L_by_scenario = [L_1]
     # print(L_by_scenario)
     globals()["L_by_scenario"] = L_by_scenario
@@ -246,7 +260,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
 
 
     cf_1 = {}
-    for t in L_max:
+    for t in range(1, len(n_stage)+1):
         d_idx = 0
         for d in list_of_repr_days_per_scenario:
             s_idx = 0
@@ -470,8 +484,14 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
     # for i in range(len(temp_line)):
     #make each area have lines with same properties
     line = {'Capacity': 2020.0,  'B': 8467.24770417039}
+    lines_cost = {}
     lines_two_end = [('Coastal', 'South'), ('Coastal', 'Northeast'), ('South', 'Northeast'), ('South', 'West'),
         ('West', 'Northeast'), ('West', 'Panhandle'), ('Northeast', 'Panhandle') ]
+    for two_ends in lines_two_end:
+        key = two_ends[0] + "_" + two_ends[1]
+        lines_cost[key] = dist[two_ends[0], two_ends[1]] *  CostPerMile[500]
+    globals()["lines_cost"] = lines_cost
+          
     j = 1
     for ends in lines_two_end:
         for i in range(10):
