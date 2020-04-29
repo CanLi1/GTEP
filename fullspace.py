@@ -4,6 +4,7 @@ __author__ = "Cristiana L. Lara"
 
 # This algorithm scenario tree satisfies stage-wise independence
 
+
 import time
 import math
 import random
@@ -29,11 +30,11 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 20  # number od stages in the scenario tree
+n_stages = 5  # number od stages in the scenario tree
 formulation = "standard"
 
 # num_days = 4
@@ -176,8 +177,18 @@ investment_cost = 0.0
 for i in m.stages:
   investment_cost += m.Bl[i].total_investment_cost.expr()
 total_operating_cost = 0.0
-for day in range(1, 3):
-  total_operating_cost += eval_investment_single_day(new_model, day, n_stages) * 1/9
+# for day in range(1, 3):
+#   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) * 1/9
+import pymp
+NumProcesses = 6
+operating_cost = pymp.shared.dict()
+with pymp.Parallel(NumProcesses) as p:
+  for day in p.range(1, 366):
+    operating_cost[day] = eval_investment_single_day(new_model, day, n_stages) 
+    print(day)
+
+print(investment_cost)
+print(operating_cost)    
 
 
 
