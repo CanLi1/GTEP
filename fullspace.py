@@ -187,5 +187,8 @@ with pymp.Parallel(NumProcesses) as p:
     operating_cost[day] = eval_investment_single_day(new_model, day, n_stages) 
     print(day)
 
+print(investment_cost)
+print(operating_cost)    
+
 
 
