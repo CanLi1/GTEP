@@ -169,10 +169,9 @@ def eval_investment_single_day(new_model, day, n_stages):
     total_operating_cost = 0.0
 
     for i in range(1, n_stages+1):
-        opt.solve(new_model.Bl[i], tee=True)
+        opt.solve(new_model.Bl[i], tee=False)
         total_operating_cost += new_model.Bl[i].total_operating_cost.expr()
     return total_operating_cost
-
 
 
 
