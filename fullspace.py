@@ -61,7 +61,7 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 
 #cluster 
 from cluster import *
-result = run_cluster(data=load_input_data(), method="kmedoid", n_clusters=1)
+result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=15)
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 sc_headers = list(sc_nodes.keys())
 
@@ -180,7 +180,7 @@ total_operating_cost = 0.0
 # for day in range(1, 3):
 #   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) * 1/9
 import pymp
-NumProcesses = 6
+NumProcesses =12 
 operating_cost = pymp.shared.dict()
 with pymp.Parallel(NumProcesses) as p:
   for day in p.range(1, 366):
@@ -188,7 +188,7 @@ with pymp.Parallel(NumProcesses) as p:
     print(day)
 
 print(investment_cost)
-print(operating_cost)    
+print(total_operating_cost)    
 
 
 

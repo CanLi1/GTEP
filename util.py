@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-uthor: Can Li 
-=======
 # author: Can Li 
->>>>>>> f6e96f3a1b64ac6c8ebe585d22c57d6908cb031f
 #utils for representative days selection
 from pyomo.environ import *
 import pandas as pd
