@@ -1,8 +1,4 @@
-__author__ = "Cristiana L. Lara"
-# Stochastic Dual Dynamic Integer Programming (SDDiP) description at:
-# https://link.springer.com/content/pdf/10.1007%2Fs10107-018-1249-5.pdf
-
-# This algorithm scenario tree satisfies stage-wise independence
+__author__ = "Can Li"
 
 import time
 import math
@@ -14,7 +10,7 @@ import csv
 
 
 from scenarioTree import create_scenario_tree
-import deterministic.readData_det as readData_det
+import deterministic.readData_days as readData_det
 import deterministic.gtep_optBlocks_det as b
 # import deterministic.optBlocks_det as b
 from forward_gtep import forward_pass
@@ -36,8 +32,8 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 n_stages = 5  # number od stages in the scenario tree
 formulation = "improved"
 outputfile = "15days_mediumtax_fullcostlines_improved.csv"
-num_days =4
-print(formulation, outputfile, num_days)
+# num_days =4
+# print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
@@ -57,6 +53,12 @@ opt_tol = 1  # %
 
 # create scenarios and input data
 nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
+
+#cluster 
+from cluster import *
+result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=5)
+readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
+sc_headers = list(sc_nodes.keys())
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, num_days)
 
 
@@ -73,8 +75,8 @@ j_r = [(j, r) for j in m.j for r in m.r]
 l_new = list(m.l_new)
 
 # request the dual variables for all (locally) defined blocks
-for b in m.Bl.values():
-    b.dual = Suffix(direction=Suffix.IMPORT)
+for bloc in m.Bl.values():
+    bloc.dual = Suffix(direction=Suffix.IMPORT)
 
 # Add equality constraints (solve the full space)
 for stage in m.stages:
@@ -129,7 +131,7 @@ import time
 
 opt = SolverFactory("cplex_persistent")
  
-opt.options['threads'] = 1
+opt.options['threads'] = 6
 opt.options['timelimit'] = 36000
 opt.set_instance(m)
 opt.set_benders_annotation()

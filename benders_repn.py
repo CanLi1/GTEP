@@ -1,9 +1,8 @@
-__author__ = "Cristiana L. Lara"
+__author__ = "Can Li"
 # Stochastic Dual Dynamic Integer Programming (SDDiP) description at:
 # https://link.springer.com/content/pdf/10.1007%2Fs10107-018-1249-5.pdf
 
 # This algorithm scenario tree satisfies stage-wise independence
-
 
 import time
 import math
@@ -30,20 +29,20 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 20  # number od stages in the scenario tree
-formulation = "standard"
-
-# num_days = 4
-# print(formulation, num_days)
+n_stages = 5  # number od stages in the scenario tree
+formulation = "improved"
+# outputfile = "15days_mediumtax_fullcostlines_improved.csv"
+# num_days =4
+# print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
 
-# time_periods = 10
+
 time_periods = n_stages
 set_time_periods = range(1, time_periods + 1)
 t_per_stage = {}
@@ -61,58 +60,16 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 
 #cluster 
 from cluster import *
-result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=15)
+result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=5)
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 sc_headers = list(sc_nodes.keys())
 
-# operating scenarios
-prob_op = 1
-# print(operating_scenarios)
-
-# list of thermal generators:
-th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old', 'ng-cc-old', 'ng-st-old',
-                 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
-# 'nuc-st-old', 'nuc-st-new'
-
-# Shared data among processes
-ngo_rn_par_k = {}
-ngo_th_par_k = {}
-nso_par_k = {}
-nsb_par_k = {}
-nte_par_k = {}
-cost_forward = {}
-cost_scenario_forward = {}
-mltp_o_rn = {}
-mltp_o_th = {}
-mltp_so = {}
-mltp_te = {}
-cost_backward = {}
-if_converged = {}
-
-# Map stage by time_period
-stage_per_t = {t: k for k, v in t_per_stage.items() for t in v}
-
-
-# print(stage_per_t)
 
 # create blocks
 m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
 start_time = time.time()
 
-# Decomposition Parameters
-m.ngo_rn_par = Param(m.rn_r, m.stages, default=0, initialize=0, mutable=True)
-m.ngo_th_par = Param(m.th_r, m.stages, default=0, initialize=0, mutable=True)
-m.nso_par = Param(m.j, m.r, m.stages, default=0, initialize=0, mutable=True)
-m.nte_par = Param(m.l_new, m.stages, default=0, initialize=0, mutable=True)
 
-# Parameters to compute upper and lower bounds
-mean = {}
-std_dev = {}
-cost_tot_forward = {}
-cost_UB = {}
-cost_LB = {}
-gap = {}
-scenarios_iter = {}
 
 # converting sets to lists:
 rn_r = list(m.rn_r)
@@ -149,20 +106,65 @@ for stage in m.stages:
 
 
 # # solve relaxed model
-a = TransformationFactory("core.relax_integrality")
-a.apply_to(m)
-opt = SolverFactory("cplex")
-opt.options['mipgap'] = 0.001
-opt.options['TimeLimit'] = 36000
-opt.options['threads'] = 1
-opt.options['LPMethod'] = 4
-opt.options['solutiontype'] =2 
-# # opt.options['LPMethod'] = 1
-results  = opt.solve(m, tee=True)
-# print(results)
-# print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
-# print(results.Solver[0]['Wall time'])
-# # print(opt.options['LPMethod'])
+# a = TransformationFactory("core.relax_integrality")
+# a.apply_to(m)
+# opt = SolverFactory("cplex")
+# opt.options['mipgap'] = 0.001
+# opt.options['TimeLimit'] = 36000
+# opt.solve(m, tee=True)
+operating_integer_vars = ["u", "su", "sd"]
+for stage in m.stages:
+    for t in t_per_stage[stage]:
+        for d in m.d:
+            for s in m.hours:
+                for (th, r) in m.th_r:
+                    lb, ub = m.Bl[stage].u[th, r, t, d, s].bounds
+                    m.Bl[stage].u[th, r, t, d, s].domain = Reals
+                    m.Bl[stage].u[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].u[th, r, t, d, s].setub(ub)     
+                    lb, ub = m.Bl[stage].su[th, r, t, d, s].bounds
+                    m.Bl[stage].su[th, r, t, d, s].domain = Reals
+                    m.Bl[stage].su[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].su[th, r, t, d, s].setub(ub)  
+                    lb, ub = m.Bl[stage].sd[th, r, t, d, s].bounds
+                    m.Bl[stage].sd[th, r, t, d, s].domain = Reals
+                    m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].sd[th, r, t, d, s].setub(ub)                                                     
+import time
+
+opt = SolverFactory("cplex_persistent")
+ 
+opt.options['threads'] = 6
+opt.options['timelimit'] = 36000
+opt.set_instance(m)
+opt.set_benders_annotation()
+opt.set_benders_strategy(1)
+opt.set_mip_rel_gap(0.005)
+
+#set master variables 
+investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
+for v in m.component_objects(Var):
+    if v.getname() in investment_vars:
+        for index in v:
+            opt.set_master_variable(v[index])
+
+#set subproblems
+operating_vars = []
+if formulation == "standard":
+  operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+elif formulation == "hull":
+  operating_vars = ["theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+elif formulation == "improved":
+  operating_vars = ["theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
+map_d = {'fall':3, 'summer':2, 'spring':1, 'winter':4}
+for v in m.component_objects(Var):
+    if v.getname() in operating_vars:
+        for index in v:
+            t = index[-3]
+            opt.set_subproblem_variable(v[index], t)
+
+
+opt.solve(m, tee=True)
 
 # #==============fix the investment decisions and evaluate them ========================
 # #create a new model with a single representative day per year 
@@ -170,8 +172,8 @@ import deterministic.readData_single as readData_single
 from util import * 
 readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
 new_model = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
-a = TransformationFactory("core.relax_integrality")
-a.apply_to(new_model)
+# a = TransformationFactory("core.relax_integrality")
+# a.apply_to(new_model)
 fix_investment(m, new_model)
 investment_cost = 0.0
 for i in m.stages:
@@ -189,7 +191,5 @@ with pymp.Parallel(NumProcesses) as p:
 
 total_operating_cost = sum(operating_cost[key] for key in operating_cost)
 print(investment_cost)
-print(total_operating_cost)    
-
 
 
