@@ -35,7 +35,7 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 
 n_stages = 5  # number od stages in the scenario tree
 formulation = "improved"
-# outputfile = "15days_mediumtax_fullcostlines_improved.csv"
+outputfile = "input_15days_5years_mediumtax.csv"
 # num_days =4
 # print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
@@ -60,7 +60,7 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 
 #cluster 
 from cluster import *
-result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=5)
+result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=15)
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 sc_headers = list(sc_nodes.keys())
 
@@ -140,7 +140,8 @@ opt.set_instance(m)
 opt.set_benders_annotation()
 opt.set_benders_strategy(1)
 opt.set_mip_rel_gap(0.005)
-
+opt._solver_model.parameters.emphasis.numerical.set(1)
+opt._solver_model.parameters.preprocessing.repeatpresolve.set(0)
 #set master variables 
 investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
 for v in m.component_objects(Var):
@@ -164,32 +165,32 @@ for v in m.component_objects(Var):
             opt.set_subproblem_variable(v[index], t)
 
 
-opt.solve(m, tee=True)
+results = opt.solve(m, tee=True)
 
+from util import * 
+#write results
+write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results)
 # #==============fix the investment decisions and evaluate them ========================
 # #create a new model with a single representative day per year 
 import deterministic.readData_single as readData_single
-from util import * 
 readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
 new_model = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
-# a = TransformationFactory("core.relax_integrality")
-# a.apply_to(new_model)
-fix_investment(m, new_model)
+a = TransformationFactory("core.relax_integrality")
+a.apply_to(new_model)
+new_model = fix_investment(m, new_model)
 investment_cost = 0.0
 for i in m.stages:
   investment_cost += m.Bl[i].total_investment_cost.expr()
-total_operating_cost = 0.0
+# total_operating_cost = 0.0
 # for day in range(1, 3):
-#   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) * 1/9
+#   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) 
 import pymp
-NumProcesses =6 
+NumProcesses =6
 operating_cost = pymp.shared.dict()
 with pymp.Parallel(NumProcesses) as p:
   for day in p.range(1, 366):
-    operating_cost[day] = eval_investment_single_day(new_model, day, n_stages) /365
-    print(day)
+    operating_cost[day] = eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage) 
 
-total_operating_cost = sum(operating_cost[key] for key in operating_cost)
-print(investment_cost)
+write_repn_results(operating_cost, outputfile)   
 
 

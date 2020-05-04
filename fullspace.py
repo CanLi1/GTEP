@@ -30,11 +30,11 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
-
-n_stages = 20  # number od stages in the scenario tree
+outputfile = "15days_5years_mediumtax.csv"
+n_stages = 5  # number od stages in the scenario tree
 formulation = "standard"
 
 # num_days = 4
@@ -61,7 +61,7 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 
 #cluster 
 from cluster import *
-result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=15)
+result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=5)
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 sc_headers = list(sc_nodes.keys())
 
@@ -153,12 +153,16 @@ a = TransformationFactory("core.relax_integrality")
 a.apply_to(m)
 opt = SolverFactory("cplex")
 opt.options['mipgap'] = 0.001
-opt.options['TimeLimit'] = 36000
+opt.options['TimeLimit'] = 3600
 opt.options['threads'] = 1
 opt.options['LPMethod'] = 4
 opt.options['solutiontype'] =2 
 # # opt.options['LPMethod'] = 1
 results  = opt.solve(m, tee=True)
+
+from util import * 
+#write results
+write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results)
 # print(results)
 # print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
 # print(results.Solver[0]['Wall time'])
@@ -167,29 +171,25 @@ results  = opt.solve(m, tee=True)
 # #==============fix the investment decisions and evaluate them ========================
 # #create a new model with a single representative day per year 
 import deterministic.readData_single as readData_single
-from util import * 
 readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
 new_model = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
 a = TransformationFactory("core.relax_integrality")
 a.apply_to(new_model)
-fix_investment(m, new_model)
+new_model = fix_investment(m, new_model)
 investment_cost = 0.0
-for i in m.stages:
-  investment_cost += m.Bl[i].total_investment_cost.expr()
-total_operating_cost = 0.0
+# for i in m.stages:
+#   investment_cost += m.Bl[i].total_investment_cost.expr()
+# total_operating_cost = 0.0
 # for day in range(1, 3):
-#   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) * 1/9
+#   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) 
 import pymp
-NumProcesses =6 
+NumProcesses =6
 operating_cost = pymp.shared.dict()
 with pymp.Parallel(NumProcesses) as p:
-  for day in p.range(1, 366):
-    operating_cost[day] = eval_investment_single_day(new_model, day, n_stages) /365
-    print(day)
+  for day in p.range(1, 3):
+    operating_cost[day] = eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage) 
 
-total_operating_cost = sum(operating_cost[key] for key in operating_cost)
-print(investment_cost)
-print(total_operating_cost)    
+write_repn_results(operating_cost, outputfile)     
 
 
 

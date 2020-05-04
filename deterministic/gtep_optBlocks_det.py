@@ -433,7 +433,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
             b.d_theta_1 = Var(m.l_new, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)        
             b.d_theta_2 = Var(m.l_new, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)                   
         b.P = Var(m.i_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals, bounds=bound_P)
-        b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
+        b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours,within=NonNegativeReals)
         b.RES_def = Var(t_per_stage[stage], within=NonNegativeReals)
         b.Q_spin = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.Q_Qstart = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)

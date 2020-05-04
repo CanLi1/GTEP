@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set the number of nodes and processes per node
-#PBS -l nodes=1:ppn=12
+#PBS -l nodes=1:ppn=6
 
 # Set max wallclock time
 #PBS -l walltime=48:00:00
@@ -10,10 +10,10 @@
 #PBS -l mem=64gb
 
 # Set name of job
-#PBS -N  fullspace 
+#PBS -N  inputdata 
 
 # Use submission environment
 #PBS -V
 cd ~/work/GETP 
 source ~/python3.6/bin/activate
-python3 fullspace.py
+python3 benders_repn.py 
