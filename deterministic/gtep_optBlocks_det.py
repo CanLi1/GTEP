@@ -748,6 +748,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                       for t in t_per_stage[stage]) \
                    * 10 ** (-9)                                                                                                                       
         b.total_operating_cost = Expression(rule=total_operating_cost)
+        b.vobj = Objective(rule=total_operating_cost, sense=minimize)
+        b.vobj.deactivate()
         def obj_rule(_b):
             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
@@ -812,7 +814,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                    + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
                          sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
                    + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
-                   == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]                
+                   == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]        
 
         b.en_bal = Constraint(m.r, t_per_stage[stage], m.d, m.hours, rule=en_bal)
 

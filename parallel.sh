@@ -10,7 +10,7 @@
 #PBS -l mem=64gb
 
 # Set name of job
-#PBS -N  inputdata 
+#PBS -N  costdata 
 
 # Use submission environment
 #PBS -V

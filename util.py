@@ -164,23 +164,29 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
 
     new_model.cf._initialize_from(cf_by_scenario[0])						
     new_model.L._initialize_from(L_by_scenario[0])
+    # opt = SolverFactory("gurobi")
     opt = SolverFactory("cplex")
-    opt.options['mipgap'] = 0.001
-    opt.options['TimeLimit'] = 36000
+    # opt.options['mipgap'] = 0.001
+    # opt.options['TimeLimit'] = 36000
     opt.options['threads'] = 1
-    opt.options['LPMethod'] = 4
-    opt.options['solutiontype'] =2     
+    # opt.options['emphasis numerical'] = 'y'
+    # opt.options['simplex tolerances feasibility'] = 0.01
+    # opt.options['feasibility'] = 1e-4
+    # opt.options['LPMethod'] = 4
+    # opt.options['solutiontype'] =2     
 
     total_operating_cost = 0.0
 
     for i in range(1, n_stages+1):
-        results = opt.solve(new_model.Bl[i], tee=False)
+        results = opt.solve(new_model.Bl[i])
         if (results.solver.status == SolverStatus.ok) and (results.solver.termination_condition == TerminationCondition.optimal):
             total_operating_cost += new_model.Bl[i].total_operating_cost.expr()
         elif results.solver.termination_condition == TerminationCondition.infeasible:
             total_operating_cost += 1e10
+            # opt.solve(new_model.Bl[i], tee=True, keepfiles=True)
             break
         else:
+            # opt.solve(new_model.Bl[i], tee=True, keepfiles=True)
             raise Exception("the problem at a given time is not solved to optimality termination_condition is ", results.solver.termination_condition)    
     operating_related_cost = {}
     operating_related_cost["total_operating_cost"] = total_operating_cost            

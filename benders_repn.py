@@ -35,7 +35,7 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 
 n_stages = 5  # number od stages in the scenario tree
 formulation = "improved"
-outputfile = "input_15days_5years_mediumtax.csv"
+outputfile = "cost_15days_5years_mediumtax.csv"
 # num_days =4
 # print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
@@ -60,7 +60,7 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 
 #cluster 
 from cluster import *
-result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=15)
+result = run_cluster(data=load_cost_data(), method="kmedoid_exact", n_clusters=15)
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 sc_headers = list(sc_nodes.keys())
 
