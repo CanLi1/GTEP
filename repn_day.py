@@ -22,11 +22,11 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 20  # number od stages in the scenario tree
+n_stages = 5 # number od stages in the scenario tree
 formulation = "standard"
 
 
@@ -52,7 +52,7 @@ max_iter = 100
 
 
 # create blocks
-m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation)
+m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation,readData_single)
 fieldnames = ["repnday", "solution", "obj"]
 lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]      
 for t in m.t:
@@ -68,7 +68,7 @@ for t in m.t:
 
 day_start = 1
 day_end = 366
-with open('repn_results/updateinvestment' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
+with open('repn_results/5yearsinvestment' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
 	writer = csv.DictWriter(results_file, fieldnames=fieldnames) 	
 	writer.writeheader()
 
@@ -81,7 +81,7 @@ with open('repn_results/updateinvestment' + str(day_start) + "-" + str(day_end) 
 
 
 		# create blocks
-		m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation)
+		m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
 		start_time = time.time()
 
 
@@ -134,9 +134,9 @@ with open('repn_results/updateinvestment' + str(day_start) + "-" + str(day_end) 
 		# for t in m.t:
 		# 	m.Bl[t].ntb.domain = Binary
 		opt = SolverFactory("cplex")
-		opt.options['threads'] = 4
-		opt.options['LPMethod'] = 4
-		opt.options['solutiontype'] =2 
+		opt.options['threads'] = 6
+		# opt.options['LPMethod'] = 4
+		# opt.options['solutiontype'] =2 
 # 0	Automatic
 # 1	Primal Simplex
 # 2	Dual Simplex

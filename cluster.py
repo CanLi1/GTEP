@@ -51,9 +51,8 @@ def load_cost_data():
 			key = "nso[" + j + "," + r + ",20]"
 			if investment.loc[:,key].sum() > 0.1:
 				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.storage_inv_cost[j, 20] * readData_single.max_storage_cap[j] * 10 ** (-9))], axis=1)
-	data = data.drop(["obj"], axis=1)
 
-	return data.to_numpy()
+	return data.drop(["obj"], axis=1).to_numpy(), data.obj.to_numpy()
 
 
 def load_input_data():
@@ -133,6 +132,10 @@ def run_cluster(data, method="kmedoid_exact", n_clusters=10):
 
 	return {"medoids":indices+1, "weights":sorted_count, "labels":labels+1}
 
+def select_extreme_days_cost(obj, cluster_results={}, n=1, method="highest_cost"):
+	if method == "highest_cost":
+		days = obj.argsort()[-n:] + 1
+		return days 
 
 
 
