@@ -10,7 +10,7 @@ import csv
 
 
 from scenarioTree import create_scenario_tree
-import deterministic.readData_days as readData_det
+import deterministic.readData_det as readData_det
 import deterministic.gtep_optBlocks_det as b
 # import deterministic.optBlocks_det as b
 from forward_gtep import forward_pass
@@ -25,15 +25,15 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages = 5  # number od stages in the scenario tree
+n_stages = 20  # number od stages in the scenario tree
 formulation = "improved"
-outputfile = "15days_mediumtax_fullcostlines_improved.csv"
-# num_days =4
-# print(formulation, outputfile, num_days)
+outputfile = "15days_mediumtax_EIA_improved.csv"
+num_days =4
+print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
 single_prob = {'M': 1.0}
@@ -54,16 +54,12 @@ opt_tol = 1  # %
 # create scenarios and input data
 nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
 
-#cluster 
-from cluster import *
-result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=5)
-readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
-sc_headers = list(sc_nodes.keys())
+
 readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, num_days)
 
 
 # create blocks
-m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation)
+m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
 start_time = time.time()
 
 
@@ -131,7 +127,7 @@ import time
 
 opt = SolverFactory("cplex_persistent")
  
-opt.options['threads'] = 6
+opt.options['threads'] = 1
 opt.options['timelimit'] = 36000
 opt.set_instance(m)
 opt.set_benders_annotation()
