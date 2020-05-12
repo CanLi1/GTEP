@@ -4,6 +4,32 @@ import numpy as np
 from pyomo.environ import *
 import pandas as pd
 import csv
+
+#pick solution from solution pool
+def pick_soln(opt):
+    best_thermal_capacity = 0 
+    best_soln = 0
+    m = opt._pyomo_model
+    print("number of solutions in solution pool", len(opt._solver_model.solution.pool.get_names()))
+    for soln in opt._solver_model.solution.pool.get_names():
+        if opt.results['Problem'][0]['Upper bound'] * 1.01 < opt._solver_model.solution.pool.get_objective_value(soln):
+            continue 
+        print(soln)
+        def get_var_value(var, opt=opt, soln=soln):
+            return opt._solver_model.solution.pool.get_values(soln, opt._pyomo_var_to_solver_var_map[var])
+        temp_thermal_capacity = sum(sum(m.Qg_np[th, r]* get_var_value(m.Bl[t].ngo_th[th, r, t]) for th, r in m.i_r if th in m.th) for t in m.stages)
+        if temp_thermal_capacity > best_thermal_capacity:
+            best_thermal_capacity = temp_thermal_capacity
+            best_soln = soln
+    #fix the variables in m to the values in best_soln
+    for i in m.stages:
+        for v1 in m.Bl[i].component_objects(Var):
+            for index in v1:
+                if v1[index].value != None:
+                    new_value = opt._solver_model.solution.pool.get_values(best_soln, opt._pyomo_var_to_solver_var_map[v1[index]])
+                    v1[index].fix(new_value)
+
+
 #fix investment decisions
 def fix_investment(ref_model, new_model):
     investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "RES_def"]	

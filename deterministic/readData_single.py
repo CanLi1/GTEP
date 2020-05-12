@@ -40,17 +40,40 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
                     d[str(row[0]), str(row[1]), str(row[2]), str(row[3]), str(row[4])] = row[5]
         return d
 
-    params = [ 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
+    params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
               'Pg_min', 'Ru_max', 'Rd_max', 'f_start', 'C_start', 'frac_spin', 'frac_Qstart', 't_loss', 't_up', 'dist',
               'if_', 'ED', 'Rmin', 'hr', 'EF_CO2', 'FOC', 'VOC', 'CCm', 'DIC', 'LEC', 'PEN', 'tx_CO2',
               'RES_min', 'P_fuel']  
 
-    for p in params:
-        globals()[p] = process_param(p)
 
+    for p in params:
+        if p not in ["FOC", "VOC", "DIC"]:
+            globals()[p] = process_param(p)
+
+    FOC = process_param("FOC")
+    VOC = process_param("VOC")
+    DIC = process_param("DIC")
     conn.close()
 
     time = len(t_per_stage)
+
+    #change investment cost, variable operating cost and fixed operating cost of future generators
+    # m.FOC: 􏰄fixed operating cost of generator cluster i ($/MW)
+    # m.VOC: variable O&M cost of generator cluster i ($/MWh)
+    # m.DIC: discounted investment cost of generator cluster i in year t ($/MW)
+    new_gen = ['wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new']    
+
+    d_FOC = pd.read_csv(os.path.join(curPath, 'generator/fixOM.csv'), index_col=0, header=0).iloc[0, :]
+    d_DIC = pd.read_csv(os.path.join(curPath, 'generator/investment.csv'), index_col=0, header=0).iloc[0, :]
+    d_VOC = pd.read_csv(os.path.join(curPath, 'generator/variableOM.csv'), index_col=0, header=0).iloc[0, :]
+    for t in range(1, len(n_stage)+1):
+        for g in new_gen:
+            FOC[(g,t)] = float(d_FOC[g])
+            DIC[(g,t)] = float(d_DIC[g])
+            VOC[(g,t)] = float(d_VOC[g])
+    globals()['FOC'] = FOC 
+    globals()['DIC'] = DIC
+    globals()['VOC'] = VOC 
 
     globals()['hs'] = 1
     globals()['ir'] = 0.057

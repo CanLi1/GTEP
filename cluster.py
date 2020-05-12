@@ -8,11 +8,11 @@ from scenarioTree import create_scenario_tree
 
 
 #preprocess
-def load_cost_data():
+def load_cost_data(year=5):
 	curPath = os.path.abspath(os.path.curdir)
 	curPath = curPath.replace('/deterministic', '')
-	filepath = 'data/GTEPdata_2020_2039.db'
-	n_stages = 20  # number od stages in the scenario tree
+	filepath = 'data/GTEPdata_2020_2024.db'
+	n_stages = 5  # number od stages in the scenario tree
 	stages = range(1, n_stages + 1)
 	t_per_stage = {}
 	for i in range(1, n_stages+1):
@@ -27,30 +27,30 @@ def load_cost_data():
 	region = ['Northeast', 'West', 'Coastal', 'South', 'Panhandle']
 	storage = ['Li_ion', 'Lead_acid', 'Flow']
 	lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]    
-	investment = pd.read_csv("repn_results/investment1-365.csv", index_col=0, header=0).iloc[:, :]
+	investment = pd.read_csv("repn_results/5yearsinvestment1-366.csv", index_col=0, header=0).iloc[:, :]
 
 	#filter the data (domain reduction) && translate the data into cost domain
 	data = investment.obj
 	for line in lines:
-		if investment.loc[:, line + "[20]"].sum()> 0.1:
-			data = pd.concat([data, investment.loc[:, line + "[20]"].multiply(readData_single.lines_cost[line] * 10 ** (-9))], axis=1)
+		if investment.loc[:, line + "[5]"].sum()> 0.1:
+			data = pd.concat([data, investment.loc[:, line + "[5]"].multiply(readData_single.lines_cost[line] * 10 ** (-9))], axis=1)
 
 	for rn in rnew:
 		for r in region:
-			key = "ngo_rn[" + rn + "," + r + ",20]"
+			key = "ngo_rn[" + rn + "," + r + ",5]"
 			if investment.loc[:, key].sum() > 0.1:
-				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.DIC[rn, 20] * readData_single.CCm[rn] * readData_single.Qg_np[rn, r]* 10 ** (-9))], axis=1)
+				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.DIC[rn, 5] * readData_single.CCm[rn] * readData_single.Qg_np[rn, r]* 10 ** (-9))], axis=1)
 
 	for th in tnew:
 		for r in region:
-			key = "ngo_th[" + th + "," + r + ",20]"
+			key = "ngo_th[" + th + "," + r + ",5]"
 			if investment.loc[:,key].sum() > 0.1:
-				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.DIC[th, 20] * readData_single.CCm[th] * readData_single.Qg_np[th, r]* 10 ** (-9))], axis=1)			
+				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.DIC[th, 5] * readData_single.CCm[th] * readData_single.Qg_np[th, r]* 10 ** (-9))], axis=1)			
 	for j in storage:
 		for r in region:
-			key = "nso[" + j + "," + r + ",20]"
+			key = "nso[" + j + "," + r + ",5]"
 			if investment.loc[:,key].sum() > 0.1:
-				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.storage_inv_cost[j, 20] * readData_single.max_storage_cap[j] * 10 ** (-9))], axis=1)
+				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.storage_inv_cost[j, 5] * readData_single.max_storage_cap[j] * 10 ** (-9))], axis=1)
 
 	return data.drop(["obj"], axis=1).to_numpy(), data.obj.to_numpy()
 
@@ -132,10 +132,16 @@ def run_cluster(data, method="kmedoid_exact", n_clusters=10):
 
 	return {"medoids":indices+1, "weights":sorted_count, "labels":labels+1}
 
-def select_extreme_days_cost(obj, cluster_results={}, n=1, method="highest_cost"):
+def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost"):
 	if method == "highest_cost":
 		days = obj.argsort()[-n:] + 1
-		return days 
+		#adjust weight of the cluster where the representative days is in 
+		for day in days:
+			cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
+			cluster_results['medoids'].append(day)
+			cluster_results['weights'].append(1)
+
+		return cluster_results 
 
 
 

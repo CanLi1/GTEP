@@ -62,14 +62,18 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 from cluster import *
 method = "cost"
 if method == "cost":
-    outputfile = method + "_15days_5years_mediumtax.csv"
-    data, obj = load_cost_data()
+    outputfile = method + "_15days_5years_picksoln_mediumtax.csv"
+    data, obj = load_cost_data(n_stages)
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
-    extreme_days = select_extreme_days_cost(obj)
-    readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'] + list(extreme_days), result['weights'] + [0]* len(extreme_days))
+    extreme_days = []
+    result = select_extreme_days_cost(obj, result)
+    readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 
 elif method == "input":
-    pass 
+    outputfile = method + "_15days_5years_picksoln_mediumtax.csv"
+    data= load_input_data()
+    result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
+    readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])     
 
 # create blocks
 m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
@@ -111,13 +115,6 @@ for stage in m.stages:
     m.obj.expr += m.Bl[stage].obj.expr
 
 
-# # solve relaxed model
-# a = TransformationFactory("core.relax_integrality")
-# a.apply_to(m)
-# opt = SolverFactory("cplex")
-# opt.options['mipgap'] = 0.001
-# opt.options['TimeLimit'] = 36000
-# opt.solve(m, tee=True)
 operating_integer_vars = ["u", "su", "sd"]
 for stage in m.stages:
     for t in t_per_stage[stage]:
@@ -146,8 +143,8 @@ opt.set_instance(m)
 opt.set_benders_annotation()
 opt.set_benders_strategy(1)
 opt.set_mip_rel_gap(0.005)
-opt._solver_model.parameters.emphasis.numerical.set(1)
-opt._solver_model.parameters.preprocessing.repeatpresolve.set(0)
+# opt._solver_model.parameters.emphasis.numerical.set(1)
+# opt._solver_model.parameters.preprocessing.repeatpresolve.set(0)
 #set master variables 
 investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
 for v in m.component_objects(Var):
@@ -173,7 +170,24 @@ for v in m.component_objects(Var):
 
 results = opt.solve(m, tee=True)
 
+# #get the degenerate solution that maximize thermal capacity 
+# m.tobj = Objective(expr=0, sense=maximize)
+# m.obj.deactivate()
+# #set obj to be within 1% tolerance of the optimal solution
+# for stage in m.stages:
+#     m.tobj.expr += m.Bl[stage].thermal_capacity
+# # m.objbound = Constraint(expr=m.obj.expr<=  1.01)    
+# m.objbound = Constraint(expr=m.obj.expr<= results['Problem'][0]['Upper bound'] * 1.01)
+# opt.set_objective(m.tobj)
+# opt.add_constraint(m.objbound)
+# results2 = opt.solve(m, tee=True)
+
+
 from util import * 
+
+#pick the solution in solution pool that maximize average thermal capacity over the years.
+pick_soln(opt)
+
 #write results
 write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results)
 # #==============fix the investment decisions and evaluate them ========================
@@ -187,9 +201,7 @@ new_model = fix_investment(m, new_model)
 investment_cost = 0.0
 for i in m.stages:
   investment_cost += m.Bl[i].total_investment_cost.expr()
-# total_operating_cost = 0.0
-# for day in range(1, 3):
-#   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) 
+
 import pymp
 NumProcesses =6
 operating_cost = pymp.shared.dict()

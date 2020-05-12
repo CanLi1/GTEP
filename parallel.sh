@@ -10,10 +10,10 @@
 #PBS -l mem=64gb
 
 # Set name of job
-#PBS -N  repn_day 
+#PBS -N  cost 
 
 # Use submission environment
 #PBS -V
 cd ~/work/GETP 
 source ~/python3.6/bin/activate
-python3 repn_day.py 
+python3 benders_repn.py 

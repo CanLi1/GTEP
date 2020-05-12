@@ -177,7 +177,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
     m.hr: heat rate of generator cluster i (MMBtu/MWh)
     m.P_fuel: price of fuel for generator cluster i in year t ($/MMBtu)
     m.EF_CO2: full lifecycle CO2 emission factor for generator cluster i (kgCO2/MMBtu)
-    m.FOC: 􏰄xed operating cost of generator cluster i ($/MW)
+    m.FOC: 􏰄fixed operating cost of generator cluster i ($/MW)
     m.VOC: variable O&M cost of generator cluster i ($/MWh)
     m.CCm: capital cost multiplier of generator cluster i (unitless)
     m.DIC: discounted investment cost of generator cluster i in year t ($/MW)
@@ -750,6 +750,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
         b.total_operating_cost = Expression(rule=total_operating_cost)
         b.vobj = Objective(rule=total_operating_cost, sense=minimize)
         b.vobj.deactivate()
+
+
         def obj_rule(_b):
             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[

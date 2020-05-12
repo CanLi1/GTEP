@@ -100,96 +100,96 @@ m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, r
 start_time = time.time()
 
 # Decomposition Parameters
-m.ngo_rn_par = Param(m.rn_r, m.stages, default=0, initialize=0, mutable=True)
-m.ngo_th_par = Param(m.th_r, m.stages, default=0, initialize=0, mutable=True)
-m.nso_par = Param(m.j, m.r, m.stages, default=0, initialize=0, mutable=True)
-m.nte_par = Param(m.l_new, m.stages, default=0, initialize=0, mutable=True)
+# m.ngo_rn_par = Param(m.rn_r, m.stages, default=0, initialize=0, mutable=True)
+# m.ngo_th_par = Param(m.th_r, m.stages, default=0, initialize=0, mutable=True)
+# m.nso_par = Param(m.j, m.r, m.stages, default=0, initialize=0, mutable=True)
+# m.nte_par = Param(m.l_new, m.stages, default=0, initialize=0, mutable=True)
 
-# Parameters to compute upper and lower bounds
-mean = {}
-std_dev = {}
-cost_tot_forward = {}
-cost_UB = {}
-cost_LB = {}
-gap = {}
-scenarios_iter = {}
+# # Parameters to compute upper and lower bounds
+# mean = {}
+# std_dev = {}
+# cost_tot_forward = {}
+# cost_UB = {}
+# cost_LB = {}
+# gap = {}
+# scenarios_iter = {}
 
-# converting sets to lists:
-rn_r = list(m.rn_r)
-th_r = list(m.th_r)
-j_r = [(j, r) for j in m.j for r in m.r]
-l_new = list(m.l_new)
+# # converting sets to lists:
+# rn_r = list(m.rn_r)
+# th_r = list(m.th_r)
+# j_r = [(j, r) for j in m.j for r in m.r]
+# l_new = list(m.l_new)
 
-# request the dual variables for all (locally) defined blocks
-for bloc in m.Bl.values():
-    bloc.dual = Suffix(direction=Suffix.IMPORT)
+# # request the dual variables for all (locally) defined blocks
+# for bloc in m.Bl.values():
+#     bloc.dual = Suffix(direction=Suffix.IMPORT)
 
-# Add equality constraints (solve the full space)
-for stage in m.stages:
-    if stage != 1:
-        # print('stage', stage, 't_prev', t_prev)
-        for (rn, r) in m.rn_r:
-            m.Bl[stage].link_equal1.add(expr=(m.Bl[stage].ngo_rn_prev[rn, r] ==
-                                              m.Bl[stage-1].ngo_rn[rn, r, t_per_stage[stage-1][-1]] ))
-        for (th, r) in m.th_r:
-            m.Bl[stage].link_equal2.add(expr=(m.Bl[stage].ngo_th_prev[th, r] ==
-                                                m.Bl[stage-1].ngo_th[th, r, t_per_stage[stage-1][-1]]  ))
-        for (j, r) in j_r:
-            m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
-                                                 m.Bl[stage-1].nso[j, r, t_per_stage[stage-1][-1]]))
+# # Add equality constraints (solve the full space)
+# for stage in m.stages:
+#     if stage != 1:
+#         # print('stage', stage, 't_prev', t_prev)
+#         for (rn, r) in m.rn_r:
+#             m.Bl[stage].link_equal1.add(expr=(m.Bl[stage].ngo_rn_prev[rn, r] ==
+#                                               m.Bl[stage-1].ngo_rn[rn, r, t_per_stage[stage-1][-1]] ))
+#         for (th, r) in m.th_r:
+#             m.Bl[stage].link_equal2.add(expr=(m.Bl[stage].ngo_th_prev[th, r] ==
+#                                                 m.Bl[stage-1].ngo_th[th, r, t_per_stage[stage-1][-1]]  ))
+#         for (j, r) in j_r:
+#             m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
+#                                                  m.Bl[stage-1].nso[j, r, t_per_stage[stage-1][-1]]))
 
-        for l in m.l_new:
-            m.Bl[stage].link_equal4.add(expr=(m.Bl[stage].nte_prev[l] ==
-                                                 m.Bl[stage-1].nte[l, t_per_stage[stage-1][-1]]))
-m.obj = Objective(expr=0, sense=minimize)
+#         for l in m.l_new:
+#             m.Bl[stage].link_equal4.add(expr=(m.Bl[stage].nte_prev[l] ==
+#                                                  m.Bl[stage-1].nte[l, t_per_stage[stage-1][-1]]))
+# m.obj = Objective(expr=0, sense=minimize)
 
-for stage in m.stages:
-    m.Bl[stage].obj.deactivate()
-    m.obj.expr += m.Bl[stage].obj.expr
+# for stage in m.stages:
+#     m.Bl[stage].obj.deactivate()
+#     m.obj.expr += m.Bl[stage].obj.expr
 
 
-# # solve relaxed model
-a = TransformationFactory("core.relax_integrality")
-a.apply_to(m)
-opt = SolverFactory("cplex")
-opt.options['mipgap'] = 0.001
-opt.options['TimeLimit'] = 3600
-opt.options['threads'] = 1
-opt.options['LPMethod'] = 4
-opt.options['solutiontype'] =2 
-# # opt.options['LPMethod'] = 1
-results  = opt.solve(m, tee=True)
+# # # solve relaxed model
+# a = TransformationFactory("core.relax_integrality")
+# a.apply_to(m)
+# opt = SolverFactory("cplex")
+# opt.options['mipgap'] = 0.001
+# opt.options['TimeLimit'] = 3600
+# opt.options['threads'] = 1
+# opt.options['LPMethod'] = 4
+# opt.options['solutiontype'] =2 
+# # # opt.options['LPMethod'] = 1
+# results  = opt.solve(m, tee=True)
 
-from util import * 
-#write results
-write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results)
-# print(results)
-# print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
-# print(results.Solver[0]['Wall time'])
-# # print(opt.options['LPMethod'])
+# from util import * 
+# #write results
+# write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results)
+# # print(results)
+# # print(results['Problem'][0]['Lower bound'], opt.results['Problem'][0]['Upper bound'])
+# # print(results.Solver[0]['Wall time'])
+# # # print(opt.options['LPMethod'])
 
-# #==============fix the investment decisions and evaluate them ========================
-# #create a new model with a single representative day per year 
-import deterministic.readData_single as readData_single
-readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
-new_model = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
-a = TransformationFactory("core.relax_integrality")
-a.apply_to(new_model)
-new_model = fix_investment(m, new_model)
-investment_cost = 0.0
-# for i in m.stages:
-#   investment_cost += m.Bl[i].total_investment_cost.expr()
-# total_operating_cost = 0.0
-# for day in range(1, 3):
-#   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) 
-import pymp
-NumProcesses =6
-operating_cost = pymp.shared.dict()
-with pymp.Parallel(NumProcesses) as p:
-  for day in p.range(1, 3):
-    operating_cost[day] = eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage) 
+# # #==============fix the investment decisions and evaluate them ========================
+# # #create a new model with a single representative day per year 
+# import deterministic.readData_single as readData_single
+# readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
+# new_model = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
+# a = TransformationFactory("core.relax_integrality")
+# a.apply_to(new_model)
+# new_model = fix_investment(m, new_model)
+# investment_cost = 0.0
+# # for i in m.stages:
+# #   investment_cost += m.Bl[i].total_investment_cost.expr()
+# # total_operating_cost = 0.0
+# # for day in range(1, 3):
+# #   total_operating_cost += eval_investment_single_day(new_model, day, n_stages) 
+# import pymp
+# NumProcesses =6
+# operating_cost = pymp.shared.dict()
+# with pymp.Parallel(NumProcesses) as p:
+#   for day in p.range(1, 3):
+#     operating_cost[day] = eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage) 
 
-write_repn_results(operating_cost, outputfile)     
+# write_repn_results(operating_cost, outputfile)     
 
 
 
