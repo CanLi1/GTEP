@@ -62,7 +62,7 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 from cluster import *
 method = "cost"
 if method == "cost":
-    outputfile = method + "_15days_5years_picksoln_mediumtax.csv"
+    outputfile = 'repn_results/' +  method + "_15days_5years_picksoln_mediumtax.csv"
     data, obj = load_cost_data(n_stages)
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
     extreme_days = []
@@ -70,7 +70,7 @@ if method == "cost":
     readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
 
 elif method == "input":
-    outputfile = method + "_15days_5years_picksoln_mediumtax.csv"
+    outputfile ='repn_results/' +  method + "_15days_5years_picksoln_mediumtax.csv"
     data= load_input_data()
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
     readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])     

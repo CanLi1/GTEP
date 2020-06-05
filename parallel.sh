@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set the number of nodes and processes per node
-#PBS -l nodes=1:ppn=6
+#PBS -l nodes=1:ppn=1
 
 # Set max wallclock time
 #PBS -l walltime=48:00:00
@@ -10,7 +10,7 @@
 #PBS -l mem=64gb
 
 # Set name of job
-#PBS -N  15days 
+#PBS -N  15days_benders 
 
 # Use submission environment
 #PBS -V

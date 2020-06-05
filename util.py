@@ -377,7 +377,7 @@ def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results):
     "coal":coal_capacity_region,
     "natural gas": natural_gas_capacity_region,
     "wind":wind_capacity_region}
-    with open('repn_results/' + outputfile, 'w', newline='') as results_file:
+    with open(outputfile, 'w', newline='') as results_file:
                 fieldnames = ["Time", "total_investment_cost", "variable_operating_cost",
                             "fixed_operating_cost",
                             "startup_cost",
