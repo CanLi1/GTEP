@@ -713,11 +713,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
         b.total_capacity = Expression(rule=total_capacity)   
 
         def total_investment_cost(_b):
-            return   sum(m.if_[t] * ( sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
-                                                                            _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
-                                   + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
-                                         for th, r in m.th_r)
-                                   + sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
+            return   sum(m.if_[t] * ( sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
                                          for rnew, r in m.rn_r if rnew in m.rnew)
                                    + sum(m.DIC[tnew, t] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[tnew, r, t]
                                          for tnew, r in m.th_r if tnew in m.tnew)
