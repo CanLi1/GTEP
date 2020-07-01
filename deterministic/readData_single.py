@@ -40,7 +40,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
                     d[str(row[0]), str(row[1]), str(row[2]), str(row[3]), str(row[4])] = row[5]
         return d
 
- params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
+    params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
               'Pg_min', 'Ru_max', 'Rd_max', 'f_start', 'C_start', 'frac_spin', 'frac_Qstart', 't_loss', 't_up', 'dist',
               'if_', 'ED', 'Rmin', 'hr', 'EF_CO2', 'FOC', 'VOC', 'CCm', 'DIC', 'LEC', 'PEN', 'tx_CO2',
               'RES_min', 'P_fuel']  
@@ -65,19 +65,19 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
     # m.DIC: discounted investment cost of generator cluster i in year t ($/MW)
     new_gen = ['wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new']    
 
-    d_FOC = pd.read_csv(os.path.join(curPath, 'generator/fixOM.csv'), index_col=0, header=0).iloc[0, :]
-    d_OCC = pd.read_csv(os.path.join(curPath, 'generator/overnightcost.csv'), index_col=0, header=0).iloc[0, :]
-    d_VOC = pd.read_csv(os.path.join(curPath, 'generator/variableOM.csv'), index_col=0, header=0).iloc[0, :]
+    d_FOC = pd.read_csv(os.path.join(curPath, 'generator/fixOM.csv'), index_col=0, header=0).iloc[:, :]
+    d_OCC = pd.read_csv(os.path.join(curPath, 'generator/overnightcost.csv'), index_col=0, header=0).iloc[:, :]
+    d_VOC = pd.read_csv(os.path.join(curPath, 'generator/variableOM.csv'), index_col=0, header=0).iloc[:, :]
     #ir nomimal interest rate 
     ir = 0.057
     for t in range(1, len(n_stage)+1):
         for g in new_gen:
-            FOC[(g,t)] = float(d_FOC[g])
-            OCC = float(d_OCC[g])
+            FOC[(g,t)] = float(d_FOC[g][t])
+            OCC = float(d_OCC[g][t])
             ACC = OCC * ir / (1 - (1/(1+ir)) ** LT[g]) 
             T_remain = len(n_stage) - t + 1
             DIC[(g,t)] = ACC * sum(if_[tt] for tt in range(1, len(n_stage) + 1) if (tt <= T_remain and tt <= LT[g]))
-            VOC[(g,t)] = float(d_VOC[g])
+            VOC[(g,t)] = float(d_VOC[g][t])
     globals()['FOC'] = FOC 
     globals()['DIC'] = DIC
     globals()['VOC'] = VOC 

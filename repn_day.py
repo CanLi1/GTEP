@@ -68,7 +68,7 @@ for t in m.t:
 
 day_start = 1
 day_end = 366
-with open('repn_results/5yearsinvestment' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
+with open('repn_results/5yearsinvestment_NETL' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
 	writer = csv.DictWriter(results_file, fieldnames=fieldnames) 	
 	writer.writeheader()
 

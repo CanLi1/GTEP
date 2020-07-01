@@ -284,7 +284,7 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
     return operating_related_cost
 
 
-def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results):
+def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results, ub_problem={}):
     total_investment_cost = []
     variable_operating_cost = []
     fixed_operating_cost =[]
@@ -510,6 +510,11 @@ def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results):
                     results_writer.writerow(["lb", results['Problem'][0]['Lower bound']])
                 if 'Upper bound' in results['Problem'][0]:
                     results_writer.writerow(["ub", results['Problem'][0]['Upper bound']])
+#{"ub time":ub_time, "upper_bound_obj":upper_bound_obj}                    
+                if "ub time" in ub_problem:
+                    results_writer.writerow(["ub_time", ub_problem["ub time"]])
+                if "upper_bound_obj" in ub_problem:
+                    results_writer.writerow(["upper_bound_obj", ub_problem["upper_bound_obj"]])
 
 def write_repn_results(operating_cost, outputfile):
     with open('repn_results/' + outputfile, 'a', newline='') as results_file:

@@ -31,8 +31,8 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
 
 n_stages = 20  # number od stages in the scenario tree
 formulation = "improved"
-outputfile = "results/15days_mediumtax_EIA_improved.csv"
-num_days = 15
+outputfile = "results/12days_mediumtax_NETL_improved_10lines.csv"
+num_days =12
 print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
@@ -128,7 +128,7 @@ import time
 opt = SolverFactory("cplex_persistent")
  
 opt.options['threads'] = 1
-opt.options['timelimit'] = 36000
+opt.options['timelimit'] = 3600*24
 opt.set_instance(m)
 opt.set_benders_annotation()
 opt.set_benders_strategy(1)
@@ -237,9 +237,9 @@ print(ub_time)
 
 print("benders results")
 print(opt.results)
-
+ub_problem = {"ub time":ub_time, "upper_bound_obj":upper_bound_obj}
 from util import *
-write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, opt.results)
+write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, opt.results, ub_problem)
 # variable_operating_cost = []
 # fixed_operating_cost =[]
 # startup_cost = []
