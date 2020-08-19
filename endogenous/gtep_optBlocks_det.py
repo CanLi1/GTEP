@@ -63,15 +63,16 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
         m.stage: set of stages in the scenario tree
     '''
     m.r = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
-
     m.i = Set(initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old', 'wind-old',
                           'wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new',
-                          'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-old','nuc-st-new'], ordered=True)
+                          'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-old','nuc-st-new','coal-first-new'], ordered=True)
+    # 'nuc-st-old', 'nuc-st-new',
     m.th = Set(within=m.i, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new',
                                        'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
-                                       'ng-ct-new','nuc-st-old', 'nuc-st-new'], ordered=True)
+                                       'ng-ct-new','nuc-st-old', 'nuc-st-new', 'coal-first-new'], ordered=True)
+    # 'nuc-st-old', 'nuc-st-new',
     m.rn = Set(within=m.i, initialize=['pv-old', 'pv-new', 'csp-new', 'wind-old', 'wind-new'], ordered=True)
-    m.co = Set(within=m.th, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new'], ordered=True)
+    m.co = Set(within=m.th, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'coal-first-new'], ordered=True)
     m.ng = Set(within=m.th, initialize=['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
                                         'ng-ct-new'], ordered=True)
     m.nu = Set(within=m.th, initialize=['nuc-st-old', 'nuc-st-new'], ordered=True)
@@ -81,14 +82,14 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
     m.old = Set(within=m.i, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old',
                                         'wind-old','nuc-st-old'], ordered=True)
     m.new = Set(within=m.i, initialize=['wind-new', 'pv-new', 'csp-new', 'coal-igcc-new',
-                                        'coal-igcc-ccs-new', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new'], ordered=True)
+                                        'coal-igcc-ccs-new', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new', 'coal-first-new'], ordered=True)
     m.rold = Set(within=m.old, initialize=['pv-old', 'wind-old'], ordered=True)
     m.rnew = Set(within=m.new, initialize=['wind-new', 'pv-new', 'csp-new'], ordered=True)
     m.told = Set(within=m.old, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old','nuc-st-old'],
                  ordered=True)
 
     m.tnew = Set(within=m.new, initialize=['coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new',
-                                           'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new'], ordered=True)
+                                           'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new', 'coal-first-new'], ordered=True)
     m.j = Set(initialize=['Li_ion', 'Lead_acid', 'Flow'], ordered=True)
 
     m.d = RangeSet(readData_det.num_days)
@@ -238,17 +239,17 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
     m.FOC = Param(m.i, m.t, default=0, initialize=readData_det.FOC)
     m.VOC = Param(m.i, m.t, default=0, initialize=readData_det.VOC)
     m.CCm = Param(m.i, default=0, initialize=readData_det.CCm)
-    m.DIC = Param(m.i, m.t, default=0, initialize=readData_det.DIC)
+    m.DIC = Param(m.i, m.t, default=0, initialize=readData_det.DIC, mutable=True)
     m.TIC = Param(m.l, m.t, default=0, initialize=readData_det.TIC)
     m.LEC = Param(m.i, default=0, initialize=readData_det.LEC)
     m.PEN = Param(m.t, default=0, initialize=readData_det.PEN)
     m.PENc = Param(default=0, initialize=readData_det.PENc)
     m.tx_CO2 = Param(m.t, m.stages, default=0, mutable=True)   
-    for t in m.t:
-        if t == 1:
-            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
-        else:
-            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
+    # for t in m.t:
+    #     if t == 1:
+    #         m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
+    #     else:
+    #         m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
     m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
     m.hs = Param(initialize=readData_det.hs, default=1)
     m.ir = Param(initialize=readData_det.ir, default=0)
@@ -627,12 +628,12 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                 return _b.nte[l,t] ==  _b.nte_prev[l] + _b.ntb[l, t]
         b.transmission_line_balance = Constraint(m.l_new, t_per_stage[stage], rule=transmission_line_balance)     
 
-        def symmetrybreaking_line(_b, l, t):
-            if l%10 != 1:
-                return _b.nte[l,t] >= _b.nte[l-1,t]
-            else:
-                return Constraint.Skip
-        b.symmetrybreaking_line = Constraint(m.l_new, t_per_stage[stage], rule=symmetrybreaking_line)
+        # def symmetrybreaking_line(_b, l, t):
+        #     if l%10 != 1:
+        #         return _b.nte[l,t] >= _b.nte[l-1,t]
+        #     else:
+        #         return Constraint.Skip
+        # b.symmetrybreaking_line = Constraint(m.l_new, t_per_stage[stage], rule=symmetrybreaking_line)
 
         ####################### end constraints related to transmission ####################### 
         #show costs breakdown 

@@ -514,15 +514,11 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
     # for i in range(len(temp_line)):
     #make each area have lines with same properties
     line = {'Capacity': 2020.0,  'B': 8467.24770417039}
-    lines_cost = {}
     lines_two_end = [('Coastal', 'South'), ('Coastal', 'Northeast'), ('South', 'Northeast'), ('South', 'West'),
         ('West', 'Northeast'), ('West', 'Panhandle'), ('Northeast', 'Panhandle') ]
-    for two_ends in lines_two_end:
-        key = two_ends[0] + "_" + two_ends[1]
-        lines_cost[key] = dist[two_ends[0], two_ends[1]] *  CostPerMile[500]
-    globals()["lines_cost"] = lines_cost
-          
     j = 1
+    #life expectancy of transmission lines 
+    LT_t = 80
     for ends in lines_two_end:
         for i in range(10):
             temp_line = {}
@@ -532,7 +528,11 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, day):
             temp_line['B'] = line['B']
             temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
             temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
-            TIC[j] = temp_line['Cost']# * 0.3
+            for t in range(1, len(n_stage)+1):
+                # TIC[j] = temp_line['Cost']
+                ACC = temp_line['Cost'] * ir / (1 - (1/(1+ir)) ** LT_t) 
+                T_remain = len(n_stage) - t + 1
+                TIC[(j,t)] = ACC * sum(if_[tt] for tt in range(1, len(n_stage) + 1) if (tt <= T_remain and tt <= LT[g]))
             all_tielines.append(temp_line)
             j += 1
 

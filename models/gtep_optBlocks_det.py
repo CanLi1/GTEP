@@ -239,7 +239,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
     m.VOC = Param(m.i, m.t, default=0, initialize=readData_det.VOC)
     m.CCm = Param(m.i, default=0, initialize=readData_det.CCm)
     m.DIC = Param(m.i, m.t, default=0, initialize=readData_det.DIC)
-    m.TIC = Param(m.l, m.t, default=0, initialize=readData_det.TIC)
+    m.TIC = Param(m.l, default=0, initialize=readData_det.TIC)
     m.LEC = Param(m.i, default=0, initialize=readData_det.LEC)
     m.PEN = Param(m.t, default=0, initialize=readData_det.PEN)
     m.PENc = Param(default=0, initialize=readData_det.PENc)
@@ -685,7 +685,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
         b.extending_thermal_generator_cost = Expression(rule=extending_thermal_generator_cost)
 
         def transmission_line_cost(_b):
-            return sum(m.if_[t] * sum(m.TIC[l,t] * _b.ntb[l,t] for l in m.l) for t in t_per_stage[stage])* 10 ** (-9)
+            return sum(m.if_[t] * sum(m.TIC[l] * _b.ntb[l,t] for l in m.l) for t in t_per_stage[stage])* 10 ** (-9)
         b.transmission_line_cost = Expression(rule=transmission_line_cost)
 
         def storage_investment_cost(_b):
@@ -721,7 +721,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                          for rn, r in m.rn_r)
                                    + sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
                                          for th, r in m.th_r)
-                                  + sum(m.TIC[l,t] * _b.ntb[l, t] for l in m.l_new)
+                                  + sum(m.TIC[l] * _b.ntb[l, t] for l in m.l_new)
                                    + sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
                                          for j in m.j for r in m.r)
                                    + m.PEN[t] * _b.RES_def[t] )
@@ -769,7 +769,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                          for rn, r in m.rn_r)
                                    + sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
                                          for th, r in m.th_r)
-                                  + sum(m.TIC[l,t] * _b.ntb[l, t] for l in m.l_new)
+                                  + sum(m.TIC[l] * _b.ntb[l, t] for l in m.l_new)
                                    + sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
                                          for j in m.j for r in m.r)
                                    + m.PEN[t] * _b.RES_def[t]

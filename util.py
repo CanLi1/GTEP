@@ -284,7 +284,7 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
     return operating_related_cost
 
 
-def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results, ub_problem={}):
+def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results=[], ub_problem={}, mode="w"):
     total_investment_cost = []
     variable_operating_cost = []
     fixed_operating_cost =[]
@@ -377,7 +377,7 @@ def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results, u
     "coal":coal_capacity_region,
     "natural gas": natural_gas_capacity_region,
     "wind":wind_capacity_region}
-    with open(outputfile, 'w', newline='') as results_file:
+    with open(outputfile, mode, newline='') as results_file:
                 fieldnames = ["Time", "total_investment_cost", "variable_operating_cost",
                             "fixed_operating_cost",
                             "startup_cost",
@@ -502,22 +502,23 @@ def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results, u
                         results_writer.writerow([readData_det.tielines[l-1]["Near Area Name"], readData_det.tielines[l-1]["Far Area Name"], m.Bl[last_stage].P_flow[l, last_stage, largest_d, largest_s].value ])
                 results_writer.writerow([])        
                 results_writer.writerow(["total_investment_cost", sum(total_investment_cost[:])])
-                if 'Time' in results['Solver'][0]:
-                    results_writer.writerow(["cplex fullspace time", results['Solver'][0]['Time']])
-                elif 'Wallclock time' in results['Solver'][0]:
-                     results_writer.writerow(["cplex fullspace time", results['Solver'][0]['Wallclock time']])
-                if 'Lower bound' in results['Problem'][0]:
-                    results_writer.writerow(["lb", results['Problem'][0]['Lower bound']])
-                if 'Upper bound' in results['Problem'][0]:
-                    results_writer.writerow(["ub", results['Problem'][0]['Upper bound']])
-#{"ub time":ub_time, "upper_bound_obj":upper_bound_obj}                    
-                if "ub time" in ub_problem:
-                    results_writer.writerow(["ub_time", ub_problem["ub time"]])
-                if "upper_bound_obj" in ub_problem:
-                    results_writer.writerow(["upper_bound_obj", ub_problem["upper_bound_obj"]])
+                if results != []:
+                    if 'Time' in results['Solver'][0]:
+                        results_writer.writerow(["cplex fullspace time", results['Solver'][0]['Time']])
+                    elif 'Wallclock time' in results['Solver'][0]:
+                         results_writer.writerow(["cplex fullspace time", results['Solver'][0]['Wallclock time']])
+                    if 'Lower bound' in results['Problem'][0]:
+                        results_writer.writerow(["lb", results['Problem'][0]['Lower bound']])
+                    if 'Upper bound' in results['Problem'][0]:
+                        results_writer.writerow(["ub", results['Problem'][0]['Upper bound']])
+    #{"ub time":ub_time, "upper_bound_obj":upper_bound_obj}                    
+                    if "ub time" in ub_problem:
+                        results_writer.writerow(["ub_time", ub_problem["ub time"]])
+                    if "upper_bound_obj" in ub_problem:
+                        results_writer.writerow(["upper_bound_obj", ub_problem["upper_bound_obj"]])
 
 def write_repn_results(operating_cost, outputfile):
-    with open('repn_results/' + outputfile, 'a', newline='') as results_file:
+    with open(outputfile, 'a', newline='') as results_file:
         results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         results_writer.writerow([])
         results_writer.writerow(["testing over all the repn days results"])

@@ -59,12 +59,14 @@ for t in m.t:
 	for line in lines:
 		fieldnames.append(line + "[" + str(t) + "]")
 	for (rn, r) in m.rn_r:
-		fieldnames.append("ngo_rn[" + rn + "," + r + "," + str(t) + "]")  
+		if rn in m.rnew:
+			fieldnames.append("ngb_rn[" + rn + "," + r + "," + str(t) + "]")  
 	for (th,r) in m.th_r:
-		fieldnames.append("ngo_th[" + th + "," + r + "," + str(t) + "]")
+		if th in m.tnew:
+			fieldnames.append("ngb_th[" + th + "," + r + "," + str(t) + "]")
 	for j in m.j:
 		for r in m.r:
-			fieldnames.append("nso["+j + ","+r+"," +  str(t) +"]")
+			fieldnames.append("nsb["+j + ","+r+"," +  str(t) +"]")
 
 day_start = 1
 day_end = 366
@@ -258,21 +260,23 @@ with open('repn_results/5yearsinvestment_NETL' + str(day_start) + "-" + str(day_
 			for line in lines:
 				new_row[line + "[" + str(t) + "]"] = 0
 			for l in m.l_new:
-				value = m.Bl[t].nte[l,t].value
+				value = m.Bl[t].ntb[l,t].value
 				key = readData_single.tielines[l-1]['Near Area Name'] + "_" + readData_single.tielines[l-1]['Far Area Name'] + "[" + str(t) + "]"
 				new_row[key] += value 
 			for (rn, r) in m.rn_r:
-				value = m.Bl[t].ngo_rn[rn, r, t].value 
-				key = "ngo_rn[" + rn + "," + r + "," +  str(t) +"]"
-				new_row[key] = value 
+				if rn in m.rnew:
+					value = m.Bl[t].ngb_rn[rn, r, t].value 
+					key = "ngb_rn[" + rn + "," + r + "," +  str(t) +"]"
+					new_row[key] = value 
 			for (th, r) in m.th_r:
-				value = m.Bl[t].ngo_th[th, r, t].value 
-				key = "ngo_th[" + th + "," + r + "," +  str(t) + "]"
-				new_row[key] = value  
+				if th in m.tnew:
+					value = m.Bl[t].ngb_th[th, r, t].value 
+					key = "ngb_th[" + th + "," + r + "," +  str(t) + "]"
+					new_row[key] = value  
 			for j in m.j:
 				for r in m.r:
-					value =m.Bl[t].nso[j, r, t].value 
-					key = "nso[" + j + "," + r + "," +  str(t) + "]"
+					value =m.Bl[t].nsb[j, r, t].value 
+					key = "nsb[" + j + "," + r + "," +  str(t) + "]"
 					new_row[key] = value 
 		writer.writerow(new_row)  
 

@@ -27,7 +27,7 @@ def load_cost_data(year=5):
 	region = ['Northeast', 'West', 'Coastal', 'South', 'Panhandle']
 	storage = ['Li_ion', 'Lead_acid', 'Flow']
 	lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]    
-	investment = pd.read_csv("repn_results/5yearsinvestment1-366.csv", index_col=0, header=0).iloc[:, :]
+	investment = pd.read_csv("repn_results/investmentdata/5yearsinvestment_NETL1-366.csv", index_col=0, header=0).iloc[:, :]
 
 	#filter the data (domain reduction) && translate the data into cost domain
 	data = investment.obj
@@ -137,9 +137,10 @@ def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost"):
 		days = obj.argsort()[-n:] + 1
 		#adjust weight of the cluster where the representative days is in 
 		for day in days:
-			cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
-			cluster_results['medoids'].append(day)
-			cluster_results['weights'].append(1)
+			if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:
+				cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
+				cluster_results['medoids'].append(day)
+				cluster_results['weights'].append(1)
 
 		return cluster_results 
 

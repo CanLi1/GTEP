@@ -83,6 +83,34 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, num_days):
     globals()['VOC'] = VOC 
 
 
+#add initial data for coal first plant
+    f_start['coal-first-new'] = f_start['coal-igcc-new']
+    q_v['coal-first-new'] = q_v['coal-igcc-new']
+    Pg_min['coal-first-new'] = Pg_min['coal-igcc-new']
+    Ru_max['coal-first-new'] = Ru_max['coal-igcc-new']
+    Rd_max['coal-first-new'] = Rd_max['coal-igcc-new']
+    C_start['coal-first-new'] = C_start['coal-igcc-new']
+    frac_spin['coal-first-new'] = frac_spin['coal-igcc-new']
+    LT['coal-first-new'] = LT['coal-igcc-new']
+    EF_CO2['coal-first-new'] = EF_CO2['coal-igcc-new']
+    CCm['coal-first-new'] = CCm['coal-igcc-new']
+
+    i_r_keys = [('coal-igcc-new', 'Northeast'), ('coal-igcc-new', 'West'), ('coal-igcc-new', 'Coastal'), ('coal-igcc-new', 'South'), ('coal-igcc-new', 'Panhandle')]
+    for key in i_r_keys:
+        new_key = ('coal-first-new', key[1])
+        Qg_np[new_key] = Qg_np[key]
+        Ng_max[new_key] = Ng_max[key]
+        hr[new_key] = hr[key]
+
+    for i in range(len(if_)):
+        new_key = ('coal-first-new', i+1)
+        old_key = ('coal-igcc-new', i+1)
+        Qinst_UB[new_key] = Qinst_UB[old_key] 
+        P_fuel[new_key] = P_fuel[old_key]
+        FOC[new_key] = FOC[old_key]
+        VOC[new_key] = VOC[old_key]
+        DIC[new_key] = DIC[old_key]
+
     globals()['hs'] = 1
     globals()['ir'] = 0.057
     globals()['PENc'] = 5000
@@ -506,6 +534,8 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, num_days):
     lines_two_end = [('Coastal', 'South'), ('Coastal', 'Northeast'), ('South', 'Northeast'), ('South', 'West'),
         ('West', 'Northeast'), ('West', 'Panhandle'), ('Northeast', 'Panhandle') ]
     j = 1
+    #life expectancy of transmission lines 
+    LT_t = 80
     for ends in lines_two_end:
         for i in range(10):
             temp_line = {}
@@ -515,7 +545,11 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, num_days):
             temp_line['B'] = line['B']
             temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
             temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
-            TIC[j] = temp_line['Cost']# * 0.3
+            for t in range(1, len(n_stage)+1):
+                # TIC[j] = temp_line['Cost']
+                ACC = temp_line['Cost'] * ir / (1 - (1/(1+ir)) ** LT_t) 
+                T_remain = len(n_stage) - t + 1
+                TIC[(j,t)] = ACC * sum(if_[tt] for tt in range(1, len(n_stage) + 1) if (tt <= T_remain and tt <= LT[g]))
             all_tielines.append(temp_line)
             j += 1
 

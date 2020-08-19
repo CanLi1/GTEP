@@ -10,11 +10,11 @@
 #PBS -l mem=64gb
 
 # Set name of job
-#PBS -N  repn_day 
+#PBS -N job  
 
 # Use submission environment
 #PBS -V
 cd ~/work/GETP 
-source ~/python3.6/bin/activate
 export PATH=$PATH:/opt/ibm/ILOG/CPLEX_Studio129/cplex/bin/x86-64_linux
-python3 repn_day.py
+source ~/python3.6/bin/activate
+/home/canl1/python3.6/bin/python  repn_day.py

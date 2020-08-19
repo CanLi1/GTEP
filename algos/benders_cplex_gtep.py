@@ -23,16 +23,12 @@ from backward_SDDiP_gtep import backward_pass
 curPath = os.path.abspath(os.path.curdir)
 curPath = curPath.replace('/deterministic', '')
 print(curPath)
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
-# filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 
-n_stages =5  # number od stages in the scenario tree
+
+n_stages = 20  # number od stages in the scenario tree
 formulation = "improved"
 outputfile = "results/12days_mediumtax_NETL_improved_10lines.csv"
-num_days =5
+num_days =12
 print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
@@ -40,6 +36,7 @@ single_prob = {'M': 1.0}
 
 
 time_periods = n_stages
+set_time_periods = range(1, time_periods + 1)
 t_per_stage = {}
 for i in range(1, n_stages+1):
   t_per_stage[i] = [i]
@@ -98,147 +95,147 @@ for stage in m.stages:
 
 
 # # solve relaxed model
-a = TransformationFactory("core.relax_integrality")
-a.apply_to(m)
-opt = SolverFactory("cplex")
-opt.options['mipgap'] = 0.001
-opt.options['TimeLimit'] = 36000
-opt.solve(m, tee=True)
-# operating_integer_vars = ["u", "su", "sd"]
-# for stage in m.stages:
-#     for t in t_per_stage[stage]:
-#         for d in m.d:
-#             for s in m.hours:
-#                 for (th, r) in m.th_r:
-#                     lb, ub = m.Bl[stage].u[th, r, t, d, s].bounds
-#                     m.Bl[stage].u[th, r, t, d, s].domain = Reals
-#                     m.Bl[stage].u[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].u[th, r, t, d, s].setub(ub)     
-#                     lb, ub = m.Bl[stage].su[th, r, t, d, s].bounds
-#                     m.Bl[stage].su[th, r, t, d, s].domain = Reals
-#                     m.Bl[stage].su[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].su[th, r, t, d, s].setub(ub)  
-#                     lb, ub = m.Bl[stage].sd[th, r, t, d, s].bounds
-#                     m.Bl[stage].sd[th, r, t, d, s].domain = Reals
-#                     m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].sd[th, r, t, d, s].setub(ub)                                                     
-# import time
-
-# opt = SolverFactory("cplex_persistent")
- 
-# opt.options['threads'] = 1
-# opt.options['timelimit'] = 3600*24
-# opt.set_instance(m)
-# opt.set_benders_annotation()
-# opt.set_benders_strategy(1)
-# opt.set_mip_rel_gap(0.005)
-
-# #set master variables 
-# investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
-# for v in m.component_objects(Var):
-#     if v.getname() in investment_vars:
-#         for index in v:
-#             opt.set_master_variable(v[index])
-
-# #set subproblems
-# operating_vars = []
-# if formulation == "standard":
-#   operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
-# elif formulation == "hull":
-#   operating_vars = ["theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
-# elif formulation == "improved":
-#   operating_vars = ["theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
-# map_d = {'fall':3, 'summer':2, 'spring':1, 'winter':4}
-# for v in m.component_objects(Var):
-#     if v.getname() in operating_vars:
-#         for index in v:
-#             t = index[-3]
-#             opt.set_subproblem_variable(v[index], t)
-
-
+# a = TransformationFactory("core.relax_integrality")
+# a.apply_to(m)
+# opt = SolverFactory("cplex")
+# opt.options['mipgap'] = 0.001
+# opt.options['TimeLimit'] = 36000
 # opt.solve(m, tee=True)
+operating_integer_vars = ["u", "su", "sd"]
+for stage in m.stages:
+    for t in t_per_stage[stage]:
+        for d in m.d:
+            for s in m.hours:
+                for (th, r) in m.th_r:
+                    lb, ub = m.Bl[stage].u[th, r, t, d, s].bounds
+                    m.Bl[stage].u[th, r, t, d, s].domain = Reals
+                    m.Bl[stage].u[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].u[th, r, t, d, s].setub(ub)     
+                    lb, ub = m.Bl[stage].su[th, r, t, d, s].bounds
+                    m.Bl[stage].su[th, r, t, d, s].domain = Reals
+                    m.Bl[stage].su[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].su[th, r, t, d, s].setub(ub)  
+                    lb, ub = m.Bl[stage].sd[th, r, t, d, s].bounds
+                    m.Bl[stage].sd[th, r, t, d, s].domain = Reals
+                    m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].sd[th, r, t, d, s].setub(ub)                                                     
+import time
 
-# #fix the integer variables from Benders and resolve the original problem by stages
-# m.obj.deactivate()
-# for stage in m.stages:
-#     m.Bl[stage].obj.activate() ####To do
-# for stage in m.stages:
-#     for t in t_per_stage[stage]:
-#         for d in m.d:
-#             for s in m.hours:
-#                 for (th, r) in m.th_r:
-#                     lb, ub = m.Bl[stage].u[th, r, t, d, s].bounds
-#                     m.Bl[stage].u[th, r, t, d, s].domain = NonNegativeIntegers
-#                     m.Bl[stage].u[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].u[th, r, t, d, s].setub(ub)     
-#                     lb, ub = m.Bl[stage].su[th, r, t, d, s].bounds
-#                     m.Bl[stage].su[th, r, t, d, s].domain = NonNegativeIntegers
-#                     m.Bl[stage].su[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].su[th, r, t, d, s].setub(ub)  
-#                     lb, ub = m.Bl[stage].sd[th, r, t, d, s].bounds
-#                     m.Bl[stage].sd[th, r, t, d, s].domain = NonNegativeIntegers
-#                     m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].sd[th, r, t, d, s].setub(ub)        
+opt = SolverFactory("cplex_persistent")
+ 
+opt.options['threads'] = 1
+opt.options['timelimit'] = 3600*24
+opt.set_instance(m)
+opt.set_benders_annotation()
+opt.set_benders_strategy(1)
+opt.set_mip_rel_gap(0.005)
 
-# for stage in m.stages:
-#     #clear the linking constraints to solve each block separately
-#     m.Bl[stage].link_equal1.clear()
-#     m.Bl[stage].link_equal2.clear()
-#     m.Bl[stage].link_equal3.clear()
-#     m.Bl[stage].link_equal4.clear()
+#set master variables 
+investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
+for v in m.component_objects(Var):
+    if v.getname() in investment_vars:
+        for index in v:
+            opt.set_master_variable(v[index])
 
-#     for t in t_per_stage[stage]:
-#         for (rn, r) in m.rn_r:
-#             value = m.Bl[stage].ngo_rn[rn, r, t].value
-#             m.Bl[stage].ngo_rn[rn, r, t].fix(value)
-#             value = m.Bl[stage].ngb_rn[rn, r, t].value
-#             m.Bl[stage].ngb_rn[rn, r, t].fix(value)
-#             value = m.Bl[stage].nge_rn[rn, r, t].value
-#             m.Bl[stage].nge_rn[rn, r, t].fix(value)
-#             value = m.Bl[stage].ngr_rn[rn, r, t].value
-#             m.Bl[stage].ngr_rn[rn, r, t].fix(value)                                    
-#         for (th, r) in m.th_r:
-#             value = m.Bl[stage].ngo_th[th, r, t].value
-#             m.Bl[stage].ngo_th[th, r, t].fix(value)
-#             value = m.Bl[stage].ngb_th[th, r, t].value
-#             m.Bl[stage].ngb_th[th, r, t].fix(value)
-#             value = m.Bl[stage].nge_th[th, r, t].value
-#             m.Bl[stage].nge_th[th, r, t].fix(value)
-#             value = m.Bl[stage].ngr_th[th, r, t].value
-#             m.Bl[stage].ngr_th[th, r, t].fix(value)                                    
-#         for (j, r) in j_r:
-#             value = m.Bl[stage].nso[j, r, t].value
-#             m.Bl[stage].nso[j, r, t].fix(value)
-#             value = m.Bl[stage].nsb[j, r, t].value
-#             m.Bl[stage].nsb[j, r, t].fix(value)
-#             value = m.Bl[stage].nsr[j, r, t].value
-#             m.Bl[stage].nsr[j, r, t].fix(value)                        
+#set subproblems
+operating_vars = []
+if formulation == "standard":
+  operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+elif formulation == "hull":
+  operating_vars = ["theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+elif formulation == "improved":
+  operating_vars = ["theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
+map_d = {'fall':3, 'summer':2, 'spring':1, 'winter':4}
+for v in m.component_objects(Var):
+    if v.getname() in operating_vars:
+        for index in v:
+            t = index[-3]
+            opt.set_subproblem_variable(v[index], t)
 
-#         for l in m.l_new:
-#             value = m.Bl[stage].nte[l, t].value
-#             m.Bl[stage].nte[l, t].fix(value)   
-#             value = m.Bl[stage].ntb[l, t].value
-#             m.Bl[stage].ntb[l, t].fix(value)                
 
-# upper_bound_obj = 0.0
-# lopt = SolverFactory("cplex")
-# lopt.options['mipgap'] = 0.005
-# lopt.options['threads'] = 1
-# ub_time = 0.0 
-# a = time.time()
-# for stage in m.stages:
-#     results = lopt.solve(m.Bl[stage], tee=True)
-#     upper_bound_obj += m.Bl[stage].obj.expr()
-# b = time.time()
-# ub_time = b - a 
-# print("ub time")
-# print(ub_time)
+opt.solve(m, tee=True)
 
-# print("benders results")
-# print(opt.results)
-# ub_problem = {"ub time":ub_time, "upper_bound_obj":upper_bound_obj}
-# from util import *
-# write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, opt.results, ub_problem)
+#fix the integer variables from Benders and resolve the original problem by stages
+m.obj.deactivate()
+for stage in m.stages:
+    m.Bl[stage].obj.activate() ####To do
+for stage in m.stages:
+    for t in t_per_stage[stage]:
+        for d in m.d:
+            for s in m.hours:
+                for (th, r) in m.th_r:
+                    lb, ub = m.Bl[stage].u[th, r, t, d, s].bounds
+                    m.Bl[stage].u[th, r, t, d, s].domain = NonNegativeIntegers
+                    m.Bl[stage].u[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].u[th, r, t, d, s].setub(ub)     
+                    lb, ub = m.Bl[stage].su[th, r, t, d, s].bounds
+                    m.Bl[stage].su[th, r, t, d, s].domain = NonNegativeIntegers
+                    m.Bl[stage].su[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].su[th, r, t, d, s].setub(ub)  
+                    lb, ub = m.Bl[stage].sd[th, r, t, d, s].bounds
+                    m.Bl[stage].sd[th, r, t, d, s].domain = NonNegativeIntegers
+                    m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
+                    m.Bl[stage].sd[th, r, t, d, s].setub(ub)        
+
+for stage in m.stages:
+    #clear the linking constraints to solve each block separately
+    m.Bl[stage].link_equal1.clear()
+    m.Bl[stage].link_equal2.clear()
+    m.Bl[stage].link_equal3.clear()
+    m.Bl[stage].link_equal4.clear()
+
+    for t in t_per_stage[stage]:
+        for (rn, r) in m.rn_r:
+            value = m.Bl[stage].ngo_rn[rn, r, t].value
+            m.Bl[stage].ngo_rn[rn, r, t].fix(value)
+            value = m.Bl[stage].ngb_rn[rn, r, t].value
+            m.Bl[stage].ngb_rn[rn, r, t].fix(value)
+            value = m.Bl[stage].nge_rn[rn, r, t].value
+            m.Bl[stage].nge_rn[rn, r, t].fix(value)
+            value = m.Bl[stage].ngr_rn[rn, r, t].value
+            m.Bl[stage].ngr_rn[rn, r, t].fix(value)                                    
+        for (th, r) in m.th_r:
+            value = m.Bl[stage].ngo_th[th, r, t].value
+            m.Bl[stage].ngo_th[th, r, t].fix(value)
+            value = m.Bl[stage].ngb_th[th, r, t].value
+            m.Bl[stage].ngb_th[th, r, t].fix(value)
+            value = m.Bl[stage].nge_th[th, r, t].value
+            m.Bl[stage].nge_th[th, r, t].fix(value)
+            value = m.Bl[stage].ngr_th[th, r, t].value
+            m.Bl[stage].ngr_th[th, r, t].fix(value)                                    
+        for (j, r) in j_r:
+            value = m.Bl[stage].nso[j, r, t].value
+            m.Bl[stage].nso[j, r, t].fix(value)
+            value = m.Bl[stage].nsb[j, r, t].value
+            m.Bl[stage].nsb[j, r, t].fix(value)
+            value = m.Bl[stage].nsr[j, r, t].value
+            m.Bl[stage].nsr[j, r, t].fix(value)                        
+
+        for l in m.l_new:
+            value = m.Bl[stage].nte[l, t].value
+            m.Bl[stage].nte[l, t].fix(value)   
+            value = m.Bl[stage].ntb[l, t].value
+            m.Bl[stage].ntb[l, t].fix(value)                
+
+upper_bound_obj = 0.0
+lopt = SolverFactory("cplex")
+lopt.options['mipgap'] = 0.005
+lopt.options['threads'] = 1
+ub_time = 0.0 
+a = time.time()
+for stage in m.stages:
+    results = lopt.solve(m.Bl[stage], tee=True)
+    upper_bound_obj += m.Bl[stage].obj.expr()
+b = time.time()
+ub_time = b - a 
+print("ub time")
+print(ub_time)
+
+print("benders results")
+print(opt.results)
+ub_problem = {"ub time":ub_time, "upper_bound_obj":upper_bound_obj}
+from util import *
+write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, opt.results, ub_problem)
 # variable_operating_cost = []
 # fixed_operating_cost =[]
 # startup_cost = []

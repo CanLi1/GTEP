@@ -40,7 +40,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, days, weight
                     d[str(row[0]), str(row[1]), str(row[2]), str(row[3]), str(row[4])] = row[5]
         return d
 
- params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
+    params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
               'Pg_min', 'Ru_max', 'Rd_max', 'f_start', 'C_start', 'frac_spin', 'frac_Qstart', 't_loss', 't_up', 'dist',
               'if_', 'ED', 'Rmin', 'hr', 'EF_CO2', 'FOC', 'VOC', 'CCm', 'DIC', 'LEC', 'PEN', 'tx_CO2',
               'RES_min', 'P_fuel']  
@@ -522,17 +522,13 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, days, weight
     # for i in range(len(temp_line)):
     #make each area have lines with same properties
     line = {'Capacity': 2020.0,  'B': 8467.24770417039}
-    lines_cost = {}
     lines_two_end = [('Coastal', 'South'), ('Coastal', 'Northeast'), ('South', 'Northeast'), ('South', 'West'),
         ('West', 'Northeast'), ('West', 'Panhandle'), ('Northeast', 'Panhandle') ]
-    for two_ends in lines_two_end:
-        key = two_ends[0] + "_" + two_ends[1]
-        lines_cost[key] = dist[two_ends[0], two_ends[1]] *  CostPerMile[500]
-    globals()["lines_cost"] = lines_cost
-          
     j = 1
+    #life expectancy of transmission lines 
+    LT_t = 80
     for ends in lines_two_end:
-        for i in range(15):
+        for i in range(10):
             temp_line = {}
             temp_line['Near Area Name'] = ends[0]
             temp_line['Far Area Name'] = ends[1]
@@ -540,7 +536,11 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, days, weight
             temp_line['B'] = line['B']
             temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
             temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
-            TIC[j] = temp_line['Cost']# * 0.3
+            for t in range(1, len(n_stage)+1):
+                # TIC[j] = temp_line['Cost']
+                ACC = temp_line['Cost'] * ir / (1 - (1/(1+ir)) ** LT_t) 
+                T_remain = len(n_stage) - t + 1
+                TIC[(j,t)] = ACC * sum(if_[tt] for tt in range(1, len(n_stage) + 1) if (tt <= T_remain and tt <= LT[g]))
             all_tielines.append(temp_line)
             j += 1
 
@@ -549,7 +549,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, days, weight
     globals()["tielines"] = tielines    
     globals()["TIC"] = TIC   
 
-    # print('finished loading data')
+    print('finished loading data')
 
 
 
