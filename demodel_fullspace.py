@@ -71,7 +71,7 @@ m = b.create_model(time_periods, formulation, readData_det, num_scenario)
 
 
 
-ratio = [0.1, 1.0, 1.9]
+ratio = [0.7, 1.0, 1.3]
 #set uncertain parameters for the stochastic model 
 for w in range(1, num_scenario+1):
     for i in m.i:
@@ -199,6 +199,10 @@ max_iter = 1
 scenario_time_blocks = {}
 for w in range(1, num_scenario+1):      
     time_blocks = sub.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
+    for i in m.i:
+        for t in m.t:
+            if i == 'coal-first-new':
+                time_blocks.DIC[i, t] = readData_det.DIC[i,t] * ratio[w-1]  
     scenario_time_blocks[w] = time_blocks
 
 mipopt = SolverFactory("cplex")
@@ -275,20 +279,26 @@ def copy_operating_vars(w1, w2, t):
 heuristic_wall_time = time.time()
 
 #fix to to scenario 1 when t<= time_distinguished
-for t in range(1, time_distinguished+1):
-    fix_investment_and_solve(m, 1, t, scenario_time_blocks, mipopt)
-    for w in range(2, num_scenario+1):
-        copy_investment_vars(1, w, t)
-        if t < time_distinguished:
+if time_distinguished > n_stages:
+    for t in range(1, n_stages+1):
+        fix_investment_and_solve(m, 1, t, scenario_time_blocks, mipopt)
+        for w in range(2, num_scenario+1):
+            copy_investment_vars(1, w, t)
             copy_operating_vars(1, w, t)
-        else:
-            mipopt.solve(scenario_time_blocks[w].Bl[t], tee=True)
-
-#solve each scenario separately for t> time_distinguished
-if time_distinguished < n_stages:
-    for t in range(time_distinguished+1, n_stages+1):
-        for w in range(1, num_scenario+1):
-            fix_investment_and_solve(m, w, t, scenario_time_blocks, mipopt)
+else:
+    for t in range(1, time_distinguished+1):
+        fix_investment_and_solve(m, 1, t, scenario_time_blocks, mipopt)
+        for w in range(2, num_scenario+1):
+            copy_investment_vars(1, w, t)
+            if t < time_distinguished:
+                copy_operating_vars(1, w, t)
+            else:
+                mipopt.solve(scenario_time_blocks[w].Bl[t], tee=True)
+    #solve each scenario separately for t> time_distinguished
+    if time_distinguished < n_stages:
+        for t in range(time_distinguished+1, n_stages+1):
+            for w in range(1, num_scenario+1):
+                fix_investment_and_solve(m, w, t, scenario_time_blocks, mipopt)
 
 heuristic_wall_time = time.time() - heuristic_wall_time 
 fieldnames = ["scenario", "obj"]

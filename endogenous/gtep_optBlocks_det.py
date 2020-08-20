@@ -245,11 +245,11 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
     m.PEN = Param(m.t, default=0, initialize=readData_det.PEN)
     m.PENc = Param(default=0, initialize=readData_det.PENc)
     m.tx_CO2 = Param(m.t, m.stages, default=0, mutable=True)   
-    # for t in m.t:
-    #     if t == 1:
-    #         m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
-    #     else:
-    #         m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
+    for t in m.t:
+        if t == 1:
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
+        else:
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
     m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
     m.hs = Param(initialize=readData_det.hs, default=1)
     m.ir = Param(initialize=readData_det.ir, default=0)
