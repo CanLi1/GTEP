@@ -642,7 +642,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
                                                                  i, r, t, d, s]
                                                              for i, r in m.i_r)
-                                       for d in m.d for s in m.hours) )   for t in t_per_stage[stage])* 10 ** (-9)
+                                       for d in m.d for s in m.hours) )   for t in t_per_stage[stage])* 10 ** (-6)
         b.variable_operating_cost = Expression(rule=variable_operating_cost)
 
 
@@ -650,7 +650,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
             return sum(m.if_[t] * (sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
                                                                             _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
                                    + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
-                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-9)
+                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-6)
         b.fixed_operating_cost = Expression(rule=fixed_operating_cost)
 
 
@@ -658,45 +658,45 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
                                          * (m.f_start[th] * m.P_fuel[th, t]
                                             + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, stage] + m.C_start[th])
-                                   for th, r in m.th_r for d in m.d for s in m.hours))   for t in t_per_stage[stage])* 10 ** (-9)
+                                   for th, r in m.th_r for d in m.d for s in m.hours))   for t in t_per_stage[stage])* 10 ** (-6)
         b.startup_cost = Expression(rule=startup_cost)
 
         def renewable_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
-                                         for rnew, r in m.rn_r if rnew in m.rnew))   for t in t_per_stage[stage])* 10 ** (-9)
+                                         for rnew, r in m.rn_r if rnew in m.rnew))   for t in t_per_stage[stage])* 10 ** (-6)
         b.renewable_generator_cost = Expression(rule=renewable_generator_cost)
 
 
 
         def thermal_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[tnew, t] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[tnew, r, t]
-                                         for tnew, r in m.th_r if tnew in m.tnew))   for t in t_per_stage[stage])* 10 ** (-9)
+                                         for tnew, r in m.th_r if tnew in m.tnew))   for t in t_per_stage[stage])* 10 ** (-6)
         b.thermal_generator_cost = Expression(rule=thermal_generator_cost)
 
         def extending_renewable_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
-                                         for rn, r in m.rn_r))   for t in t_per_stage[stage])* 10 ** (-9)
+                                         for rn, r in m.rn_r))   for t in t_per_stage[stage])* 10 ** (-6)
         b.extending_renewable_generator_cost = Expression(rule=extending_renewable_generator_cost)
 
 
         def extending_thermal_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
-                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-9)
+                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-6)
         b.extending_thermal_generator_cost = Expression(rule=extending_thermal_generator_cost)
 
         def transmission_line_cost(_b):
-            return sum(m.if_[t] * sum(m.TIC[l,t] * _b.ntb[l,t] for l in m.l) for t in t_per_stage[stage])* 10 ** (-9)
+            return sum(m.if_[t] * sum(m.TIC[l,t] * _b.ntb[l,t] for l in m.l) for t in t_per_stage[stage])* 10 ** (-6)
         b.transmission_line_cost = Expression(rule=transmission_line_cost)
 
         def storage_investment_cost(_b):
             return sum(m.if_[t] * (sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
-                                         for j in m.j for r in m.r))   for t in t_per_stage[stage])* 10 ** (-9)  
+                                         for j in m.j for r in m.r))   for t in t_per_stage[stage])* 10 ** (-6)  
         b.storage_investment_cost = Expression(rule=storage_investment_cost)       
         
         def penalty_cost(_b):
             return sum(m.if_[t] * (m.PEN[t] * _b.RES_def[t]
                                    + m.PENc * sum(_b.cu[r, t, d, s]
-                                                  for r in m.r for d in m.d for s in m.hours))   for t in t_per_stage[stage])  * 10 ** (-9)
+                                                  for r in m.r for d in m.d for s in m.hours))   for t in t_per_stage[stage])  * 10 ** (-6)
         b.penalty_cost = Expression(rule=penalty_cost)   
 
         def renewable_capacity(_b):
@@ -726,7 +726,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                          for j in m.j for r in m.r)
                                    + m.PEN[t] * _b.RES_def[t] )
                       for t in t_per_stage[stage]) \
-                   * 10 ** (-9)
+                   * 10 ** (-6)
         b.total_investment_cost = Expression(rule=total_investment_cost)
 
         def total_operating_cost(_b):
@@ -742,7 +742,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                    + m.PENc * sum(_b.cu[r, t, d, s]
                                                   for r in m.r for d in m.d for s in m.hours) )
                       for t in t_per_stage[stage]) \
-                   * 10 ** (-9)                                                                                                                       
+                   * 10 ** (-6)                                                                                                                       
         b.total_operating_cost = Expression(rule=total_operating_cost)
         b.vobj = Objective(rule=total_operating_cost, sense=minimize)
         b.vobj.deactivate()
@@ -776,7 +776,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                    + m.PENc * sum(_b.cu[r, t, d, s]
                                                   for r in m.r for d in m.d for s in m.hours) )
                       for t in t_per_stage[stage]) \
-                   * 10 ** (-9) \
+                   * 10 ** (-6) \
                    + _b.alphafut
 
         b.obj = Objective(rule=obj_rule, sense=minimize)
@@ -788,12 +788,12 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
 
         # b.min_RN_req = Constraint(t_per_stage[stage], rule=min_RN_req)
 
-        def min_reserve(_b, t):
-            return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
-                   + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th) \
-                   >= (1 + m.Rmin[t]) * m.L_max[t]
+        # def min_reserve(_b, t):
+        #     return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
+        #            + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th) \
+        #            >= (1 + m.Rmin[t]) * m.L_max[t]
 
-        b.min_reserve = Constraint(t_per_stage[stage], rule=min_reserve)
+        # b.min_reserve = Constraint(t_per_stage[stage], rule=min_reserve)
 
         def inst_RN_UB(_b, rnew, t):
             return sum(_b.ngb_rn[rnew, r, t] for r in m.r) \

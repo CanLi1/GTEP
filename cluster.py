@@ -17,40 +17,55 @@ def load_cost_data(year=5):
 	t_per_stage = {}
 	for i in range(1, n_stages+1):
 		t_per_stage[i] = [i]
-	stages = range(1, n_stages + 1)
 	scenarios = ['M']
 	single_prob = {'M': 1.0}	
 	nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)	
 	readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
 	rnew = ['wind-new', 'pv-new', 'csp-new']
+	rn_r = [('pv-old', 'West'), ('pv-old', 'South'), ('pv-new', 'Northeast'), ('pv-new', 'West'), ('pv-new', 'Coastal'), ('pv-new', 'South'), ('pv-new', 'Panhandle'), ('csp-new', 'Northeast'), ('csp-new', 'West'), ('csp-new', 'Coastal'), ('csp-new', 'South'), ('csp-new', 'Panhandle'), ('wind-old', 'Northeast'), ('wind-old', 'West'), ('wind-old', 'Coastal'), ('wind-old', 'South'), ('wind-old', 'Panhandle'), ('wind-new', 'Northeast'), ('wind-new', 'West'), ('wind-new', 'Coastal'), ('wind-new', 'South'), ('wind-new', 'Panhandle')]
+	th_r = [('coal-st-old1', 'Northeast'), ('coal-st-old1', 'West'), ('coal-st-old1', 'Coastal'), ('coal-st-old1', 'South'), ('coal-igcc-new', 'Northeast'), ('coal-igcc-new', 'West'), ('coal-igcc-new', 'Coastal'), ('coal-igcc-new', 'South'), ('coal-igcc-new', 'Panhandle'), ('coal-igcc-ccs-new', 'Northeast'), ('coal-igcc-ccs-new', 'West'), ('coal-igcc-ccs-new', 'Coastal'), ('coal-igcc-ccs-new', 'South'), ('coal-igcc-ccs-new', 'Panhandle'), ('ng-ct-old', 'Northeast'), ('ng-ct-old', 'West'), ('ng-ct-old', 'Coastal'), ('ng-ct-old', 'South'), ('ng-ct-old', 'Panhandle'), ('ng-cc-old', 'Northeast'), ('ng-cc-old', 'West'), ('ng-cc-old', 'Coastal'), ('ng-cc-old', 'South'), ('ng-st-old', 'Northeast'), ('ng-st-old', 'West'), ('ng-st-old', 'South'), ('ng-cc-new', 'Northeast'), ('ng-cc-new', 'West'), ('ng-cc-new', 'Coastal'), ('ng-cc-new', 'South'), ('ng-cc-new', 'Panhandle'), ('ng-cc-ccs-new', 'Northeast'), ('ng-cc-ccs-new', 'West'), ('ng-cc-ccs-new', 'Coastal'), ('ng-cc-ccs-new', 'South'), ('ng-cc-ccs-new', 'Panhandle'), ('ng-ct-new', 'Northeast'), ('ng-ct-new', 'West'), ('ng-ct-new', 'Coastal'), ('ng-ct-new', 'South'), ('ng-ct-new', 'Panhandle'), ('nuc-st-old', 'Northeast'), ('nuc-st-old', 'Coastal'), ('nuc-st-new', 'Northeast'), ('nuc-st-new', 'West'), ('nuc-st-new', 'Coastal'), ('nuc-st-new', 'South'), ('nuc-st-new', 'Panhandle')]
 	tnew = ['coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new','ng-cc-ccs-new', 'ng-ct-new','nuc-st-new']
 	region = ['Northeast', 'West', 'Coastal', 'South', 'Panhandle']
 	storage = ['Li_ion', 'Lead_acid', 'Flow']
 	lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]    
-	investment = pd.read_csv("repn_results/investmentdata/5yearsinvestment_NETL1-366.csv", index_col=0, header=0).iloc[:, :]
+	investment = pd.read_csv("repn_results/investmentdata/5yearsinvestment_NETL_no_reserve1-366.csv", index_col=0, header=0).iloc[:, :]
 
+	data = investment.obj 
 	#filter the data (domain reduction) && translate the data into cost domain
-	data = investment.obj
 	for line in lines:
-		if investment.loc[:, line + "[5]"].sum()> 0.1:
-			data = pd.concat([data, investment.loc[:, line + "[5]"].multiply(readData_single.lines_cost[line] * 10 ** (-9))], axis=1)
+		if sum( investment.loc[:, "cost_" + line + "[" + str(t) + "]"].sum() for t in stages) > 0.1:
+			new_col = sum( investment.loc[:, "cost_" + line + "[" + str(t) + "]"] for t in stages)
+			new_col.name = "tcost_" +  line 
+			data = pd.concat([data, new_col], axis=1)
 
-	for rn in rnew:
-		for r in region:
-			key = "ngo_rn[" + rn + "," + r + ",5]"
-			if investment.loc[:, key].sum() > 0.1:
-				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.DIC[rn, 5] * readData_single.CCm[rn] * readData_single.Qg_np[rn, r]* 10 ** (-9))], axis=1)
+	for (rn, r) in rn_r:
+		if rn in rnew:
+			if sum(investment.loc[:, "cost_ngb_rn[" + rn + "," + r + "," +  str(t) +"]"].sum() for t in stages) > 0.1:
+				new_col = sum(investment.loc[:, "cost_ngb_rn[" + rn + "," + r + "," +  str(t) +"]"] for t in stages)
+				new_col.name = "tcost_ngb_rn[" + rn + "," + r + "]"
+				data = pd.concat([data, new_col], axis=1)
+		if sum(investment.loc[:, "cost_nge_rn[" + rn + "," + r + "," +  str(t) +"]"].sum() for t in stages) > 0.1:
+			new_col = sum(investment.loc[:, "cost_nge_rn[" + rn + "," + r + "," +  str(t) +"]"] for t in stages)
+			new_col.name = "tcost_nge_rn[" + rn + "," + r + "]"
+			data = pd.concat([data, new_col], axis=1)				
 
-	for th in tnew:
-		for r in region:
-			key = "ngo_th[" + th + "," + r + ",5]"
-			if investment.loc[:,key].sum() > 0.1:
-				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.DIC[th, 5] * readData_single.CCm[th] * readData_single.Qg_np[th, r]* 10 ** (-9))], axis=1)			
+	for (th, r) in th_r:
+		if th in tnew:
+			if sum(investment.loc[:, "cost_ngb_th[" + th + "," + r + "," +  str(t) +"]"].sum() for t in stages) > 0.1:
+				new_col = sum(investment.loc[:, "cost_ngb_th[" + th + "," + r + "," +  str(t) +"]"] for t in stages)
+				new_col.name = "tcost_ngb_th[" + th + "," + r + "]"
+				data = pd.concat([data, new_col], axis=1)
+		if sum(investment.loc[:, "cost_nge_th[" + th + "," + r + "," +  str(t) + "]"].sum() for t in stages) > 0.1:
+			new_col = sum(investment.loc[:, "cost_nge_th[" + th + "," + r + "," +  str(t) + "]"] for t in stages)
+			new_col.name = "tcost_nge_th[" + th + "," + r + "]"
+			data = pd.concat([data, new_col], axis=1)	
+
 	for j in storage:
 		for r in region:
-			key = "nso[" + j + "," + r + ",5]"
-			if investment.loc[:,key].sum() > 0.1:
-				data = pd.concat([data, investment.loc[:, key].multiply(readData_single.storage_inv_cost[j, 5] * readData_single.max_storage_cap[j] * 10 ** (-9))], axis=1)
+			if sum(investment.loc[:,"cost_nsb[" + j + "," + r + "," + str(t) + "]"].sum() for t in stages) > 0.1:
+				new_col = sum(investment.loc[:,"cost_nsb[" + j + "," + r + "," + str(t) + "]"] for t in stages)
+				new_col.name = "cost_nsb[" + j + "," + r + "," + str(t) + "]"
+				data = pd.concat([data, new_col], axis=1)
 
 	return data.drop(["obj"], axis=1).to_numpy(), data.obj.to_numpy()
 
@@ -132,17 +147,26 @@ def run_cluster(data, method="kmedoid_exact", n_clusters=10):
 
 	return {"medoids":indices+1, "weights":sorted_count, "labels":labels+1}
 
-def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost"):
+def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost", infeasible_days=[]):
 	if method == "highest_cost":
 		days = obj.argsort()[-n:] + 1
 		#adjust weight of the cluster where the representative days is in 
-		for day in days:
-			if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:
-				cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
-				cluster_results['medoids'].append(day)
-				cluster_results['weights'].append(1)
+	if method == "highest_cost_infeasible":
+		days_obj = []#the cost of infeasible days
+		for day in infeasible_days:
+			days_obj.append(obj[day-1])
+		days =  []#days selected
+		days_obj = np.array(days_obj)
+		for index in days_obj.argsort()[-n:]:
+			days.append(infeasible_days[index])
+	print(days)
+	for day in days:
+		if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:
+			cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
+			cluster_results['medoids'].append(day)
+			cluster_results['weights'].append(1)
 
-		return cluster_results 
+	return cluster_results 
 
 
 

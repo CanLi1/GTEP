@@ -58,19 +58,28 @@ lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", 
 for t in m.t:
 	for line in lines:
 		fieldnames.append(line + "[" + str(t) + "]")
+		fieldnames.append("cost_" + line + "[" + str(t) + "]")
 	for (rn, r) in m.rn_r:
 		if rn in m.rnew:
 			fieldnames.append("ngb_rn[" + rn + "," + r + "," + str(t) + "]")  
+			fieldnames.append("cost_ngb_rn[" + rn + "," + r + "," + str(t) + "]")  
+		fieldnames.append("nge_rn[" + rn + "," + r + "," + str(t) + "]")  
+		fieldnames.append("cost_nge_rn[" + rn + "," + r + "," + str(t) + "]")  
 	for (th,r) in m.th_r:
 		if th in m.tnew:
 			fieldnames.append("ngb_th[" + th + "," + r + "," + str(t) + "]")
+			fieldnames.append("cost_ngb_th[" + th + "," + r + "," + str(t) + "]")
+		fieldnames.append("nge_th[" + th + "," + r + "," + str(t) + "]")
+		fieldnames.append("cost_nge_th[" + th + "," + r + "," + str(t) + "]")
 	for j in m.j:
 		for r in m.r:
 			fieldnames.append("nsb["+j + ","+r+"," +  str(t) +"]")
+			fieldnames.append("cost_nsb["+j + ","+r+"," +  str(t) +"]")
+
 
 day_start = 1
 day_end = 366
-with open('repn_results/5yearsinvestment_NETL' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
+with open('repn_results/5yearsinvestment_NETL_no_reserve' + str(day_start) + "-" + str(day_end) + '.csv', 'w', newline='') as results_file:      
 	writer = csv.DictWriter(results_file, fieldnames=fieldnames) 	
 	writer.writeheader()
 
@@ -257,26 +266,52 @@ with open('repn_results/5yearsinvestment_NETL' + str(day_start) + "-" + str(day_
 
 		new_row = {"repnday":day, "solution":1, "obj":m.obj.expr()}
 		for t in m.t: 
+			#investment related variables 
 			for line in lines:
 				new_row[line + "[" + str(t) + "]"] = 0
+				new_row["cost_" + line + "[" + str(t) + "]"] = 0
 			for l in m.l_new:
 				value = m.Bl[t].ntb[l,t].value
 				key = readData_single.tielines[l-1]['Near Area Name'] + "_" + readData_single.tielines[l-1]['Far Area Name'] + "[" + str(t) + "]"
+				new_row[key] += value 
+				value = m.Bl[t].ntb[l,t].value * m.TIC[l,t] * m.if_[t]  * 10 ** (-6)
+				key = "cost_" + readData_single.tielines[l-1]['Near Area Name'] + "_" + readData_single.tielines[l-1]['Far Area Name'] + "[" + str(t) + "]"
 				new_row[key] += value 
 			for (rn, r) in m.rn_r:
 				if rn in m.rnew:
 					value = m.Bl[t].ngb_rn[rn, r, t].value 
 					key = "ngb_rn[" + rn + "," + r + "," +  str(t) +"]"
 					new_row[key] = value 
+					value = m.Bl[t].ngb_rn[rn, r, t].value * m.DIC[rn, t] * m.CCm[rn] * m.Qg_np[rn, r] * m.if_[t]  * 10 ** (-6)
+					key = "cost_ngb_rn[" + rn + "," + r + "," +  str(t) +"]"
+					new_row[key] = value 
+				value = m.Bl[t].nge_rn[rn, r, t].value 
+				key = "nge_rn[" + rn + "," + r + "," +  str(t) +"]"
+				new_row[key] = value 
+				value = m.Bl[t].nge_rn[rn, r, t].value  * m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * m.if_[t]  * 10 ** (-6)
+				key = "cost_nge_rn[" + rn + "," + r + "," +  str(t) +"]"
+				new_row[key] = value 
 			for (th, r) in m.th_r:
 				if th in m.tnew:
 					value = m.Bl[t].ngb_th[th, r, t].value 
 					key = "ngb_th[" + th + "," + r + "," +  str(t) + "]"
 					new_row[key] = value  
+					value = m.Bl[t].ngb_th[th, r, t].value * m.DIC[th, t] * m.CCm[th] * m.Qg_np[th, r] * m.if_[t]  * 10 ** (-6)
+					key = "cost_ngb_th[" + th + "," + r + "," +  str(t) + "]"
+					new_row[key] = value  					
+				value = m.Bl[t].nge_th[th, r, t].value 
+				key = "nge_th[" + th + "," + r + "," +  str(t) + "]"
+				new_row[key] = value  
+				value = m.Bl[t].nge_th[th, r, t].value * m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * m.if_[t]  * 10 ** (-6)
+				key = "cost_nge_th[" + th + "," + r + "," +  str(t) + "]"
+				new_row[key] = value  					
 			for j in m.j:
 				for r in m.r:
 					value =m.Bl[t].nsb[j, r, t].value 
 					key = "nsb[" + j + "," + r + "," +  str(t) + "]"
+					new_row[key] = value 
+					value = m.Bl[t].nsb[j, r, t].value * m.storage_inv_cost[j, t] * m.max_storage_cap[j] * m.if_[t]  * 10 ** (-6)
+					key = "cost_nsb[" + j + "," + r + "," +  str(t) + "]"
 					new_row[key] = value 
 		writer.writerow(new_row)  
 

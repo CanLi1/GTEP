@@ -61,25 +61,29 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 #cluster 
 from cluster import *
 method = "cost"
+extreme_day_method = "highest_cost_infeasible"
 if method == "cost":
-    outputfile = 'repn_results/' +  method + "_15days_5years_picksoln_mediumtax.csv"
+    outputfile = 'repn_results/' +  method + "_15days_5years_picksoln_mediumtax_no_reserve.csv"
     data, cluster_obj = load_cost_data(n_stages)
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
     initial_cluster_result = result
 elif method == "input":
-    outputfile ='repn_results/' +  method + "_15days_5years_picksoln_mediumtax.csv"
+    outputfile ='repn_results/' +  method + "_15days_5years_picksoln_mediumtax_no_reserve.csv"
     data= load_input_data()
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
     readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])   
 iter_ = 1 
-iter_limit = 7
+iter_limit = 3
 best_ub = float("inf") 
 cluster_results_record = []
 while True:
     if method == "cost":
-        cluster_results = deepcopy(initial_cluster_result)
-        if iter_ > 1:
-            select_extreme_days_cost(cluster_obj, cluster_results, n=iter_-1, method="highest_cost")
+        if extreme_day_method == "highest_cost":
+            cluster_results = deepcopy(initial_cluster_result)#reselected n days as extreme days
+        elif extreme_day_method == "highest_cost_infeasible" and iter_ == 1:
+            cluster_results = deepcopy(initial_cluster_result)#only copy once and add 1 extreme days per iteration 
+        if iter_ > 1 and len(infeasible_days) >0:
+                cluster_results = select_extreme_days_cost(cluster_obj, cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days)
         readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, cluster_results['medoids'], cluster_results['weights'])
         cluster_results_record.append(cluster_results)
     # create blocks
@@ -217,9 +221,12 @@ while True:
     import pymp
     NumProcesses =6
     operating_cost = pymp.shared.dict()
+    infeasible_days = pymp.shared.list()
     with pymp.Parallel(NumProcesses) as p:
       for day in p.range(1, 366):
         operating_cost[day] = eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage) 
+        if operating_cost[day]["total_operating_cost"] >= 1e10:
+            infeasible_days.append(day)
 
     write_repn_results(operating_cost, outputfile)  
 
@@ -233,6 +240,9 @@ while True:
     if best_ub > totol_cost:
         best_ub = totol_cost
     else:
+        break 
+
+    if len(infeasible_days) == 0:
         break 
 
     iter_ += 1 

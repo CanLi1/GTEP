@@ -678,7 +678,7 @@ def create_model(time_periods, formulation, readData_det, num_scenario):
                                                               + m.EF_CO2[i] * m.tx_CO2[t, t] * m.hr[i, r]) * _b.P[scenario, 
                                                                  i, r, t, d, s]
                                                              for i, r in m.i_r)
-                                       for d in m.d for s in m.hours) )   for t in [tt])* 10 ** (-9)
+                                       for d in m.d for s in m.hours) )   for t in [tt])* 10 ** (-6)
         b.variable_operating_cost = Expression(rule=variable_operating_cost)
 
 
@@ -686,7 +686,7 @@ def create_model(time_periods, formulation, readData_det, num_scenario):
             return sum(m.if_[t] * (sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
                                                                             _b.ngo_rn[scenario, rn, r, t] for rn, r in m.rn_r)
                                    + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[scenario, th, r, t]
-                                         for th, r in m.th_r))   for t in [tt])* 10 ** (-9)
+                                         for th, r in m.th_r))   for t in [tt])* 10 ** (-6)
         b.fixed_operating_cost = Expression(rule=fixed_operating_cost)
 
 
@@ -694,45 +694,45 @@ def create_model(time_periods, formulation, readData_det, num_scenario):
             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * _b.su[scenario, th, r, t, d, s] * m.Qg_np[th, r]
                                          * (m.f_start[th] * m.P_fuel[th, t]
                                             + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, t] + m.C_start[th])
-                                   for th, r in m.th_r for d in m.d for s in m.hours))   for t in [tt])* 10 ** (-9)
+                                   for th, r in m.th_r for d in m.d for s in m.hours))   for t in [tt])* 10 ** (-6)
         b.startup_cost = Expression(rule=startup_cost)
 
         def renewable_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[rnew, t, scenario] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[scenario, rnew, r, t]
-                                         for rnew, r in m.rn_r if rnew in m.rnew))   for t in [tt])* 10 ** (-9)
+                                         for rnew, r in m.rn_r if rnew in m.rnew))   for t in [tt])* 10 ** (-6)
         b.renewable_generator_cost = Expression(rule=renewable_generator_cost)
 
 
 
         def thermal_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[tnew, t, scenario] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[scenario, tnew, r, t]
-                                         for tnew, r in m.th_r if tnew in m.tnew))   for t in [tt])* 10 ** (-9)
+                                         for tnew, r in m.th_r if tnew in m.tnew))   for t in [tt])* 10 ** (-6)
         b.thermal_generator_cost = Expression(rule=thermal_generator_cost)
 
         def extending_renewable_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[rn, t, scenario] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[scenario, rn, r, t]
-                                         for rn, r in m.rn_r))   for t in [tt])* 10 ** (-9)
+                                         for rn, r in m.rn_r))   for t in [tt])* 10 ** (-6)
         b.extending_renewable_generator_cost = Expression(rule=extending_renewable_generator_cost)
 
 
         def extending_thermal_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[th, t, scenario] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[scenario, th, r, t]
-                                         for th, r in m.th_r))   for t in [tt])* 10 ** (-9)
+                                         for th, r in m.th_r))   for t in [tt])* 10 ** (-6)
         b.extending_thermal_generator_cost = Expression(rule=extending_thermal_generator_cost)
 
         def transmission_line_cost(_b):
-            return sum(m.if_[t] * sum(m.TIC[l,t] * _b.ntb[scenario, l,t] for l in m.l) for t in [tt])* 10 ** (-9)
+            return sum(m.if_[t] * sum(m.TIC[l,t] * _b.ntb[scenario, l,t] for l in m.l) for t in [tt])* 10 ** (-6)
         b.transmission_line_cost = Expression(rule=transmission_line_cost)
 
         def storage_investment_cost(_b):
             return sum(m.if_[t] * (sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[scenario, j, r, t]
-                                         for j in m.j for r in m.r))   for t in [tt])* 10 ** (-9)  
+                                         for j in m.j for r in m.r))   for t in [tt])* 10 ** (-6)  
         b.storage_investment_cost = Expression(rule=storage_investment_cost)       
         
         def penalty_cost(_b):
             return sum(m.if_[t] * (m.PEN[t] * _b.RES_def[scenario, t]
                                    + m.PENc * sum(_b.cu[scenario, r, t, d, s]
-                                                  for r in m.r for d in m.d for s in m.hours))   for t in [tt])  * 10 ** (-9)
+                                                  for r in m.r for d in m.d for s in m.hours))   for t in [tt])  * 10 ** (-6)
         b.penalty_cost = Expression(rule=penalty_cost)   
 
         def renewable_capacity(_b):
@@ -762,7 +762,7 @@ def create_model(time_periods, formulation, readData_det, num_scenario):
                                          for j in m.j for r in m.r)
                                    + m.PEN[t] * _b.RES_def[scenario, t] )
                       for t in [tt]) \
-                   * 10 ** (-9)
+                   * 10 ** (-6)
         b.total_investment_cost = Expression(rule=total_investment_cost)
 
         def total_operating_cost(_b):
@@ -778,7 +778,7 @@ def create_model(time_periods, formulation, readData_det, num_scenario):
                                    + m.PENc * sum(_b.cu[scenario, r, t, d, s]
                                                   for r in m.r for d in m.d for s in m.hours) )
                       for t in [tt]) \
-                   * 10 ** (-9)                                                                                                                       
+                   * 10 ** (-6)                                                                                                                       
         b.total_operating_cost = Expression(rule=total_operating_cost)
         b.vobj = Objective(rule=total_operating_cost, sense=minimize)
         b.vobj.deactivate()
@@ -812,7 +812,7 @@ def create_model(time_periods, formulation, readData_det, num_scenario):
                                    + m.PENc * sum(_b.cu[scenario, r, t, d, s]
                                                   for r in m.r for d in m.d for s in m.hours) )
                       for t in [tt]) \
-                   * 10 ** (-9) \
+                   * 10 ** (-6) \
                    
 
         b.obj = Objective(rule=obj_rule, sense=minimize)

@@ -8,12 +8,14 @@ import os.path
 from pyomo.environ import *
 import csv
 import copy 
-
+from util import *
 from scenarioTree import create_scenario_tree
 import deterministic.readData_det as readData_det
-import endogenous.endoblock_gtep_det as b
-import sys
-sys.setrecursionlimit(10**4)
+import endogenous.endo_gtep_optBlocks_det as b
+import  endogenous.gtep_optBlocks_det as sub
+from endogenous.util import * 
+import time
+
 
 # ######################################################################################################################
 # USER-DEFINED PARAMS
@@ -47,6 +49,8 @@ for i in range(1, n_stages+1):
 max_iter = 100
 opt_tol = 1  # %
 
+start_time = time.time()
+
 # ######################################################################################################################
 
 # create scenarios and input data
@@ -61,313 +65,316 @@ num_scenario = 3
 m = b.create_model(time_periods, formulation, readData_det, num_scenario)
 
 
-# connnecting the time blocks for each scenario block
-for s in range(1, num_scenario+1):
-    m.scenario_block[s].obj = Objective(expr=0, sense=minimize)
-    for t in m.t:
-        m.scenario_block[s].obj += m.scenario_block[s].time_block[t,s].obj.expr 
-        m.scenario_block[s].time_block[t,s].obj.deactivate()
-        if t != 1:
-            for (rn, r) in m.rn_r:
-                m.scenario_block[s].time_block[t,s].link_equal1.add(expr=(m.scenario_block[s].time_block[t,s].ngo_rn_prev[s, rn, r] ==
-                                                  m.scenario_block[s].time_block[t-1,s].ngo_rn[s, rn, r, t-1] ))
-            for (th, r) in m.th_r:
-                m.scenario_block[s].time_block[t,s].link_equal2.add(expr=(m.scenario_block[s].time_block[t,s].ngo_th_prev[s, th, r] ==
-                                                    m.scenario_block[s].time_block[t-1,s].ngo_th[s, th, r, t-1]  ))
-            for j in m.j:
-                for r in m.r:
-                    m.scenario_block[s].time_block[t,s].link_equal3.add(expr=(m.scenario_block[s].time_block[t,s].nso_prev[s, j, r] ==
-                                                     m.scenario_block[s].time_block[t-1,s].nso[s, j, r, t-1]))
-
-            for l in m.l_new:
-                m.scenario_block[s].time_block[t,s].link_equal4.add(expr=(m.scenario_block[s].time_block[t,s].nte_prev[s, l] ==
-                                                     m.scenario_block[s].time_block[t-1,s].nte[s, l, t-1]))
 
 
 
 
 
-# ratio = [0.7, 1.0, 1.3]
-# #set uncertain parameters for the stochastic model 
-# for w in range(1, num_scenario+1):
-#     for i in m.i:
-#         for t in m.t:
-#             if i == 'coal-first-new':
-#                 m.DIC[i, t, w] = readData_det.DIC[i,t] * ratio[w-1]
-#             else:
-#                 m.DIC[i,t,w] = readData_det.DIC[i,t]
 
-# a = TransformationFactory("core.relax_integrality")
-# a.apply_to(m)
-# opt = SolverFactory("cplex")
-# opt.options['LPMethod'] = 4
-# opt.options['solutiontype'] =2 
-# opt.options['mipgap'] = 0.001
-# opt.options['TimeLimit'] = 36000
-# opt.options['threads'] = 6
-# # opt.solve(m.scenario_block[1], )
-# for s in range(1, 4):
-#     opt.solve(m.scenario_block[s], tee=True)
+ratio = [0.1, 1.0, 1.9]
+#set uncertain parameters for the stochastic model 
+for w in range(1, num_scenario+1):
+    for i in m.i:
+        for t in m.t:
+            if i == 'coal-first-new':
+                m.DIC[i, t, w] = readData_det.DIC[i,t] * ratio[w-1]
+            else:
+                m.DIC[i,t,w] = readData_det.DIC[i,t]
 
 #define investment variables and operating variables
-# investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
-# operating_vars = []
-# if formulation == "standard":
-#   operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
-# elif formulation == "hull":
-#   operating_vars = ["theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
-# elif formulation == "improved":
-#   operating_vars = ["theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
-# map_d = {'fall':3, 'summer':2, 'spring':1, 'winter':4}
+investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
+operating_vars = []
+if formulation == "standard":
+  operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+elif formulation == "hull":
+  operating_vars = ["theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+elif formulation == "improved":
+  operating_vars = ["theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
+
 
 #add initial NACs
-# for w in range(2, num_scenario + 1):
-#     for v in m.scenario_block[w].component_objects(Var):
-#         if v.getname() in investment_vars:
-#             for index in v:
-#                 t = index[-1]
-#                 new_index = list(copy.deepcopy(index))
-#                 new_index[0] = 1
-#                 new_index = tuple(new_index)
-#                 new_var = getattr(m.scenario_block[1], v.getname())
-#                 m.scenario_block[w].link_equal1.add(v[index] == new_var[new_index])
+for w in range(2, num_scenario + 1):
+    for v in m.scenario_block[w].component_objects(Var):
+        if v.getname() in investment_vars:
+            for index in v:
+                t = index[-1]
+                if t == 1:
+                    new_index = list(copy.deepcopy(index))
+                    new_index[0] = 1
+                    new_index = tuple(new_index)
+                    new_var = getattr(m.scenario_block[1], v.getname())
+                    m.scenario_block[w].link_equal1.add(v[index] == new_var[new_index])
 
-# #add conditional NACs
-# scenario_pair = [(1,2), (1,3)]
-# m.s_pair = Set(initialize=scenario_pair)
-# m.Y = Var(m.s_pair, m.t, within=Binary)
-
-
-# #add NACs when Y equals 1 
-# for pair in scenario_pair:
-#     first_scenario = pair[0]
-#     second_scenario = pair[1]
-#     for v in m.scenario_block[second_scenario].component_objects(Var):
-#         new_var = getattr(m.scenario_block[first_scenario], v.getname())
-#         for index in v:
-#             if v.getname() in investment_vars:
-#                 t = index[-1]
-#                 if t != 1:
-#                     new_index = list(copy.deepcopy(index))
-#                     new_index[0] = first_scenario
-#                     new_index = tuple(new_index)                                        
-#                     m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]<= (v[index].ub - new_var[new_index].lb) * (1 - m.Y[pair, t-1]) ) 
-#                     m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]>= (v[index].lb - new_var[new_index].ub) * (1 - m.Y[pair, t-1]) ) 
-#             elif v.getname() in operating_vars:
-#                 t = index[-3]
-#                 new_index = list(copy.deepcopy(index))
-#                 new_index[0] = first_scenario
-#                 new_index = tuple(new_index)                      
-#                 m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]<= (v[index].ub - new_var[new_index].lb) * (1 - m.Y[pair, t]) ) 
-#                 m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]>= (v[index].lb - new_var[new_index].ub) * (1 - m.Y[pair, t]) )                
+#add conditional NACs
+scenario_pair = [(1,2), (1,3)]
+m.s_pair = Set(initialize=scenario_pair)
+m.Y = Var(m.s_pair, m.t, within=Binary)
 
 
-# #determine the relationship between Y and the investment decisions
-# for pair in scenario_pair:
-#     for t in m.t:
-#         s1 = pair[0]
-#         s2 = pair[1]
-#         for th, r in m.th_r:
-#             if th == "coal-first-new":
-#                 m.scenario_block[s2].link_equal3.add( sum(m.scenario_block[s2].ngb_th[s2, th, r, tt] for tt in m.t if tt <= t) <= m.scenario_block[s2].ngb_th[s2, th, r, t].ub * t * (1-m.Y[s1,s2,t])  )
-#                 m.scenario_block[s2].link_equal3.add( sum(m.scenario_block[s2].ngb_th[s2, th, r, tt] for tt in m.t if tt <= t) >= (1-m.Y[s1,s2,t])  )
-
-# #set probability 
-# for s in m.scenarios:
-#     m.probability[s] = 1/num_scenario
-
-# #set objective 
-# m.obj = Objective(expr=0, sense=minimize)
-
-# for s in m.scenarios:
-#     m.scenario_block[s].obj.deactivate()
-#     m.obj.expr += m.scenario_block[s].obj.expr
-# a = TransformationFactory("core.relax_integrality")
-# a.apply_to(m)
-# opt = SolverFactory("cplex")
-# opt.options['LPMethod'] = 4
-# opt.options['solutiontype'] =2 
-# opt.options['mipgap'] = 0.001
-# opt.options['TimeLimit'] = 36000
-# opt.options['threads'] = 6
-# opt.solve(m, tee=True)
-
-# # converting sets to lists:
-# rn_r = list(m.rn_r)
-# th_r = list(m.th_r)
-# j_r = [(j, r) for j in m.j for r in m.r]
-# l_new = list(m.l_new)
-
-# # request the dual variables for all (locally) defined blocks
-# for bloc in m.Bl.values():
-#     bloc.dual = Suffix(direction=Suffix.IMPORT)
-
-# # Add equality constraints (solve the full space)
-# for stage in m.stages:
-#     if stage != 1:
-#         # print('stage', stage, 't_prev', t_prev)
-#         for (rn, r) in m.rn_r:
-#             m.Bl[stage].link_equal1.add(expr=(m.Bl[stage].ngo_rn_prev[rn, r] ==
-#                                               m.Bl[stage-1].ngo_rn[rn, r, t_per_stage[stage-1][-1]] ))
-#         for (th, r) in m.th_r:
-#             m.Bl[stage].link_equal2.add(expr=(m.Bl[stage].ngo_th_prev[th, r] ==
-#                                                 m.Bl[stage-1].ngo_th[th, r, t_per_stage[stage-1][-1]]  ))
-#         for (j, r) in j_r:
-#             m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
-#                                                  m.Bl[stage-1].nso[j, r, t_per_stage[stage-1][-1]]))
-
-#         for l in m.l_new:
-#             m.Bl[stage].link_equal4.add(expr=(m.Bl[stage].nte_prev[l] ==
-#                                                  m.Bl[stage-1].nte[l, t_per_stage[stage-1][-1]]))
-# m.obj = Objective(expr=0, sense=minimize)
-
-# for stage in m.stages:
-#     m.Bl[stage].obj.deactivate()
-#     m.obj.expr += m.Bl[stage].obj.expr
+#add NACs when Y equals 1 
+for pair in scenario_pair:
+    first_scenario = pair[0]
+    second_scenario = pair[1]
+    for v in m.scenario_block[second_scenario].component_objects(Var):
+        new_var = getattr(m.scenario_block[first_scenario], v.getname())
+        for index in v:
+            if v.getname() in investment_vars:
+                t = index[-1]
+                if t != 1:
+                    new_index = list(copy.deepcopy(index))
+                    new_index[0] = first_scenario
+                    new_index = tuple(new_index)                                        
+                    m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]<= (v[index].ub - new_var[new_index].lb) * (1 - m.Y[pair, t-1]) ) 
+                    m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]>= (v[index].lb - new_var[new_index].ub) * (1 - m.Y[pair, t-1]) ) 
+            elif v.getname() in operating_vars:
+                t = index[-3]
+                new_index = list(copy.deepcopy(index))
+                new_index[0] = first_scenario
+                new_index = tuple(new_index)                      
+                m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]<= (v[index].ub - new_var[new_index].lb) * (1 - m.Y[pair, t]) ) 
+                m.scenario_block[second_scenario].link_equal2.add(v[index]- new_var[new_index]>= (v[index].lb - new_var[new_index].ub) * (1 - m.Y[pair, t]) )                
 
 
-# # # solve relaxed model
-# # a = TransformationFactory("core.relax_integrality")
-# # a.apply_to(m)
-# # opt = SolverFactory("cplex")
-# # opt.options['mipgap'] = 0.001
-# # opt.options['TimeLimit'] = 36000
-# # opt.solve(m, tee=True)
-# operating_integer_vars = ["u", "su", "sd"]
-# for stage in m.stages:
-#     for t in t_per_stage[stage]:
-#         for d in m.d:
-#             for s in m.hours:
-#                 for (th, r) in m.th_r:
-#                     lb, ub = m.Bl[stage].u[th, r, t, d, s].bounds
-#                     m.Bl[stage].u[th, r, t, d, s].domain = Reals
-#                     m.Bl[stage].u[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].u[th, r, t, d, s].setub(ub)     
-#                     lb, ub = m.Bl[stage].su[th, r, t, d, s].bounds
-#                     m.Bl[stage].su[th, r, t, d, s].domain = Reals
-#                     m.Bl[stage].su[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].su[th, r, t, d, s].setub(ub)  
-#                     lb, ub = m.Bl[stage].sd[th, r, t, d, s].bounds
-#                     m.Bl[stage].sd[th, r, t, d, s].domain = Reals
-#                     m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].sd[th, r, t, d, s].setub(ub)                                                     
-# import time
+#determine the relationship between Y and the investment decisions
+for pair in scenario_pair:
+    for t in m.t:
+        s1 = pair[0]
+        s2 = pair[1]
+        m.scenario_block[s2].link_equal3.add( sum(m.scenario_block[s2].ngb_th[s2, th, r, tt] for (th,r) in m.th_r for tt in m.t if (tt <= t and th == "coal-first-new") )  <= 10*t * (1-m.Y[s1,s2,t])  )
+        m.scenario_block[s2].link_equal3.add( sum(m.scenario_block[s2].ngb_th[s2, th, r, tt] for (th,r) in m.th_r for tt in m.t if (tt <= t and th == "coal-first-new") ) >= (1-m.Y[s1,s2,t])  )
 
-# opt = SolverFactory("cplex_persistent")
+#set probability 
+for s in m.scenarios:
+    m.probability[s] = 1/num_scenario
+
+#set objective 
+m.obj = Objective(expr=0, sense=minimize)
+
+
+for s in m.scenarios:
+    m.scenario_block[s].obj.deactivate()
+    m.obj.expr += m.scenario_block[s].obj.expr
+
+#use cplex Benders to solve the problem 
+for w in range(1, num_scenario+1):
+    for t in m.t:
+        for d in m.d:
+            for s in m.hours:
+                for (th, r) in m.th_r:
+                    lb, ub = m.scenario_block[w].u[w, th, r, t, d, s].bounds
+                    m.scenario_block[w].u[w, th, r, t, d, s].domain = Reals
+                    m.scenario_block[w].u[w, th, r, t, d, s].setlb(lb)
+                    m.scenario_block[w].u[w, th, r, t, d, s].setub(ub)     
+                    lb, ub = m.scenario_block[w].su[w, th, r, t, d, s].bounds
+                    m.scenario_block[w].su[w, th, r, t, d, s].domain = Reals
+                    m.scenario_block[w].su[w, th, r, t, d, s].setlb(lb)
+                    m.scenario_block[w].su[w, th, r, t, d, s].setub(ub)  
+                    lb, ub = m.scenario_block[w].sd[w, th, r, t, d, s].bounds
+                    m.scenario_block[w].sd[w, th, r, t, d, s].domain = Reals
+                    m.scenario_block[w].sd[w, th, r, t, d, s].setlb(lb)
+                    m.scenario_block[w].sd[w, th, r, t, d, s].setub(ub)                                                    
+import time
+
+opt = SolverFactory("cplex_persistent")
  
-# opt.options['threads'] = 1
-# opt.options['timelimit'] = 3600*24
-# opt.set_instance(m)
-# opt.set_benders_annotation()
-# opt.set_benders_strategy(1)
-# opt.set_mip_rel_gap(0.005)
+opt.options['threads'] = 1
+opt.options['timelimit'] = 3600*24
+opt.set_instance(m)
+opt.set_benders_annotation()
+opt.set_benders_strategy(1)
+opt.set_mip_rel_gap(0.005)
 
-# #set master variables 
-# investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
-# for v in m.component_objects(Var):
-#     if v.getname() in investment_vars:
-#         for index in v:
-#             opt.set_master_variable(v[index])
+#set master variables 
+for v in m.component_objects(Var):
+    if v.getname() in investment_vars:
+        for index in v:
+            opt.set_master_variable(v[index])
 
-# #set subproblems
-# operating_vars = []
-# if formulation == "standard":
-#   operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
-# elif formulation == "hull":
-#   operating_vars = ["theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
-# elif formulation == "improved":
-#   operating_vars = ["theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
-# map_d = {'fall':3, 'summer':2, 'spring':1, 'winter':4}
-# for v in m.component_objects(Var):
-#     if v.getname() in operating_vars:
-#         for index in v:
-#             t = index[-3]
-#             opt.set_subproblem_variable(v[index], t)
+#set subproblems
+for w in range(1, num_scenario + 1):
+    for v in m.scenario_block[w].component_objects(Var):
+        if v.getname() in operating_vars:
+            for index in v:
+                t = index[-3]
+                opt.set_subproblem_variable(v[index], t)
+
+benders_results = opt.solve(m, tee=True)
+
+time_distinguished = n_stages + 1
+tol = 0.99
+#find when the scenarios pairs can be distinguished 
+#we assume that if the value of coal-first-plant> 1e-5 then it is implemented 
+for pair in scenario_pair:
+    time_distinguished
+    for t in m.t:
+        s1 = pair[0]
+        s2 = pair[1]
+        if sum(m.scenario_block[s1].ngb_th[s1, "coal-first-new", r, t].value + m.scenario_block[s2].ngb_th[s2, "coal-first-new", r, t].value for r in m.r) > tol:
+            if t < time_distinguished:
+                time_distinguished = t 
+            break 
 
 
-# opt.solve(m, tee=True)
 
-# #fix the integer variables from Benders and resolve the original problem by stages
-# m.obj.deactivate()
-# for stage in m.stages:
-#     m.Bl[stage].obj.activate() ####To do
-# for stage in m.stages:
-#     for t in t_per_stage[stage]:
-#         for d in m.d:
-#             for s in m.hours:
-#                 for (th, r) in m.th_r:
-#                     lb, ub = m.Bl[stage].u[th, r, t, d, s].bounds
-#                     m.Bl[stage].u[th, r, t, d, s].domain = NonNegativeIntegers
-#                     m.Bl[stage].u[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].u[th, r, t, d, s].setub(ub)     
-#                     lb, ub = m.Bl[stage].su[th, r, t, d, s].bounds
-#                     m.Bl[stage].su[th, r, t, d, s].domain = NonNegativeIntegers
-#                     m.Bl[stage].su[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].su[th, r, t, d, s].setub(ub)  
-#                     lb, ub = m.Bl[stage].sd[th, r, t, d, s].bounds
-#                     m.Bl[stage].sd[th, r, t, d, s].domain = NonNegativeIntegers
-#                     m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
-#                     m.Bl[stage].sd[th, r, t, d, s].setub(ub)        
+# #apply a heuristic to find the optimal investment decisions 
+# #and solve the deterministic model for each scenario to obtain a feasible solution
+time_periods = n_stages
+t_per_stage = {}
+for i in range(1, n_stages+1):
+    t_per_stage[i] = [i]
+max_iter = 1
+scenario_time_blocks = {}
+for w in range(1, num_scenario+1):      
+    time_blocks = sub.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
+    for i in m.i:
+        for t in m.t:
+            if i == 'coal-first-new':
+                time_blocks.DIC[i, t] = readData_det.DIC[i,t] * ratio[w-1]  
+    scenario_time_blocks[w] = time_blocks
 
-# for stage in m.stages:
-#     #clear the linking constraints to solve each block separately
-#     m.Bl[stage].link_equal1.clear()
-#     m.Bl[stage].link_equal2.clear()
-#     m.Bl[stage].link_equal3.clear()
-#     m.Bl[stage].link_equal4.clear()
+mipopt = SolverFactory("cplex")
+mipopt.options['TimeLimit'] = 36000
+mipopt.options['threads'] = 6
+mipopt.options['mipgap'] = 0.001
 
-#     for t in t_per_stage[stage]:
-#         for (rn, r) in m.rn_r:
-#             value = m.Bl[stage].ngo_rn[rn, r, t].value
-#             m.Bl[stage].ngo_rn[rn, r, t].fix(value)
-#             value = m.Bl[stage].ngb_rn[rn, r, t].value
-#             m.Bl[stage].ngb_rn[rn, r, t].fix(value)
-#             value = m.Bl[stage].nge_rn[rn, r, t].value
-#             m.Bl[stage].nge_rn[rn, r, t].fix(value)
-#             value = m.Bl[stage].ngr_rn[rn, r, t].value
-#             m.Bl[stage].ngr_rn[rn, r, t].fix(value)                                    
-#         for (th, r) in m.th_r:
-#             value = m.Bl[stage].ngo_th[th, r, t].value
-#             m.Bl[stage].ngo_th[th, r, t].fix(value)
-#             value = m.Bl[stage].ngb_th[th, r, t].value
-#             m.Bl[stage].ngb_th[th, r, t].fix(value)
-#             value = m.Bl[stage].nge_th[th, r, t].value
-#             m.Bl[stage].nge_th[th, r, t].fix(value)
-#             value = m.Bl[stage].ngr_th[th, r, t].value
-#             m.Bl[stage].ngr_th[th, r, t].fix(value)                                    
-#         for (j, r) in j_r:
-#             value = m.Bl[stage].nso[j, r, t].value
-#             m.Bl[stage].nso[j, r, t].fix(value)
-#             value = m.Bl[stage].nsb[j, r, t].value
-#             m.Bl[stage].nsb[j, r, t].fix(value)
-#             value = m.Bl[stage].nsr[j, r, t].value
-#             m.Bl[stage].nsr[j, r, t].fix(value)                        
+def fix_investment_and_solve_no_rounding(m, w, t, scenario_time_blocks, opt):
+    time_blocks = scenario_time_blocks[w]
+    for l in m.l_new:
+        time_blocks.Bl[t].nte[l,t].fix(m.scenario_block[w].nte[w,l,t].value)
+    #fix generation related constraints 
+    for (rn, r) in m.rn_r:
+        time_blocks.Bl[t].ngo_rn[rn, r, t].fix(m.scenario_block[w].ngo_rn[w,rn,r,t].value)
+    for (th, r) in m.th_r:
+        time_blocks.Bl[t].ngo_th[th, r, t].fix(m.scenario_block[w].ngo_th[w,th,r,t].value)
 
-#         for l in m.l_new:
-#             value = m.Bl[stage].nte[l, t].value
-#             m.Bl[stage].nte[l, t].fix(value)   
-#             value = m.Bl[stage].ntb[l, t].value
-#             m.Bl[stage].ntb[l, t].fix(value)                
+    for j in m.j:
+        for r in m.r:
+            time_blocks.Bl[t].nso[j,r,t].fix( m.scenario_block[w].nso[w,j,r,t].value )
+    results = opt.solve(time_blocks.Bl[t], tee=True)
+    #set the variables for the next stage 
+    if t < n_stages:
+        set_next_stage_vars(time_blocks, t)
 
-# upper_bound_obj = 0.0
-# lopt = SolverFactory("cplex")
-# lopt.options['mipgap'] = 0.005
-# lopt.options['threads'] = 1
-# ub_time = 0.0 
-# a = time.time()
-# for stage in m.stages:
-#     results = lopt.solve(m.Bl[stage], tee=True)
-#     upper_bound_obj += m.Bl[stage].obj.expr()
-# b = time.time()
-# ub_time = b - a 
-# print("ub time")
-# print(ub_time)
+def set_next_stage_vars(time_blocks, t):       
+    for l in m.l_new:
+        time_blocks.Bl[t+1].nte_prev[l].fix(time_blocks.Bl[t].nte[l,t].value)
+    for (rn, r) in m.rn_r:
+        time_blocks.Bl[t+1].ngo_rn_prev[rn, r].fix(time_blocks.Bl[t].ngo_rn[rn, r, t].value)
+    for (th, r) in m.th_r:
+        time_blocks.Bl[t+1].ngo_th_prev[th, r].fix(time_blocks.Bl[t].ngo_th[th, r, t].value)
+    for j in m.j:
+        for r in m.r:
+            time_blocks.Bl[t+1].nso_prev[j,r].fix(time_blocks.Bl[t].nso[j, r, t].value)
 
-# print("benders results")
-# print(opt.results)
-# ub_problem = {"ub time":ub_time, "upper_bound_obj":upper_bound_obj}
-# from util import *
-# write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, opt.results, ub_problem)
+
+
+def copy_investment_vars(w1, w2, t):
+    for v in scenario_time_blocks[w1].Bl[t].component_objects(Var):
+        if v.getname() in investment_vars:
+            new_var = getattr(scenario_time_blocks[w2].Bl[t], v.getname())
+            for index in v:  
+                if v[index].value != None:             
+                    new_var[index].fix(v[index].value)
+    if t < n_stages:
+        set_next_stage_vars(scenario_time_blocks[w2], t)
+
+def copy_operating_vars(w1, w2, t):
+    for v in scenario_time_blocks[w1].Bl[t].component_objects(Var):
+        if v.getname() in operating_vars:
+            new_var = getattr(scenario_time_blocks[w2].Bl[t], v.getname())
+            for index in v:               
+                new_var[index].fix(v[index].value)
+
+heuristic_wall_time = time.time()
+
+#fix to to scenario 1 when t<= time_distinguished
+if time_distinguished > n_stages:
+    for t in range(1, n_stages+1):
+        fix_investment_and_solve_no_rounding(m, 1, t, scenario_time_blocks, mipopt)
+        for w in range(2, num_scenario+1):
+            copy_investment_vars(1, w, t)
+            copy_operating_vars(1, w, t)
+else:
+    for t in range(1, time_distinguished+1):
+        fix_investment_and_solve_no_rounding(m, 1, t, scenario_time_blocks, mipopt)
+        for w in range(2, num_scenario+1):
+            copy_investment_vars(1, w, t)
+            if t < time_distinguished:
+                copy_operating_vars(1, w, t)
+            else:
+                mipopt.solve(scenario_time_blocks[w].Bl[t], tee=True)
+    #solve each scenario separately for t> time_distinguished
+    if time_distinguished < n_stages:
+        for t in range(time_distinguished+1, n_stages+1):
+            for w in range(1, num_scenario+1):
+                fix_investment_and_solve_no_rounding(m, w, t, scenario_time_blocks, mipopt)
+
+heuristic_wall_time = time.time() - heuristic_wall_time 
+fieldnames = ["scenario", "obj"]
+lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]      
+for t in m.t:
+    for line in lines:
+        fieldnames.append(line + "[" + str(t) + "]")
+    for (rn, r) in m.rn_r:
+        fieldnames.append("ngo_rn[" + rn + "," + r + "," + str(t) + "]")  
+    for (th,r) in m.th_r:
+        fieldnames.append("ngo_th[" + th + "," + r + "," + str(t) + "]")
+    for j in m.j:
+        for r in m.r:
+            fieldnames.append("nso["+j + ","+r+"," +  str(t) +"]")
+
+
+
+
+          
+with open(outputfile, 'w', newline='') as results_file:      
+    writer = csv.DictWriter(results_file, fieldnames=fieldnames)    
+    writer.writeheader()
+    heuristic_solve_time = 0.0 
+    heuristic_obj = 0.0
+    for w in range(1, num_scenario+1):
+        time_blocks = scenario_time_blocks[w]
+        #write objective and results
+        new_row = {"scenario":w,  "obj":sum(time_blocks.Bl[t].obj.expr() for t in m.t)}
+        heuristic_obj += sum(time_blocks.Bl[t].obj.expr() for t in m.t) * m.probability[w].value  
+        for t in time_blocks.t: 
+            for line in lines:
+                new_row[line + "[" + str(t) + "]"] = 0
+            for l in time_blocks.l_new:
+                value = time_blocks.Bl[t].nte[l,t].value
+                key = readData_det.tielines[l-1]['Near Area Name'] + "_" + readData_det.tielines[l-1]['Far Area Name'] + "[" + str(t) + "]"
+                new_row[key] += value 
+            for (rn, r) in time_blocks.rn_r:
+                value = time_blocks.Bl[t].ngo_rn[rn, r, t].value 
+                key = "ngo_rn[" + rn + "," + r + "," +  str(t) +"]"
+                new_row[key] = value 
+            for (th, r) in time_blocks.th_r:
+                value = time_blocks.Bl[t].ngo_th[th, r, t].value 
+                key = "ngo_th[" + th + "," + r + "," +  str(t) + "]"
+                new_row[key] = value  
+            for j in time_blocks.j:
+                for r in time_blocks.r:
+                    value =time_blocks.Bl[t].nso[j, r, t].value 
+                    key = "nso[" + j + "," + r + "," +  str(t) + "]"
+                    new_row[key] = value 
+        writer.writerow(new_row)  
+        write_GTEP_results(time_blocks, outputfile.split(".")[0]+"_w" + str(w) + ".csv", opt, readData_det, t_per_stage)
+    results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)        
+    results_writer.writerow(["Benders obj", benders_results['Problem'][0]['Lower bound']])
+    results_writer.writerow(["heuristic obj", heuristic_obj])
+    results_writer.writerow(["gap", (heuristic_obj-benders_results['Problem'][0]['Lower bound'])/ heuristic_obj])
+    results_writer.writerow(["Benders decomposition solve time", benders_results['Solver'][0]['Wallclock time']])
+    results_writer.writerow(["heuristic_solve_time", heuristic_wall_time])
+    results_writer.writerow(["total wall time", time.time()-start_time])
+
+
+
+
+            
+
+
+
+
 
 
 

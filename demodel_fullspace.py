@@ -71,7 +71,7 @@ m = b.create_model(time_periods, formulation, readData_det, num_scenario)
 
 
 
-ratio = [0.7, 1.0, 1.3]
+ratio = [0.1, 1.0, 1.9]
 #set uncertain parameters for the stochastic model 
 for w in range(1, num_scenario+1):
     for i in m.i:
@@ -80,18 +80,6 @@ for w in range(1, num_scenario+1):
                 m.DIC[i, t, w] = readData_det.DIC[i,t] * ratio[w-1]
             else:
                 m.DIC[i,t,w] = readData_det.DIC[i,t]
-
-# a = TransformationFactory("core.relax_integrality")
-# a.apply_to(m)
-# opt = SolverFactory("cplex")
-# opt.options['LPMethod'] = 4
-# opt.options['solutiontype'] =2 
-# opt.options['mipgap'] = 0.001
-# opt.options['TimeLimit'] = 36000
-# opt.options['threads'] = 6
-# # opt.solve(m.scenario_block[1], )
-# for s in range(1, 4):
-#     opt.solve(m.scenario_block[s], tee=True)
 
 #define investment variables and operating variables
 investment_vars = ["ntb","nte","nte_prev","ngr_rn","nge_rn","ngr_th","nge_th","ngo_rn","ngb_rn","ngo_th","ngb_th","ngo_rn_prev","ngo_th_prev","nsr","nsb","nso","nso_prev", "alphafut", "RES_def"]
@@ -324,36 +312,6 @@ with open(outputfile, 'w', newline='') as results_file:
     heuristic_solve_time = 0.0 
     heuristic_obj = 0.0
     for w in range(1, num_scenario+1):
-        # for t in m.t:
-        #     #fix transmission related variables for each region pair r_r
-        #     for r_r in range(7):
-        #         num_existing_lines = sum(m.scenario_block[w].nte[w,l,t].value for l in range(r_r*10+1, r_r*10+11))
-        #         for l in range(10): 
-        #             if l < round(num_existing_lines):
-        #                 time_blocks.Bl[t].nte[r_r*10+1+l,t].fix(1)
-        #                 if t < n_stages: 
-        #                     time_blocks.Bl[t+1].nte_prev[r_r*10+1+l].fix(1)
-        #             else:
-        #                 time_blocks.Bl[t].nte[r_r*10+1+l,t].fix(0)
-        #                 if t < n_stages: 
-        #                     time_blocks.Bl[t+1].nte_prev[r_r*10+1+l].fix(0)
-        #     #fix generation related constraints 
-        #     for (rn, r) in m.rn_r:
-        #         time_blocks.Bl[t].ngo_rn[rn, r, t].fix(m.scenario_block[w].ngo_rn[w,rn,r,t].value if m.scenario_block[w].ngo_rn[w,rn,r,t].value > 1e-3 else 0)
-        #         if t < n_stages:
-        #             time_blocks.Bl[t+1].ngo_rn_prev[rn, r].fix(m.scenario_block[w].ngo_rn[w,rn,r,t].value if m.scenario_block[w].ngo_rn[w,rn,r,t].value > 1e-3 else 0)
-        #     for (th, r) in m.th_r:
-        #         time_blocks.Bl[t].ngo_th[th, r, t].fix(round(m.scenario_block[w].ngo_th[w,th,r,t].value))
-        #         if t < n_stages:
-        #             time_blocks.Bl[t+1].ngo_th_prev[th,r].fix(round(m.scenario_block[w].ngo_th[w,th,r,t].value))
-        #     for j in m.j:
-        #         for r in m.r:
-        #             time_blocks.Bl[t].nso[j,r,t].fix(m.scenario_block[w].nso[w,j,r,t].value if m.scenario_block[w].nso[w,j,r,t].value > 1e-3 else 0)
-        #             if t < n_stages:
-        #                 time_blocks.Bl[t+1].nso_prev[j,r].fix(m.scenario_block[w].nso[w,j,r,t].value if m.scenario_block[w].nso[w,j,r,t].value > 1e-3 else 0)
-        #     results = mipopt.solve(time_blocks.Bl[t], tee=True)#, keepfiles=True)
-        #     if 'Time' in results['Solver'][0]:                
-        #         heuristic_solve_time += results['Solver'][0]['Time']
         time_blocks = scenario_time_blocks[w]
         #write objective and results
         new_row = {"scenario":w,  "obj":sum(time_blocks.Bl[t].obj.expr() for t in m.t)}
