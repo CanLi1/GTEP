@@ -71,7 +71,7 @@ m = b.create_model(time_periods, formulation, readData_det, num_scenario)
 
 
 
-ratio = [0.1, 1.0, 1.9]
+ratio = [0.7, 1.0, 1.3]
 #set uncertain parameters for the stochastic model 
 for w in range(1, num_scenario+1):
     for i in m.i:

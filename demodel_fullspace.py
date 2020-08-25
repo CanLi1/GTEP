@@ -162,7 +162,7 @@ opt.options['TimeLimit'] = 36000
 opt.options['threads'] = 6
 lp_results = opt.solve(m, tee=True)
 time_distinguished = n_stages + 1
-tol = 1e-3 
+tol = 0.99
 #find when the scenarios pairs can be distinguished 
 #we assume that if the value of coal-first-plant> 1e-5 then it is implemented 
 for pair in scenario_pair:

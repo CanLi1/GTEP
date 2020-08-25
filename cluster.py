@@ -152,13 +152,16 @@ def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost", i
 		days = obj.argsort()[-n:] + 1
 		#adjust weight of the cluster where the representative days is in 
 	if method == "highest_cost_infeasible":
-		days_obj = []#the cost of infeasible days
-		for day in infeasible_days:
-			days_obj.append(obj[day-1])
 		days =  []#days selected
-		days_obj = np.array(days_obj)
-		for index in days_obj.argsort()[-n:]:
-			days.append(infeasible_days[index])
+		if len(infeasible_days) <= n:
+			days = infeasible_days
+		else:
+			days_obj = []#the cost of infeasible days
+			for day in infeasible_days:
+				days_obj.append(obj[day-1])			
+			days_obj = np.array(days_obj)
+			for index in days_obj.argsort()[-n:]:
+				days.append(infeasible_days[index])
 	print(days)
 	for day in days:
 		if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:

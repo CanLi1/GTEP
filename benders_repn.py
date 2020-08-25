@@ -72,8 +72,9 @@ elif method == "input":
     data= load_input_data()
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
     readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])   
+print(outputfile)
 iter_ = 1 
-iter_limit = 3
+iter_limit = 5
 best_ub = float("inf") 
 cluster_results_record = []
 while True:
@@ -219,7 +220,7 @@ while True:
       investment_cost += m.Bl[i].total_investment_cost.expr()
 
     import pymp
-    NumProcesses =6
+    NumProcesses =3
     operating_cost = pymp.shared.dict()
     infeasible_days = pymp.shared.list()
     with pymp.Parallel(NumProcesses) as p:
@@ -239,8 +240,7 @@ while True:
 
     if best_ub > totol_cost:
         best_ub = totol_cost
-    else:
-        break 
+
 
     if len(infeasible_days) == 0:
         break 
