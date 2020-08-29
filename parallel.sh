@@ -4,10 +4,10 @@
 #PBS -l nodes=1:ppn=1
 
 # Set max wallclock time
-#PBS -l walltime=48:00:00
+#PBS -l walltime=188:00:00
 
 # Set maximum memory
-#PBS -l mem=64gb
+#PBS -l mem=100gb
 
 # Set name of job
 #PBS -N repn_log 

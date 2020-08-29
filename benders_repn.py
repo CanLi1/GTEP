@@ -244,7 +244,8 @@ while True:
 
     if len(infeasible_days) == 0:
         break 
-
+    del m 
+    del new_model
     iter_ += 1 
 
 
