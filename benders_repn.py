@@ -63,7 +63,7 @@ from cluster import *
 method = "cost"
 extreme_day_method = "highest_cost_infeasible"
 if method == "cost":
-    outputfile = 'repn_results/' +  method + "_15days_5years_picksoln_mediumtax_no_reserve.csv"
+    outputfile = 'repn_results/' +  method + "_15days_5years_mediumtax_no_reserve.csv"
     data, cluster_obj = load_cost_data(n_stages)
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
     initial_cluster_result = result
@@ -74,7 +74,7 @@ elif method == "input":
     readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])   
 print(outputfile)
 iter_ = 1 
-iter_limit = 5
+iter_limit = 8
 best_ub = float("inf") 
 cluster_results_record = []
 while True:
@@ -200,7 +200,7 @@ while True:
     from util import * 
 
     #pick the solution in solution pool that maximize average thermal capacity over the years.
-    pick_soln(opt)
+    # pick_soln(opt)
 
     #write results
     if iter_ == 1:
