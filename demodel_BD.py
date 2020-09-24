@@ -10,7 +10,7 @@ import csv
 import copy 
 from util import *
 from scenarioTree import create_scenario_tree
-import deterministic.readData_det as readData_det
+import endogenous.readData_det as readData_det
 import endogenous.endo_gtep_optBlocks_det as b
 import  endogenous.gtep_optBlocks_det as sub
 from endogenous.util import * 
@@ -31,7 +31,8 @@ filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 
 n_stages = 5  # number od stages in the scenario tree
 formulation = "improved"
-outputfile = "endoresults/5years.csv"
+outputfolder = "endoresults/case7_highvar_medium_carbon_highng_BD"
+outputfile = outputfolder + "/5years.csv"
 num_days =5
 print(formulation, outputfile, num_days)
 stages = range(1, n_stages + 1)
@@ -71,7 +72,7 @@ m = b.create_model(time_periods, formulation, readData_det, num_scenario)
 
 
 
-ratio = [0.7, 1.0, 1.3]
+ratio = [0.5, 1.0, 1.3]
 #set uncertain parameters for the stochastic model 
 for w in range(1, num_scenario+1):
     for i in m.i:
@@ -178,7 +179,7 @@ import time
 opt = SolverFactory("cplex_persistent")
  
 opt.options['threads'] = 1
-opt.options['timelimit'] = 3600*24
+opt.options['timelimit'] = 3600*12
 opt.set_instance(m)
 opt.set_benders_annotation()
 opt.set_benders_strategy(1)
@@ -358,7 +359,7 @@ with open(outputfile, 'w', newline='') as results_file:
                     key = "nso[" + j + "," + r + "," +  str(t) + "]"
                     new_row[key] = value 
         writer.writerow(new_row)  
-        write_GTEP_results(time_blocks, outputfile.split(".")[0]+"_w" + str(w) + ".csv", opt, readData_det, t_per_stage)
+        write_GTEP_results(time_blocks,  outputfolder +  "/5years_w" + str(w) + ".csv", opt, readData_det, t_per_stage)
     results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)        
     results_writer.writerow(["Benders obj", benders_results['Problem'][0]['Lower bound']])
     results_writer.writerow(["heuristic obj", heuristic_obj])

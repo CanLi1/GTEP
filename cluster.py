@@ -28,7 +28,7 @@ def load_cost_data(year=5):
 	region = ['Northeast', 'West', 'Coastal', 'South', 'Panhandle']
 	storage = ['Li_ion', 'Lead_acid', 'Flow']
 	lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]    
-	investment = pd.read_csv("repn_results/investmentdata/5yearsinvestment_NETL_no_reserve1-366.csv", index_col=0, header=0).iloc[:, :]
+	investment = pd.read_csv("repn_results/investmentdata/5yearsinvestment_NETL_no_reserve1-366_MIP.csv", index_col=0, header=0).iloc[:, :]
 
 	data = investment.obj 
 	#filter the data (domain reduction) && translate the data into cost domain
@@ -147,7 +147,7 @@ def run_cluster(data, method="kmedoid_exact", n_clusters=10):
 
 	return {"medoids":indices+1, "weights":sorted_count, "labels":labels+1}
 
-def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost", infeasible_days=[]):
+def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[]):
 	if method == "highest_cost":
 		days = obj.argsort()[-n:] + 1
 		#adjust weight of the cluster where the representative days is in 
@@ -162,6 +162,23 @@ def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost", i
 			days_obj = np.array(days_obj)
 			for index in days_obj.argsort()[-n:]:
 				days.append(infeasible_days[index])
+	for day in days:
+		if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:
+			cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
+			cluster_results['medoids'].append(day)
+			cluster_results['weights'].append(1)
+
+	return cluster_results 
+
+def select_extreme_days_input(cluster_results, n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[]):
+	if method == "load_shedding_cost":
+		days =  []#days selected
+		if len(infeasible_days) <= n:
+			days = infeasible_days
+		else:		
+			load_shedding_cost = np.array(load_shedding_cost)
+			for index in load_shedding_cost.argsort()[-n:]:
+				days.append(infeasible_days[index])		
 	print(days)
 	for day in days:
 		if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:

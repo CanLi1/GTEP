@@ -233,7 +233,13 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
     m.ED = Param(m.t, default=0, initialize=readData_det.ED)
     m.Rmin = Param(m.t, default=0, initialize=readData_det.Rmin)
     m.hr = Param(m.i_r, default=0, initialize=readData_det.hr)
-    m.P_fuel = Param(m.i, m.t, default=0, initialize=readData_det.P_fuel)
+    m.P_fuel = Param(m.i, m.t, default=0, mutable=True, initialize=readData_det.P_fuel)
+    for i in readData_det.th_generators:
+        for t in m.t:
+            if t == 1:
+                m.P_fuel[i,t] = readData_det.P_fuel_scenarios[i, t, t, 'O']
+            else:
+                m.P_fuel[i,t] = readData_det.P_fuel_scenarios[i, t, t, 'H']
     # m.P_fuel = Param(m.i, m.t_stage, default=0, mutable=True)
     m.EF_CO2 = Param(m.i, default=0, initialize=readData_det.EF_CO2)
     m.FOC = Param(m.i, m.t, default=0, initialize=readData_det.FOC)
@@ -245,11 +251,11 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
     m.PEN = Param(m.t, default=0, initialize=readData_det.PEN)
     m.PENc = Param(default=0, initialize=readData_det.PENc)
     m.tx_CO2 = Param(m.t, m.stages, default=0, mutable=True)   
-    # for t in m.t:
-    #     if t == 1:
-    #         m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
-    #     else:
-    #         m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
+    for t in m.t:
+        if t == 1:
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'O']
+        else:
+            m.tx_CO2[t,t] = readData_det.tx_CO2[t, t, 'M']
     m.RES_min = Param(m.t, default=0, initialize=readData_det.RES_min)
     m.hs = Param(initialize=readData_det.hs, default=1)
     m.ir = Param(initialize=readData_det.ir, default=0)

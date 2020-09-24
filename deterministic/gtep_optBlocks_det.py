@@ -9,7 +9,7 @@ import math
 
 
 
-def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readData_det):
+def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readData_det, loadshedding=False):
     m = ConcreteModel()
 
     # ################################## Declare of sets ##################################
@@ -508,6 +508,16 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
 
         b.nso_prev = Var(m.j, m.r, within=NonNegativeReals)
 
+        b.L_shed = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals) 
+        if not loadshedding:
+            for t in t_per_stage[stage]:
+                for r in m.r:
+                    for d in m.d:
+                        for s in m.hours:
+                            b.L_shed[r, t, d, s].fix(0.0)
+
+            
+
         ####################### add constraints related to transmission ####################### 
         if formulation == "standard":
             def dc_power_flow_old(_b, l, t, d, s):
@@ -661,6 +671,10 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                    for th, r in m.th_r for d in m.d for s in m.hours))   for t in t_per_stage[stage])* 10 ** (-6)
         b.startup_cost = Expression(rule=startup_cost)
 
+        def load_shedding_cost(_b):
+            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * _b.L_shed[r, t, d, s] * 1e5 for d in m.d for s in m.hours for r in m.r))   for t in t_per_stage[stage])* 10 ** (-6)
+        b.load_shedding_cost = Expression(rule=load_shedding_cost)
+
         def renewable_generator_cost(_b):
             return sum(m.if_[t] * (sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
                                          for rnew, r in m.rn_r if rnew in m.rnew))   for t in t_per_stage[stage])* 10 ** (-6)
@@ -747,6 +761,9 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
         b.vobj = Objective(rule=total_operating_cost, sense=minimize)
         b.vobj.deactivate()
 
+        b.lobj = Objective(rule=load_shedding_cost, sense=minimize)
+        b.lobj.deactivate()
+
 
         def obj_rule(_b):
             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
@@ -774,7 +791,8 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                          for j in m.j for r in m.r)
                                    + m.PEN[t] * _b.RES_def[t]
                                    + m.PENc * sum(_b.cu[r, t, d, s]
-                                                  for r in m.r for d in m.d for s in m.hours) )
+                                                  for r in m.r for d in m.d for s in m.hours)
+                                                  +  sum( _b.L_shed[r, t, d, s] for r in m.r for d in m.d for s in m.hours  for r in m.r )* 1e5 )
                       for t in t_per_stage[stage]) \
                    * 10 ** (-6) \
                    + _b.alphafut
@@ -811,7 +829,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
             return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
                    + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
                          sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
-                   + sum(_b.p_discharged[j, r, t, d, s] for j in m.j) \
+                   + sum(_b.p_discharged[j, r, t, d, s] for j in m.j)  + _b.L_shed[r, t, d, s]\
                    == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]        
 
         b.en_bal = Constraint(m.r, t_per_stage[stage], m.d, m.hours, rule=en_bal)

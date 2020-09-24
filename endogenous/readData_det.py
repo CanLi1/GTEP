@@ -83,6 +83,33 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, num_days):
     globals()['VOC'] = VOC 
 
 
+#add initial data for coal first plant
+    f_start['coal-first-new'] = f_start['coal-igcc-ccs-new']
+    q_v['coal-first-new'] = q_v['coal-igcc-ccs-new']
+    Pg_min['coal-first-new'] = Pg_min['coal-igcc-ccs-new']
+    Ru_max['coal-first-new'] = Ru_max['coal-igcc-ccs-new']
+    Rd_max['coal-first-new'] = Rd_max['coal-igcc-ccs-new']
+    C_start['coal-first-new'] = C_start['coal-igcc-ccs-new']
+    frac_spin['coal-first-new'] = frac_spin['coal-igcc-ccs-new']
+    LT['coal-first-new'] = LT['coal-igcc-ccs-new']
+    EF_CO2['coal-first-new'] = EF_CO2['coal-igcc-ccs-new']
+    CCm['coal-first-new'] = CCm['coal-igcc-ccs-new']
+
+    i_r_keys = [('coal-igcc-ccs-new', 'Northeast'), ('coal-igcc-ccs-new', 'West'), ('coal-igcc-ccs-new', 'Coastal'), ('coal-igcc-ccs-new', 'South'), ('coal-igcc-ccs-new', 'Panhandle')]
+    for key in i_r_keys:
+        new_key = ('coal-first-new', key[1])
+        Qg_np[new_key] = Qg_np[key]
+        Ng_max[new_key] = Ng_max[key]
+        hr[new_key] = hr[key]
+
+    for i in range(len(if_)):
+        new_key = ('coal-first-new', i+1)
+        old_key = ('coal-igcc-ccs-new', i+1)
+        Qinst_UB[new_key] = Qinst_UB[old_key] 
+        P_fuel[new_key] = P_fuel[old_key]
+        FOC[new_key] = FOC[old_key]
+        VOC[new_key] = VOC[old_key]
+        DIC[new_key] = DIC[old_key]
 
     globals()['hs'] = 1
     globals()['ir'] = 0.057
@@ -432,44 +459,45 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, num_days):
     globals()["tx_CO2"] = tx_CO2
 
     # Different scenarios for NG PRICE:
-    # ng_price_scenarios = {(1, 'L'): 3.117563, (1, 'M'): 3.4014395, (1, 'H'): 4.249755,
-    #                       (2, 'L'): 2.976701, (2, 'M'): 3.357056, (2, 'H'): 4.188047,
-    #                       (3, 'L'): 2.974117, (3, 'M'): 3.4164015, (3, 'H'): 4.228118,
-    #                       (4, 'L'): 3.082466, (4, 'M'): 3.578708, (4, 'H'): 4.403251,
-    #                       (5, 'L'): 3.236482, (5, 'M'): 3.8122265, (5, 'H'): 4.745406,
-    #                       (6, 'L'): 3.394663, (6, 'M'): 3.9940535, (6, 'H'): 5.088468,
-    #                       (7, 'L'): 3.479183, (7, 'M'): 4.0682835, (7, 'H'): 5.442574,
-    #                       (8, 'L'): 3.504514, (8, 'M'): 4.117297, (8, 'H'): 5.565526,
-    #                       (9, 'L'): 3.498631, (9, 'M'): 4.188261, (9, 'H'): 5.82389,
-    #                       (10, 'L'): 3.490988, (10, 'M'): 4.219348, (10, 'H'): 5.905959,
-    #                       (11, 'L'): 3.483505, (11, 'M'): 4.250815, (11, 'H'): 5.955,
-    #                       (12, 'L'): 3.496959, (12, 'M'): 4.2411075, (12, 'H'): 6.013945,
-    #                       (13, 'L'): 3.534126, (13, 'M'): 4.3724575, (13, 'H'): 6.17547,
-    #                       (14, 'L'): 3.57645, (14, 'M'): 4.4414835, (14, 'H'): 6.240099,
-    #                       (15, 'L'): 3.585003, (15, 'M'): 4.47585855, (15, 'H'): 6.41513
-    #                       }
-    # for t in range(1, 16):
-    #     ng_price_scenarios[t, 'H'] = 1.5 * ng_price_scenarios[t, 'H']
+    ng_price_scenarios = {(1, 'L'): 3.117563, (1, 'M'): 3.4014395, (1, 'H'): 4.249755,
+                          (2, 'L'): 2.976701, (2, 'M'): 3.357056, (2, 'H'): 4.188047,
+                          (3, 'L'): 2.974117, (3, 'M'): 3.4164015, (3, 'H'): 4.228118,
+                          (4, 'L'): 3.082466, (4, 'M'): 3.578708, (4, 'H'): 4.403251,
+                          (5, 'L'): 3.236482, (5, 'M'): 3.8122265, (5, 'H'): 4.745406,
+                          (6, 'L'): 3.394663, (6, 'M'): 3.9940535, (6, 'H'): 5.088468,
+                          (7, 'L'): 3.479183, (7, 'M'): 4.0682835, (7, 'H'): 5.442574,
+                          (8, 'L'): 3.504514, (8, 'M'): 4.117297, (8, 'H'): 5.565526,
+                          (9, 'L'): 3.498631, (9, 'M'): 4.188261, (9, 'H'): 5.82389,
+                          (10, 'L'): 3.490988, (10, 'M'): 4.219348, (10, 'H'): 5.905959,
+                          (11, 'L'): 3.483505, (11, 'M'): 4.250815, (11, 'H'): 5.955,
+                          (12, 'L'): 3.496959, (12, 'M'): 4.2411075, (12, 'H'): 6.013945,
+                          (13, 'L'): 3.534126, (13, 'M'): 4.3724575, (13, 'H'): 6.17547,
+                          (14, 'L'): 3.57645, (14, 'M'): 4.4414835, (14, 'H'): 6.240099,
+                          (15, 'L'): 3.585003, (15, 'M'): 4.47585855, (15, 'H'): 6.41513
+                          }
+    for t in range(1, 16):
+        ng_price_scenarios[t, 'H'] = 1.5 * ng_price_scenarios[t, 'H']
         
-    # th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old',
-    #                  'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
-    # ng_generators = ['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
-    # # 'nuc-st-old', 'nuc-st-new',
+    th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old',
+                     'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new', 'coal-first-new']
+    ng_generators = ['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
+    # 'nuc-st-old', 'nuc-st-new',
     
-    # P_fuel_scenarios = {}
-    # for stage in stages:
-    #     for t in t_per_stage[stage]:
-    #         for i in th_generators:
-    #             if stage == 1:
-    #                 P_fuel_scenarios[i, t, stage, 'O'] = P_fuel[i, t]
-    #             else:
-    #                 for n in ['M']:
-    #                     if i in ng_generators:
-    #                         P_fuel_scenarios[i, t, stage, n] = ng_price_scenarios[t, n]
-    #                     else:
-    #                         P_fuel_scenarios[i, t, stage, n] = P_fuel[i, t]
-    # globals()["P_fuel_scenarios"] = P_fuel_scenarios
-    # print(P_fuel_scenarios)
+    P_fuel_scenarios = {}
+    for stage in stages:
+        for t in t_per_stage[stage]:
+            for i in th_generators:
+                if stage == 1:
+                    P_fuel_scenarios[i, t, stage, 'O'] = P_fuel[i, t]
+                else:
+                    for n in ['M','H']:
+                        if i in ng_generators:
+                            P_fuel_scenarios[i, t, stage, n] = ng_price_scenarios[t, n]
+                        else:
+                            P_fuel_scenarios[i, t, stage, n] = P_fuel[i, t]
+    globals()["P_fuel_scenarios"] = P_fuel_scenarios
+    globals()["th_generators"] = th_generators
+    print(P_fuel_scenarios)
 
 
 ####################################read tie lines data

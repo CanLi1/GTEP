@@ -42,7 +42,7 @@ def fix_investment(ref_model, new_model):
                             v2[index].fix(v1[index].value)
     return new_model
 
-def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage):
+def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage, load_shedding=False):
     new_model.n_d._initialize_from({1:365})
     list_of_repr_days_per_scenario = list(range(1,(1+1)))
     L_NE_1 = pd.read_csv('NSRDB_wind/for_cluster/L_Northeast_2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
@@ -215,7 +215,8 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
             # opt.solve(new_model.Bl[i], tee=True, keepfiles=True)
             raise Exception("the problem at a given time is not solved to optimality termination_condition is ", results.solver.termination_condition)    
     operating_related_cost = {}
-    operating_related_cost["total_operating_cost"] = total_operating_cost            
+    operating_related_cost["total_operating_cost"] = total_operating_cost      
+    operating_related_cost["load_shedding_cost"] = 0.0      
     if total_operating_cost >= 1e9:
         operating_related_cost["variable_operating_cost" ] = 1e10
         operating_related_cost["fixed_operating_cost"] = 1e10
@@ -230,6 +231,29 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
         operating_related_cost["coal_energy_generated" ] = 0
         operating_related_cost["natural_gas_energy_generated"] = 0
         operating_related_cost["total_energy_generated"] = 0
+#calculate load shedding cost when the problem is infeasible
+        if load_shedding:
+            for stage in new_model.stages:
+                for r in new_model.r:
+                    for t in t_per_stage[stage]:
+                        for d in new_model.d:
+                            for s in new_model.hours:
+                                new_model.Bl[t].L_shed[r, t, d, s].unfix()
+            for i in range(1, n_stages+1):
+                new_model.Bl[i].obj.deactivate()
+                new_model.Bl[i].lobj.activate()
+                results = opt.solve(new_model.Bl[i], tee=True)
+                operating_related_cost["load_shedding_cost"] += new_model.Bl[i].load_shedding_cost.expr()    
+            for stage in new_model.stages:
+                for r in new_model.r:
+                    for t in t_per_stage[stage]:
+                        for d in new_model.d:
+                            for s in new_model.hours:
+                                new_model.Bl[t].L_shed[r, t, d, s].fix(0)     
+            for i in range(1, n_stages+1):
+                new_model.Bl[i].obj.activate()
+                new_model.Bl[i].lobj.deactivate()                                               
+        print(operating_related_cost)
         return operating_related_cost
     variable_operating_cost = []
     fixed_operating_cost =[]
@@ -281,6 +305,10 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
     operating_related_cost["coal_energy_generated" ] = np.sum(coal_energy_generated )
     operating_related_cost["natural_gas_energy_generated"] = np.sum(natural_gas_energy_generated)
     operating_related_cost["total_energy_generated"] = np.sum(total_energy_generated)
+    
+
+    
+    
     return operating_related_cost
 
 

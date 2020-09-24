@@ -60,18 +60,18 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 
 #cluster 
 from cluster import *
-method = "cost"
-extreme_day_method = "highest_cost_infeasible"
+method = "input"
+extreme_day_method = "load_shedding_cost"
+load_shedding = True
 if method == "cost":
     outputfile = 'repn_results/' +  method + "_15days_5years_mediumtax_no_reserve.csv"
     data, cluster_obj = load_cost_data(n_stages)
     result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
     initial_cluster_result = result
 elif method == "input":
-    outputfile ='repn_results/' +  method + "_15days_5years_picksoln_mediumtax_no_reserve.csv"
+    outputfile ='repn_results/' +  method + "_5days_5years_picksoln_mediumtax_no_reserve.csv"
     data= load_input_data()
-    result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
-    readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])   
+    initial_cluster_result = run_cluster(data=data, method="kmedoid_exact", n_clusters=5)
 print(outputfile)
 iter_ = 1 
 iter_limit = 8
@@ -85,8 +85,15 @@ while True:
             cluster_results = deepcopy(initial_cluster_result)#only copy once and add 1 extreme days per iteration 
         if iter_ > 1 and len(infeasible_days) >0:
                 cluster_results = select_extreme_days_cost(cluster_obj, cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days)
-        readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, cluster_results['medoids'], cluster_results['weights'])
-        cluster_results_record.append(cluster_results)
+
+    if method == "input":
+        if extreme_day_method == "load_shedding_cost" and iter_==1:
+            cluster_results = deepcopy(initial_cluster_result)
+        if iter_ > 1 and len(infeasible_days) >0:
+                cluster_results = select_extreme_days_input(cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days, load_shedding_cost=load_shedding_cost)
+    readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, cluster_results['medoids'], cluster_results['weights'])
+    cluster_results_record.append(cluster_results)
+
     # create blocks
     m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
     start_time = time.time()
@@ -169,11 +176,11 @@ while True:
     #set subproblems
     operating_vars = []
     if formulation == "standard":
-      operating_vars = ["theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+      operating_vars = ["L_shed", "theta", "P", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
     elif formulation == "hull":
-      operating_vars = ["theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
+      operating_vars = ["L_shed","theta", "P", "d_theta_1", "d_theta_2","cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]
     elif formulation == "improved":
-      operating_vars = ["theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
+      operating_vars = ["L_shed","theta", "P", "d_theta_plus", "d_theta_minus", "d_P_flow_plus", "d_P_flow_minus", "cu",  "P_flow", "P_Panhandle", "Q_spin", "Q_Qstart", "u", "su", "sd",  "p_charged", "p_discharged", "p_storage_level", "p_storage_level_end_hour"]  
     map_d = {'fall':3, 'summer':2, 'spring':1, 'winter':4}
     for v in m.component_objects(Var):
         if v.getname() in operating_vars:
@@ -212,22 +219,27 @@ while True:
     import deterministic.readData_single as readData_single
     readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
     new_model = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_single)
-    a = TransformationFactory("core.relax_integrality")
-    a.apply_to(new_model)
+    # a = TransformationFactory("core.relax_integrality")
+    # a.apply_to(new_model)
     new_model = fix_investment(m, new_model)
     investment_cost = 0.0
     for i in m.stages:
       investment_cost += m.Bl[i].total_investment_cost.expr()
 
-    import pymp
-    NumProcesses =3
-    operating_cost = pymp.shared.dict()
-    infeasible_days = pymp.shared.list()
-    with pymp.Parallel(NumProcesses) as p:
-      for day in p.range(1, 366):
-        operating_cost[day] = eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage) 
-        if operating_cost[day]["total_operating_cost"] >= 1e10:
+    # import pymp
+    # NumProcesses =3
+    # operating_cost = pymp.shared.dict()
+    # infeasible_days = pymp.shared.list()
+    # load_shedding_cost = pymp.shared.list()
+    # with pymp.Parallel(NumProcesses) as p:
+    operating_cost = {}
+    infeasible_days = []
+    load_shedding_cost = []
+    for day in range(1, 366):
+        operating_cost[day] = eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage, load_shedding) 
+        if operating_cost[day]["total_operating_cost"] >= 1e9:
             infeasible_days.append(day)
+            load_shedding_cost.append(operating_cost[day]["load_shedding_cost"] )
 
     write_repn_results(operating_cost, outputfile)  
 
