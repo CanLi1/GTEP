@@ -14,7 +14,7 @@ import csv
 
 
 from scenarioTree import create_scenario_tree
-import deterministic.readData_days as readData_det
+
 import deterministic.gtep_optBlocks_det as b
 # import deterministic.optBlocks_det as b
 from forward_gtep import forward_pass
@@ -27,6 +27,7 @@ from backward_SDDiP_gtep import backward_pass
 curPath = os.path.abspath(os.path.curdir)
 curPath = curPath.replace('/deterministic', '')
 print(curPath)
+random.seed(0)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
@@ -61,20 +62,27 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 #cluster 
 from cluster import *
 method = "input"
+clustering_method = "kmeans"
 extreme_day_method = "load_shedding_cost"
+initial_cluster_num = 5
+iter_limit = 3
+outputfile = 'repn_results/' +  method + "_" + clustering_method + "_" + extreme_day_method + "_" + str(initial_cluster_num) + "days_5years_mediumtax_no_reserve.csv"
+if clustering_method == "kmeans" or clustering_method == "kmeans_exact":
+    import deterministic.readData_means as readData_det
+elif clustering_method == "kmedoid_exact" or clustering_method == "kmedoid":
+    import deterministic.readData_days as readData_det
+# extreme_day_method = "load_shedding_cost"
+
 load_shedding = True
 if method == "cost":
-    outputfile = 'repn_results/' +  method + "_15days_5years_mediumtax_no_reserve.csv"
     data, cluster_obj = load_cost_data(n_stages)
-    result = run_cluster(data=data, method="kmedoid_exact", n_clusters=15)
+    result = run_cluster(data=data, method=clustering_method, n_clusters=initial_cluster_num)
     initial_cluster_result = result
 elif method == "input":
-    outputfile ='repn_results/' +  method + "_5days_5years_picksoln_mediumtax_no_reserve.csv"
     data= load_input_data()
-    initial_cluster_result = run_cluster(data=data, method="kmedoid_exact", n_clusters=5)
+    initial_cluster_result = run_cluster(data=data, method=clustering_method, n_clusters=initial_cluster_num)
 print(outputfile)
 iter_ = 1 
-iter_limit = 8
 best_ub = float("inf") 
 cluster_results_record = []
 while True:
@@ -84,15 +92,20 @@ while True:
         elif extreme_day_method == "highest_cost_infeasible" and iter_ == 1:
             cluster_results = deepcopy(initial_cluster_result)#only copy once and add 1 extreme days per iteration 
         if iter_ > 1 and len(infeasible_days) >0:
-                cluster_results = select_extreme_days_cost(cluster_obj, cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days)
+                cluster_results = select_extreme_days_cost(cluster_obj, cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days, clustering_method=clustering_method)
 
     if method == "input":
-        if extreme_day_method == "load_shedding_cost" and iter_==1:
+        if  iter_==1:
             cluster_results = deepcopy(initial_cluster_result)
         if iter_ > 1 and len(infeasible_days) >0:
-                cluster_results = select_extreme_days_input(cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days, load_shedding_cost=load_shedding_cost)
-    readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, cluster_results['medoids'], cluster_results['weights'])
-    cluster_results_record.append(cluster_results)
+            cluster_results = select_extreme_days_input(cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days, load_shedding_cost=load_shedding_cost, clustering_method=clustering_method)
+    
+    if clustering_method == "kmeans" or clustering_method == "kmeans_exact":
+        readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, cluster_results['labels'], len(np.unique(cluster_results['labels'])))
+    elif clustering_method == "kmedoid_exact" or clustering_method == "kmedoid":
+        readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, cluster_results['medoids'], cluster_results['weights'])
+
+    cluster_results_record.append(deepcopy(cluster_results))
 
     # create blocks
     m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
@@ -241,7 +254,7 @@ while True:
             infeasible_days.append(day)
             load_shedding_cost.append(operating_cost[day]["load_shedding_cost"] )
 
-    write_repn_results(operating_cost, outputfile)  
+    write_repn_results(operating_cost, outputfile, cluster_results)  
 
     #check termination criteria 
     if iter_ >= iter_limit:

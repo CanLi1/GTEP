@@ -545,7 +545,7 @@ def write_GTEP_results(m, outputfile, opt, readData_det, t_per_stage, results=[]
                     if "upper_bound_obj" in ub_problem:
                         results_writer.writerow(["upper_bound_obj", ub_problem["upper_bound_obj"]])
 
-def write_repn_results(operating_cost, outputfile):
+def write_repn_results(operating_cost, outputfile, cluster_results={}):
     with open(outputfile, 'a', newline='') as results_file:
         results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         results_writer.writerow([])
@@ -553,11 +553,16 @@ def write_repn_results(operating_cost, outputfile):
         results_writer.writerow(["aggregated results for whole year "])        
         fieldnames = ["day_number"] + list(operating_cost[list(operating_cost.keys())[0]].keys())
         writer = csv.DictWriter(results_file, fieldnames=fieldnames)
-        writer.writeheader()
+        
         days = np.sort(list(operating_cost.keys()))
         #first write down the average 
         average = {key:(sum(operating_cost[day][key] for day in days)/len(operating_cost)) for key in fieldnames if key != "day_number"}
         average["day_number"] = "average"
+        num_infeasible_days = average["total_operating_cost"] * 365/1e10
+        results_writer.writerow(["number of infeasible days", num_infeasible_days])
+        for key in cluster_results:
+            results_writer.writerow([key, list(cluster_results[key])])
+        writer.writeheader()
         writer.writerow(average)
         for day in days:
             new_row = {key:operating_cost[day][key] for key in fieldnames  if key != "day_number"}
