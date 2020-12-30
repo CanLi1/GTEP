@@ -27,7 +27,6 @@ from backward_SDDiP_gtep import backward_pass
 curPath = os.path.abspath(os.path.curdir)
 curPath = curPath.replace('/deterministic', '')
 print(curPath)
-random.seed(0)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
@@ -62,10 +61,10 @@ nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tre
 #cluster 
 from cluster import *
 method = "input"
-clustering_method = "kmeans"
-extreme_day_method = "load_shedding_cost"
-initial_cluster_num = 5
-iter_limit = 3
+clustering_method = "kmedoid_exact" 
+extreme_day_method = "load_shedding_cost" 
+initial_cluster_num = 15 
+iter_limit = 8
 outputfile = 'repn_results/' +  method + "_" + clustering_method + "_" + extreme_day_method + "_" + str(initial_cluster_num) + "days_5years_mediumtax_no_reserve.csv"
 if clustering_method == "kmeans" or clustering_method == "kmeans_exact":
     import deterministic.readData_means as readData_det
@@ -89,16 +88,16 @@ while True:
     if method == "cost":
         if extreme_day_method == "highest_cost":
             cluster_results = deepcopy(initial_cluster_result)#reselected n days as extreme days
-        elif extreme_day_method == "highest_cost_infeasible" and iter_ == 1:
+        elif (extreme_day_method == "highest_cost_infeasible" or extreme_day_method == "load_shedding_cost") and iter_ == 1:
             cluster_results = deepcopy(initial_cluster_result)#only copy once and add 1 extreme days per iteration 
         if iter_ > 1 and len(infeasible_days) >0:
-                cluster_results = select_extreme_days_cost(cluster_obj, cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days, clustering_method=clustering_method)
+                cluster_results = select_extreme_days(cluster_results, cluster_obj= cluster_obj, n=1, method=extreme_day_method, infeasible_days=infeasible_days, load_shedding_cost=load_shedding_cost, clustering_method=clustering_method)
 
     if method == "input":
         if  iter_==1:
             cluster_results = deepcopy(initial_cluster_result)
         if iter_ > 1 and len(infeasible_days) >0:
-            cluster_results = select_extreme_days_input(cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days, load_shedding_cost=load_shedding_cost, clustering_method=clustering_method)
+            cluster_results = select_extreme_days(cluster_results, n=1, method=extreme_day_method, infeasible_days=infeasible_days, load_shedding_cost=load_shedding_cost, clustering_method=clustering_method)
     
     if clustering_method == "kmeans" or clustering_method == "kmeans_exact":
         readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, cluster_results['labels'], len(np.unique(cluster_results['labels'])))

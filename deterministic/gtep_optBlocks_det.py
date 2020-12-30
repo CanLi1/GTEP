@@ -738,7 +738,7 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                   + sum(m.TIC[l,t] * _b.ntb[l, t] for l in m.l_new)
                                    + sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
                                          for j in m.j for r in m.r)
-                                   + m.PEN[t] * _b.RES_def[t] )
+                                  )
                       for t in t_per_stage[stage]) \
                    * 10 ** (-6)
         b.total_investment_cost = Expression(rule=total_investment_cost)
@@ -748,11 +748,14 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, readD
                                                               + m.EF_CO2[i] * m.tx_CO2[t, stage] * m.hr[i, r]) * _b.P[
                                                                  i, r, t, d, s]
                                                              for i, r in m.i_r)
-                                       for d in m.d for s in m.hours) 
+                                       for d in m.d for s in m.hours) +sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
+                                                                            _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
+                                   + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
+                                         for th, r in m.th_r)
                                    + sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
                                          * (m.f_start[th] * m.P_fuel[th, t]
                                             + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t, stage] + m.C_start[th])
-                                         for th, r in m.th_r for d in m.d for s in m.hours)                                   
+                                         for th, r in m.th_r for d in m.d for s in m.hours)    + m.PEN[t] * _b.RES_def[t]                                 
                                    + m.PENc * sum(_b.cu[r, t, d, s]
                                                   for r in m.r for d in m.d for s in m.hours) )
                       for t in t_per_stage[stage]) \

@@ -198,7 +198,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, labels, num_
             selected_days = np.where(labels == d)[0]
             for ss in range(24):
                 s = ss + 1
-                selected_hours = selected_days * 24 - 24 + ss 
+                selected_hours = selected_days * 24 + ss 
                 if t >= 15:
                     L_1['Northeast', t, d, s] = L_NE_1.iloc[selected_hours, 1].mean() * (1 + growth_rate_medium * (t-1))
                     L_1['West', t, d, s] = L_W_1.iloc[selected_hours, 1].mean() * (1 + growth_rate_low * (t-1))
@@ -258,7 +258,7 @@ def read_data(database_file, curPath, stages, n_stage, t_per_stage, labels, num_
         for d in range(1, num_days +1):
             selected_days = np.where(labels == d)[0]
             for ss in range(24):
-                selected_hours = selected_days * 24 - 24 + ss 
+                selected_hours = selected_days * 24 + ss 
                 s = ss + 1
                 for i in ['csp-new']:
                     cf_1[i, 'Northeast', t, d, s] = CF_CSP_NE_1.iloc[selected_hours, 1].mean()

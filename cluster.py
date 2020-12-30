@@ -134,7 +134,7 @@ def run_cluster(data, method="kmedoid_exact", n_clusters=10):
         labels = km.labels_
         indices = km.medoid_indices_
     if method == "kmeans":
-        km = KMeans(n_clusters=n_clusters, max_iter=300000)
+        km = KMeans(n_clusters=n_clusters, max_iter=300000, n_init=100, random_state=0)
         km.fit_predict(data)
         labels = km.labels_
         return {"labels":labels+1}     
@@ -155,9 +155,9 @@ def run_cluster(data, method="kmedoid_exact", n_clusters=10):
 
     return {"medoids":indices+1, "weights":sorted_count, "labels":labels+1}
 
-def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[], clustering_method="kmedoid"):
+def select_extreme_days(cluster_results, cluster_obj=[], n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[], clustering_method="kmedoid"):
     if method == "highest_cost":
-        days = obj.argsort()[-n:] + 1
+        days = cluster_obj.argsort()[-n:] + 1
         #adjust weight of the cluster where the representative days is in 
     if method == "highest_cost_infeasible":
         days =  []#days selected
@@ -166,26 +166,11 @@ def select_extreme_days_cost(obj, cluster_results, n=1, method="highest_cost", i
         else:
             days_obj = []#the cost of infeasible days
             for day in infeasible_days:
-                days_obj.append(obj[day-1])         
+                days_obj.append(cluster_obj[day-1])         
             days_obj = np.array(days_obj)
             for index in days_obj.argsort()[-n:]:
                 days.append(infeasible_days[index])
-    num_days = len(np.unique(cluster_results["labels"]))
-    i = 1
-    for day in days:
-        if len(np.where(cluster_results["labels"] == day_label)[0]) == 1:
-            raise NameError('the highest cost day already has weight 1')        
-        #change the label of the days selected
-        cluster_results["labels"][day-1] = num_days + i 
-        if clustering_method == "kmedoid" or clustering_method == "kmedoid_exact":
-            cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
-            cluster_results['medoids'].append(day)
-            cluster_results['weights'].append(1)
-        i += 1
 
-    return cluster_results 
-
-def select_extreme_days_input(cluster_results, n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[], clustering_method="kmedoid"):
     if method == "load_shedding_cost": #select the infeasible days with largest load shedding cost 
         days =  []#days selected
         if len(infeasible_days) <= n:
@@ -193,30 +178,58 @@ def select_extreme_days_input(cluster_results, n=1, method="highest_cost", infea
         else:       
             load_shedding_cost = np.array(load_shedding_cost)
             for index in load_shedding_cost.argsort()[-n:]:
-                days.append(infeasible_days[index])     
+                days.append(infeasible_days[index])
+                                
     num_days = len(np.unique(cluster_results["labels"]))
     i = 1
+    print(days)
     for day in days:
-        day_label = cluster_results["labels"][day-1] 
-        #check is this day only has weight 1 
+        day_label = cluster_results["labels"][day-1]
         if len(np.where(cluster_results["labels"] == day_label)[0]) == 1:
-            raise NameError('the highest load shedding cost day already has weight 1')
-        cluster_results["labels"][day-1] = num_days + i 
+            raise NameError('the' + method + ' day already has weight 1')        
+        
+        print(cluster_results)
         if clustering_method == "kmedoid" or clustering_method == "kmedoid_exact":
-            if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:
-                cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
-                cluster_results['medoids'].append(day)
-                cluster_results['weights'].append(1)
+            cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
+            cluster_results['medoids'].append(day)
+            cluster_results['weights'].append(1)
+        cluster_results["labels"][day-1] = num_days + i 
         i += 1
 
     return cluster_results 
 
+# def select_extreme_days_input(cluster_results, n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[], clustering_method="kmedoid"):
+#     if method == "load_shedding_cost": #select the infeasible days with largest load shedding cost 
+#         days =  []#days selected
+#         if len(infeasible_days) <= n:
+#             days = infeasible_days
+#         else:       
+#             load_shedding_cost = np.array(load_shedding_cost)
+#             for index in load_shedding_cost.argsort()[-n:]:
+#                 days.append(infeasible_days[index])     
+#     num_days = len(np.unique(cluster_results["labels"]))
+#     i = 1
+#     for day in days:
+#         day_label = cluster_results["labels"][day-1] 
+#         #check is this day only has weight 1 
+#         if len(np.where(cluster_results["labels"] == day_label)[0]) == 1:
+#             raise NameError('the highest load shedding cost day already has weight 1')
+#         if clustering_method == "kmedoid" or clustering_method == "kmedoid_exact":
+#             if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:
+#                 cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
+#                 cluster_results['medoids'].append(day)
+#                 cluster_results['weights'].append(1)
+#                 cluster_results["labels"][day-1] = num_days + i 
+#         i += 1
+
+#     return cluster_results 
 
 
-# km = KMedoids(n_clusters=10, init='k-medoids++',max_iter=300000)
-# km = KMedoids(n_clusters=10, init='random',max_iter=300000,random_state=0)
 
-# label_km = km.fit_predict(data.to_numpy())
+# # km = KMedoids(n_clusters=10, init='k-medoids++',max_iter=300000)
+# # km = KMedoids(n_clusters=10, init='random',max_iter=300000,random_state=0)
+
+# # label_km = km.fit_predict(data.to_numpy())
 
 
 
