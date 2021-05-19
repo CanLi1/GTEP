@@ -53,7 +53,7 @@ max_iter = 100
 
 # create blocks
 m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation,readData_single)
-fieldnames = ["repnday", "solution", "obj"]
+fieldnames = ["repnday", "solution", "obj", "time"]
 lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]      
 for t in m.t:
     for line in lines:
@@ -140,16 +140,16 @@ with open('repn_results/5yearsinvestment_NETL_no_reserve' + str(day_start) + "-"
                             m.Bl[stage].sd[th, r, t, d, s].setlb(lb)
                             m.Bl[stage].sd[th, r, t, d, s].setub(ub)                                                     
         # import time
-        # a = TransformationFactory("core.relax_integrality")
-        # a.apply_to(m)
+        a = TransformationFactory("core.relax_integrality")
+        a.apply_to(m)
         # for t in m.t:
         #   m.Bl[t].ntb.domain = Binary
         # opt = SolverFactory("cplex_persistent")
         opt = SolverFactory("cplex")
         opt.options['threads'] = 6
         opt.options['mipgap'] = 0.005
-        # opt.options['LPMethod'] = 4
-        # opt.options['solutiontype'] =2 
+        opt.options['LPMethod'] = 4
+        opt.options['solutiontype'] =2 
 # 0 Automatic
 # 1 Primal Simplex
 # 2 Dual Simplex
@@ -266,7 +266,7 @@ with open('repn_results/5yearsinvestment_NETL_no_reserve' + str(day_start) + "-"
         #           writer.writerow(new_row)  
 
 
-        new_row = {"repnday":day, "solution":1, "obj":m.obj.expr()}
+        new_row = {"repnday":day, "solution":1, "obj":m.obj.expr(), "time":results['Solver'][0]['Time']}
         for t in m.t: 
             #investment related variables 
             for line in lines:

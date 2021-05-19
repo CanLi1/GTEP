@@ -15,7 +15,7 @@ import csv
 
 
 from scenarioTree import create_scenario_tree
-import deterministic.readData_days as readData_det
+import deterministic.readData_det as readData_det
 import deterministic.gtep_optBlocks_det as b
 # import deterministic.optBlocks_det as b
 from forward_gtep import forward_pass
@@ -30,14 +30,14 @@ curPath = curPath.replace('/deterministic', '')
 print(curPath)
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2034_no_nuc.db')
 # filepath = os.path.join(curPath, 'data/GTEP_data_15years.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
-filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
+filepath = os.path.join(curPath, 'data/GTEPdata_2020_2039.db')
+# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
 # filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
 outputfile = "15days_5years_mediumtax.csv"
-n_stages = 5  # number od stages in the scenario tree
-formulation = "standard"
+n_stages = 20  # number od stages in the scenario tree
+formulation = "hull"
 
-# num_days = 4
+num_days = 4
 # print(formulation, num_days)
 stages = range(1, n_stages + 1)
 scenarios = ['M']
@@ -60,9 +60,13 @@ opt_tol = 1  # %
 nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
 
 #cluster 
-from cluster import *
-result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=5)
-readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
+# from cluster import *
+# result = run_cluster(data=load_input_data(), method="kmedoid_exact", n_clusters=4)
+# readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, result['medoids'], result['weights'])
+nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)
+
+
+readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, num_days)
 sc_headers = list(sc_nodes.keys())
 
 # operating scenarios
@@ -115,50 +119,50 @@ start_time = time.time()
 # scenarios_iter = {}
 
 # # converting sets to lists:
-# rn_r = list(m.rn_r)
-# th_r = list(m.th_r)
-# j_r = [(j, r) for j in m.j for r in m.r]
-# l_new = list(m.l_new)
+rn_r = list(m.rn_r)
+th_r = list(m.th_r)
+j_r = [(j, r) for j in m.j for r in m.r]
+l_new = list(m.l_new)
 
 # # request the dual variables for all (locally) defined blocks
 # for bloc in m.Bl.values():
 #     bloc.dual = Suffix(direction=Suffix.IMPORT)
 
 # # Add equality constraints (solve the full space)
-# for stage in m.stages:
-#     if stage != 1:
-#         # print('stage', stage, 't_prev', t_prev)
-#         for (rn, r) in m.rn_r:
-#             m.Bl[stage].link_equal1.add(expr=(m.Bl[stage].ngo_rn_prev[rn, r] ==
-#                                               m.Bl[stage-1].ngo_rn[rn, r, t_per_stage[stage-1][-1]] ))
-#         for (th, r) in m.th_r:
-#             m.Bl[stage].link_equal2.add(expr=(m.Bl[stage].ngo_th_prev[th, r] ==
-#                                                 m.Bl[stage-1].ngo_th[th, r, t_per_stage[stage-1][-1]]  ))
-#         for (j, r) in j_r:
-#             m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
-#                                                  m.Bl[stage-1].nso[j, r, t_per_stage[stage-1][-1]]))
+for stage in m.stages:
+    if stage != 1:
+        # print('stage', stage, 't_prev', t_prev)
+        for (rn, r) in m.rn_r:
+            m.Bl[stage].link_equal1.add(expr=(m.Bl[stage].ngo_rn_prev[rn, r] ==
+                                              m.Bl[stage-1].ngo_rn[rn, r, t_per_stage[stage-1][-1]] ))
+        for (th, r) in m.th_r:
+            m.Bl[stage].link_equal2.add(expr=(m.Bl[stage].ngo_th_prev[th, r] ==
+                                                m.Bl[stage-1].ngo_th[th, r, t_per_stage[stage-1][-1]]  ))
+        for (j, r) in j_r:
+            m.Bl[stage].link_equal3.add(expr=(m.Bl[stage].nso_prev[j, r] ==
+                                                 m.Bl[stage-1].nso[j, r, t_per_stage[stage-1][-1]]))
 
-#         for l in m.l_new:
-#             m.Bl[stage].link_equal4.add(expr=(m.Bl[stage].nte_prev[l] ==
-#                                                  m.Bl[stage-1].nte[l, t_per_stage[stage-1][-1]]))
-# m.obj = Objective(expr=0, sense=minimize)
+        for l in m.l_new:
+            m.Bl[stage].link_equal4.add(expr=(m.Bl[stage].nte_prev[l] ==
+                                                 m.Bl[stage-1].nte[l, t_per_stage[stage-1][-1]]))
+m.obj = Objective(expr=0, sense=minimize)
 
-# for stage in m.stages:
-#     m.Bl[stage].obj.deactivate()
-#     m.obj.expr += m.Bl[stage].obj.expr
+for stage in m.stages:
+    m.Bl[stage].obj.deactivate()
+    m.obj.expr += m.Bl[stage].obj.expr
 
 
-# # # solve relaxed model
-# a = TransformationFactory("core.relax_integrality")
-# a.apply_to(m)
-# opt = SolverFactory("cplex")
-# opt.options['mipgap'] = 0.001
-# opt.options['TimeLimit'] = 3600
-# opt.options['threads'] = 1
-# opt.options['LPMethod'] = 4
-# opt.options['solutiontype'] =2 
-# # # opt.options['LPMethod'] = 1
-# results  = opt.solve(m, tee=True)
+# # solve relaxed model
+a = TransformationFactory("core.relax_integrality")
+a.apply_to(m)
+opt = SolverFactory("cplex")
+opt.options['mipgap'] = 0.001
+opt.options['TimeLimit'] = 3600
+opt.options['threads'] = 1
+opt.options['LPMethod'] = 4
+opt.options['solutiontype'] =2 
+# # opt.options['LPMethod'] = 1
+results  = opt.solve(m, tee=True)
 
 # from util import * 
 # #write results
