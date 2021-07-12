@@ -9,7 +9,7 @@ import math
 
 
 
-def create_model(stages, time_periods, t_per_stage, max_iter, formulation, InvestData, OperationalData, loadshedding=False):
+def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, loadshedding=False):
     m = ConcreteModel()
 
     # ################################## Declare of sets ##################################
@@ -91,12 +91,12 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, Inves
                                            'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new'], ordered=True)
     m.j = Set(initialize=['Li_ion', 'Lead_acid', 'Flow'], ordered=True)
 
-    m.d = RangeSet(InvestData.num_days)
+    m.d = RangeSet(OperationalData.num_days)
     #  Misleading (seasons not used) but used because of structure of old data
 
     m.hours = RangeSet(24)
 
-    m.t = RangeSet(time_periods)
+    m.t = RangeSet(stages)
     nlines = len(InvestData.tielines)
     m.l = RangeSet(nlines)
     
@@ -108,11 +108,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, Inves
     t_stage = [(t, stage) for stage in m.stages for t in t_per_stage[stage]]
     m.t_stage = Set(initialize=t_stage)
 
-    # Superset of iterations
-    m.iter = RangeSet(max_iter)
-
-    # Set of iterations for which cuts are generated
-    m.k = Set(within=m.iter, dimen=1, ordered=True)
 
     # ################################## Import parameters ############################################
     m.Ng_old = Param(m.i, m.r, default=0, initialize=InvestData.Ng_old)
@@ -156,7 +151,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, Inves
     m.Ng_max: max number of generators in cluster i of region r
     m.Qinst_UB: Yearly upper bound on installation capacity by generator type
     m.LT: expected lifetime of generation cluster i (years)
-    m.Tremain: remaining time until the end of the time horizon at year t (years)
     m.Ng_r: number of generators in cluster i of region r that achieved their expected lifetime
     m.q_v: capacity value of generation cluster i (fraction of the nameplate capacity)
     m.Pg_min: minimum operating output of a generator in cluster i ∈ ITH (fraction of the nameplate capacity)
@@ -212,7 +206,6 @@ def create_model(stages, time_periods, t_per_stage, max_iter, formulation, Inves
     m.Ng_max = Param(m.i_r, default=0, initialize=InvestData.Ng_max, mutable=True)
     m.Qinst_UB = Param(m.i, m.t, default=0, initialize=InvestData.Qinst_UB)
     m.LT = Param(m.i, initialize=InvestData.LT, default=0)
-    m.Tremain = Param(m.t, default=0, initialize=InvestData.Tremain)
     m.Ng_r = Param(m.old, m.r, m.t, default=0, initialize=InvestData.Ng_r)
     m.q_v = Param(m.i, default=0, initialize=InvestData.q_v)
     m.Pg_min = Param(m.i, default=0, initialize=InvestData.Pg_min)

@@ -38,22 +38,32 @@ def read_data(database_file, len_t):
                     d[str(row[0]), str(row[1]), str(row[2]), str(row[3]), str(row[4])] = row[5]
         return d
 
-    params = ['L_max', 'Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
+    params = ['Qg_np', 'Ng_old', 'Ng_max', 'Qinst_UB', 'LT', 'Tremain', 'Ng_r', 'q_v',
               'Pg_min', 'Ru_max', 'Rd_max', 'f_start', 'C_start', 'frac_spin', 'frac_Qstart', 't_loss', 't_up', 'dist',
-              'if_', 'ED', 'Rmin', 'hr', 'EF_CO2', 'FOC', 'VOC', 'CCm',  'LEC', 'PEN', 'tx_CO2', 'OCC'
-              'RES_min', 'P_fuel']  
+              'if_', 'ED', 'Rmin', 'hr', 'EF_CO2', 'FOC', 'VOC', 'CCm',  'LEC', 'PEN', 'tx_CO2', 'OCC',
+              'RES_min', 'P_fuel', 'P_min_charge', 'P_max_charge', 'P_min_discharge', 'P_max_discharge',
+              'min_storage_cap', 'max_storage_cap', 'eff_rate_charge', 'eff_rate_discharge', 'storage_lifetime']  
 
 
     for p in params:
         globals()[p] = process_param(p)
 
-    conn.close()
 
+    #trim the parameters to within len_t
     d_FOC = process_param("FOC")
     d_VOC = process_param("VOC")
-    d_OCC = process_param("OCC")    
+    d_OCC = process_param("OCC")  
+    d_Qinst_UB = process_param("Qinst_UB") 
+    d_Ng_r = process_param("Ng_r") 
     LT = process_param("LT")
     if_ = process_param("if_")
+    d_ED = process_param("ED")
+    d_Rmin = process_param("Rmin")
+    d_P_fuel = process_param("P_fuel")
+    d_PEN = process_param("PEN")
+
+    storage_inv_cost = process_param("storage_inv_cost")
+    conn.close()    
     FOC = {}
     DIC = {}
     VOC = {}
@@ -71,11 +81,51 @@ def read_data(database_file, len_t):
             ACC = OCC * ir / (1 - (1/(1+ir)) ** LT[g]) 
             T_remain = len_t - t + 1
             DIC[(g,t)] = ACC * sum(if_[tt] for tt in range(1, len_t + 1) if (tt <= T_remain and tt <= LT[g]))
-            VOC[(g,t)] = float(d_VOC[g][t])
+            VOC[(g,t)] = float(d_VOC[g,t])
     globals()['FOC'] = FOC 
     globals()['DIC'] = DIC
     globals()['VOC'] = VOC 
 
+    temp_dict = {}                        
+    for key in storage_inv_cost:                   
+        if key[1] <= len_t:
+            temp_dict[key] = storage_inv_cost[key]
+    storage_inv_cost = temp_dict
+    globals()["storage_inv_cost"] = storage_inv_cost
+
+    Qinst_UB = {}
+    for key in d_Qinst_UB:
+        if key[1] <= len_t:
+            Qinst_UB[key] = d_Qinst_UB[key]
+    globals()["Qinst_UB"] = Qinst_UB
+
+    Ng_r = {}
+    for key in d_Ng_r:
+        if key[2] <= len_t:
+            Ng_r[key] = d_Ng_r[key]
+    globals()["Ng_r"] = Ng_r
+
+    if__ = {}
+    ED = {}
+    Rmin = {}
+    PEN = {}
+    for key in if_:
+        if key <= len_t:
+            if__[key] = if_[key]
+            ED[key] = d_ED[key]
+            Rmin[key] = d_Rmin[key]
+            PEN[key] = d_PEN[key]
+    globals()["if_"] = if__
+    globals()["ED"] = ED 
+    globals()["Rmin"] = Rmin
+    globals()["PEN"] = PEN 
+
+
+    P_fuel = {}
+    for key in P_fuel:
+        if key[1] <= len_t:
+            P_fuel[key] = d_P_fuel[key]
+    globals()["P_fuel"] = P_fuel
 
 
     globals()['hs'] = 1
@@ -87,15 +137,6 @@ def read_data(database_file, len_t):
     t_up['South', 'Panhandle'] = 0
     t_up['Panhandle', 'Coastal'] = 0
     t_up['Panhandle', 'South'] = 0
-
-
-    temp_dict = {}                        
-    for key in storage_inv_cost:                   
-        if key[1] <= time:
-            temp_dict[key] = storage_inv_cost[key]
-    storage_inv_cost = temp_dict
-    globals()["storage_inv_cost"] = storage_inv_cost
-
 
     all_tielines = []
 
@@ -118,10 +159,10 @@ def read_data(database_file, len_t):
             temp_line['B'] = line['B']
             temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
             temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
-            for t in range(1, len(n_stage)+1):
+            for t in range(1, len_t+1):
                 ACC = temp_line['Cost'] * ir / (1 - (1/(1+ir)) ** LT_t) 
-                T_remain = len(n_stage) - t + 1
-                TIC[(j,t)] = ACC * sum(if_[tt] for tt in range(1, len(n_stage) + 1) if (tt <= T_remain and tt <= LT[g]))
+                T_remain = len_t - t + 1
+                TIC[(j,t)] = ACC * sum(if_[tt] for tt in range(1, len_t + 1) if (tt <= T_remain and tt <= LT[g]))
             all_tielines.append(temp_line)
             j += 1
     tielines = all_tielines

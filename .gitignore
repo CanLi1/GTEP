@@ -118,3 +118,6 @@ $*
 *localhost.ER
 localhost.OU
 *.pdf
+*DS_Store*
+*DS_Store
+._*py

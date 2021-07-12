@@ -22,15 +22,15 @@ def read_representative_days(len_t, days, weights):
         i += 1
     globals()['n_ss'] = n_ss
 
-    L_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/L_Northeast_2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    L_NE_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/L_Northeast_2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     L_NE_1.columns = list_of_repr_days_per_scenario
-    L_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/L_West_2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    L_W_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/L_West_2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     L_W_1.columns = list_of_repr_days_per_scenario
-    L_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/L_Coastal_2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    L_C_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/L_Coastal_2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     L_C_1.columns = list_of_repr_days_per_scenario
-    L_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/L_South_2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    L_S_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/L_South_2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     L_S_1.columns = list_of_repr_days_per_scenario
-    L_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/L_South_2012.csv'), index_col=0, header=0).iloc[selected_hours, 1].multiply(0)
+    L_PH_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/L_South_2012.csv', index_col=0, header=0).iloc[selected_hours, 1].multiply(0)
     L_PH_1.columns = list_of_repr_days_per_scenario
 
 
@@ -79,60 +79,60 @@ def read_representative_days(len_t, days, weights):
 
     # ############ CAPACITY FACTOR ############
     # -> solar CSP
-    CF_CSP_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Northeast_CSP2012.csv'), index_col=0, header=0
+    CF_CSP_NE_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Northeast_CSP2012.csv', index_col=0, header=0
                               ).iloc[selected_hours, 1]
     CF_CSP_NE_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_West_CSP2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_CSP_W_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_West_CSP2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_CSP_W_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Coastal_CSP2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_CSP_C_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Coastal_CSP2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_CSP_C_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_South_CSP2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_CSP_S_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_South_CSP2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_CSP_S_1.columns = list_of_repr_days_per_scenario
-    CF_CSP_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Panhandle_CSP2012.csv'), index_col=0, header=0
+    CF_CSP_PH_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Panhandle_CSP2012.csv', index_col=0, header=0
                               ).iloc[selected_hours, 1]
     CF_CSP_PH_1.columns = list_of_repr_days_per_scenario
 
     # -> solar PVSAT
-    CF_PV_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Northeast_PV2012.csv'), index_col=0, header=0
+    CF_PV_NE_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Northeast_PV2012.csv', index_col=0, header=0
                              ).iloc[selected_hours, 1]
     CF_PV_NE_1.columns = list_of_repr_days_per_scenario
-    CF_PV_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_West_PV2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_PV_W_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_West_PV2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_PV_W_1.columns = list_of_repr_days_per_scenario
-    CF_PV_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Coastal_PV2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_PV_C_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Coastal_PV2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_PV_C_1.columns = list_of_repr_days_per_scenario
-    CF_PV_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_South_PV2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_PV_S_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_South_PV2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_PV_S_1.columns = list_of_repr_days_per_scenario
-    CF_PV_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Panhandle_PV2012.csv'), index_col=0, header=0
+    CF_PV_PH_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Panhandle_PV2012.csv', index_col=0, header=0
                              ).iloc[selected_hours, 1]
     CF_PV_PH_1.columns = list_of_repr_days_per_scenario
 
     # -> wind (old turbines)
-    CF_wind_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv'), index_col=0, header=0
+    CF_wind_NE_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv', index_col=0, header=0
                                ).iloc[selected_hours, 1]
     CF_wind_NE_1.columns = list_of_repr_days_per_scenario
-    CF_wind_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_West_wind2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_wind_W_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_West_wind2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_wind_W_1.columns = list_of_repr_days_per_scenario
-    CF_wind_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_wind_C_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_wind_C_1.columns = list_of_repr_days_per_scenario
-    CF_wind_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_South_wind2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_wind_S_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_South_wind2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_wind_S_1.columns = list_of_repr_days_per_scenario
-    CF_wind_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv'), index_col=0, header=0
+    CF_wind_PH_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv', index_col=0, header=0
                                ).iloc[selected_hours, 1]
     CF_wind_PH_1.columns = list_of_repr_days_per_scenario
 
     # -> wind new (new turbines)
-    CF_wind_new_NE_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv'), index_col=0, header=0
+    CF_wind_new_NE_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv', index_col=0, header=0
                                    ).iloc[selected_hours, 1]
     CF_wind_new_NE_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_W_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_West_wind2012.csv'), index_col=0, header=0).iloc[selected_hours, 1]
+    CF_wind_new_W_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_West_wind2012.csv', index_col=0, header=0).iloc[selected_hours, 1]
     CF_wind_new_W_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_C_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv'), index_col=0, header=0
+    CF_wind_new_C_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv', index_col=0, header=0
                                   ).iloc[selected_hours, 1]
     CF_wind_new_C_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_S_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_South_wind2012.csv'), index_col=0, header=0
+    CF_wind_new_S_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_South_wind2012.csv', index_col=0, header=0
                                   ).iloc[selected_hours, 1]
     CF_wind_new_S_1.columns = list_of_repr_days_per_scenario
-    CF_wind_new_PH_1 = pd.read_csv(os.path.join(curPath, 'NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv'), index_col=0, header=0
+    CF_wind_new_PH_1 = pd.read_csv('../data/NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv', index_col=0, header=0
                                    ).iloc[selected_hours, 1]
     CF_wind_new_PH_1.columns = list_of_repr_days_per_scenario
 
@@ -179,7 +179,7 @@ def read_representative_days(len_t, days, weights):
 
 
     # Strategic uncertainty data
-def read_strategic_uncertainty(len_t, peak_load='L', tax='L')
+def read_strategic_uncertainty(len_t, peak_load='L', tax='L'):
     # Different scenarios for PEAK LOAD:
     L_max_scenario = {'L': L_max, 'M': {t: 1.05 * L_max[t] for t in L_max}, 'H': {t: 1.2 * L_max[t] for t in L_max}}
     # print(L_max_scenario)
@@ -223,9 +223,8 @@ def read_strategic_uncertainty(len_t, peak_load='L', tax='L')
                        }
     tx_CO2 = {}
     for key in tx_CO2_scenario:
-        if key[0] <= time and key[1]==tax:
+        if key[0] <= len_t and key[1]==tax:
             tx_CO2[key[0]] = tx_CO2_scenario[key]
-    tx_CO2_scenario = temp_dict
 
     
 

@@ -138,7 +138,7 @@ c.execute('''CREATE TABLE P_min_charge(
 for k in P_min_charge:
     c.execute("""INSERT INTO  P_min_charge (battery, value)
                     VALUES (?, ?)""",
-                    (k[0], P_min_charge[k]))    
+                    (k, P_min_charge[k]))    
 
 
 P_max_charge = {'Li_ion': 40, 'Lead_acid': 36, 'Flow': 2}
@@ -149,7 +149,7 @@ c.execute('''CREATE TABLE P_max_charge(
 for k in P_max_charge:
     c.execute("""INSERT INTO  P_max_charge (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], P_max_charge[k])) 
+                       (k, P_max_charge[k])) 
 
 P_min_discharge = {'Li_ion': 0, 'Lead_acid': 0, 'Flow': 0}
 c.execute('''CREATE TABLE P_min_discharge(
@@ -159,7 +159,7 @@ c.execute('''CREATE TABLE P_min_discharge(
 for k in P_min_discharge:
     c.execute("""INSERT INTO  P_min_discharge (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], P_min_discharge[k])) 
+                       (k, P_min_discharge[k])) 
 
 
 
@@ -171,7 +171,7 @@ c.execute('''CREATE TABLE P_max_discharge(
 for k in P_max_discharge:
     c.execute("""INSERT INTO  P_max_discharge (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], P_max_discharge[k])) 
+                       (k, P_max_discharge[k])) 
 
 # Rated energy capacity [MWh]
 min_storage_cap = {'Li_ion': 0, 'Lead_acid': 0, 'Flow': 0}
@@ -182,7 +182,7 @@ c.execute('''CREATE TABLE min_storage_cap(
 for k in min_storage_cap:
     c.execute("""INSERT INTO  min_storage_cap (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], min_storage_cap[k])) 
+                       (k, min_storage_cap[k])) 
 
 
 
@@ -194,7 +194,7 @@ c.execute('''CREATE TABLE max_storage_cap(
 for k in max_storage_cap:
     c.execute("""INSERT INTO  max_storage_cap (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], max_storage_cap[k])) 
+                       (k, max_storage_cap[k])) 
 
 # Charge efficiency (fraction)
 eff_rate_charge = {'Li_ion': 0.95, 'Lead_acid': 0.85, 'Flow': 0.75}
@@ -205,7 +205,7 @@ c.execute('''CREATE TABLE eff_rate_charge(
 for k in eff_rate_charge:
     c.execute("""INSERT INTO  eff_rate_charge (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], eff_rate_charge[k])) 
+                       (k, eff_rate_charge[k])) 
 
 
 
@@ -217,7 +217,7 @@ c.execute('''CREATE TABLE eff_rate_discharge(
 for k in eff_rate_discharge:
     c.execute("""INSERT INTO  eff_rate_discharge (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], eff_rate_discharge[k])) 
+                       (k, eff_rate_discharge[k])) 
 
 # Storage lifetime (years)
 storage_lifetime = {'Li_ion': 15, 'Lead_acid': 15, 'Flow': 20}
@@ -228,42 +228,42 @@ c.execute('''CREATE TABLE storage_lifetime(
 for k in storage_lifetime:
     c.execute("""INSERT INTO  storage_lifetime (battery, value)
                     VALUES (?, ?)""",
-                       (k[0], storage_lifetime[k])) 
+                       (k, storage_lifetime[k])) 
 
 
 
 # tielines_df = pd.read_csv('../data/tielines.csv', index_col=0, header=0).iloc[:, :]
-all_tielines = []
-#"Far West" "West" are both "West", "South" and "South Central" are both "South"
-#"North Central" and "East" are both "Northeast"
-areaMap = {'Coast':'Coastal', 'South':'South', 'South Central':'South', 'East':'Northeast', \
-            'West':'West', 'Far West':'West', 'North':'Northeast', 'North Central':'Northeast'}
-CostPerMile = {115:500000, 161:600000, 230:959700, 500:1919450}
-TIC = {}
-line = {'Capacity': 2020.0,  'B': 8467.24770417039}
-lines_two_end = [('Coastal', 'South'), ('Coastal', 'Northeast'), ('South', 'Northeast'), ('South', 'West'),
-    ('West', 'Northeast'), ('West', 'Panhandle'), ('Northeast', 'Panhandle') ]
-j = 1
-#life expectancy of transmission lines 
-LT_t = 80
-B = {}
-Far_end = {}
-Near_end = {}
-T_OCC = {}
-for ends in lines_two_end:
-    for i in range(10):
-        temp_line = {}
-        temp_line['Near Area Name'] = ends[0]
-        temp_line['Far Area Name'] = ends[1]
-        temp_line['Capacity'] = float(line['Capacity'])
-        temp_line['B'] = line['B']
-        temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
-        temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
-        B[j] = line['B']
-        Far_end[j] = ends[1]
-        Near_end[j] = ends[0]
-        T_OCC[j] = temp_line['Cost'] 
-        j += 1
+# all_tielines = []
+# #"Far West" "West" are both "West", "South" and "South Central" are both "South"
+# #"North Central" and "East" are both "Northeast"
+# areaMap = {'Coast':'Coastal', 'South':'South', 'South Central':'South', 'East':'Northeast', \
+#             'West':'West', 'Far West':'West', 'North':'Northeast', 'North Central':'Northeast'}
+# CostPerMile = {115:500000, 161:600000, 230:959700, 500:1919450}
+# TIC = {}
+# line = {'Capacity': 2020.0,  'B': 8467.24770417039}
+# lines_two_end = [('Coastal', 'South'), ('Coastal', 'Northeast'), ('South', 'Northeast'), ('South', 'West'),
+#     ('West', 'Northeast'), ('West', 'Panhandle'), ('Northeast', 'Panhandle') ]
+# j = 1
+# #life expectancy of transmission lines 
+# LT_t = 80
+# B = {}
+# Far_end = {}
+# Near_end = {}
+# T_OCC = {}
+# for ends in lines_two_end:
+#     for i in range(10):
+#         temp_line = {}
+#         temp_line['Near Area Name'] = ends[0]
+#         temp_line['Far Area Name'] = ends[1]
+#         temp_line['Capacity'] = float(line['Capacity'])
+#         temp_line['B'] = line['B']
+#         temp_line['Distance'] = dist[temp_line['Near Area Name'], temp_line['Far Area Name']]
+#         temp_line['Cost'] = CostPerMile[500] * temp_line['Distance'] 
+#         B[j] = line['B']
+#         Far_end[j] = ends[1]
+#         Near_end[j] = ends[0]
+#         T_OCC[j] = temp_line['Cost'] 
+#         j += 1
 
 # c.execute('''CREATE TABLE Far_end(
 #    j INT,

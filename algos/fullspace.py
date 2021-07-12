@@ -8,11 +8,13 @@ from copy import deepcopy
 import os.path
 from pyomo.environ import *
 import csv
+import sys
+sys.path.insert(0, os.path.abspath( os.path.join(os.path.dirname(__file__), 
+                                               '../') ))
 
-
-from scenarioTree import create_scenario_tree
-import deterministic.readData_det as readData_det
-import deterministic.gtep_optBlocks_det as b
+import dataloader.load_investment as InvestData
+import dataloader.load_operational as OperationalData
+import models.gtep_optBlocks_det as b
 
 
 # ######################################################################################################################
@@ -20,11 +22,9 @@ import deterministic.gtep_optBlocks_det as b
 
 # Define case-study
 
-filepath = 
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2024.db')
-# filepath = os.path.join(curPath, 'data/GTEPdata_2020_2029.db')
+filepath = "../data/test.db"
 outputfile = "15days_5years_mediumtax.csv"
-n_stages = 20  # number od stages in the scenario tree
+n_stages = 5  # number od stages in the scenario tree
 formulation = "hull"
 
 
@@ -33,46 +33,46 @@ for i in range(1, n_stages+1):
   t_per_stage[i] = [i]
 
 
-readData_det.read_data(filepath, curPath, stages, n_stage, t_per_stage, num_days)
-sc_headers = list(sc_nodes.keys())
+InvestData.read_data(filepath, n_stages)
+days = [1,2,3]
+weights = [100, 100, 165]
+OperationalData.read_representative_days(n_stages, days, weights)
+OperationalData.read_strategic_uncertainty(n_stages)
 
-# operating scenarios
-prob_op = 1
-# print(operating_scenarios)
+m = b.create_model(n_stages, t_per_stage, formulation, InvestData, OperationalData)
+# # list of thermal generators:
+# th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old', 'ng-cc-old', 'ng-st-old',
+#                  'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
+# # 'nuc-st-old', 'nuc-st-new'
 
-# list of thermal generators:
-th_generators = ['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new', 'ng-ct-old', 'ng-cc-old', 'ng-st-old',
-                 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new']
-# 'nuc-st-old', 'nuc-st-new'
+# # Shared data among processes
+# ngo_rn_par_k = {}
+# ngo_th_par_k = {}
+# nso_par_k = {}
+# nsb_par_k = {}
+# nte_par_k = {}
+# cost_forward = {}
+# cost_scenario_forward = {}
+# mltp_o_rn = {}
+# mltp_o_th = {}
+# mltp_so = {}
+# mltp_te = {}
+# cost_backward = {}
+# if_converged = {}
 
-# Shared data among processes
-ngo_rn_par_k = {}
-ngo_th_par_k = {}
-nso_par_k = {}
-nsb_par_k = {}
-nte_par_k = {}
-cost_forward = {}
-cost_scenario_forward = {}
-mltp_o_rn = {}
-mltp_o_th = {}
-mltp_so = {}
-mltp_te = {}
-cost_backward = {}
-if_converged = {}
-
-# Map stage by time_period
-stage_per_t = {t: k for k, v in t_per_stage.items() for t in v}
-
-
-# print(stage_per_t)
-
-# create blocks
-m = b.create_model(n_stages, time_periods, t_per_stage, max_iter, formulation, readData_det)
-start_time = time.time()
+# # Map stage by time_period
+# stage_per_t = {t: k for k, v in t_per_stage.items() for t in v}
 
 
+# # print(stage_per_t)
 
-# # converting sets to lists:
+# # create blocks
+
+# start_time = time.time()
+
+
+
+# # # converting sets to lists:
 rn_r = list(m.rn_r)
 th_r = list(m.th_r)
 j_r = [(j, r) for j in m.j for r in m.r]
