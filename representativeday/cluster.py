@@ -11,16 +11,8 @@ from scenarioTree import create_scenario_tree
 def load_cost_data(year=5):
     curPath = os.path.abspath(os.path.curdir)
     curPath = curPath.replace('/deterministic', '')
-    filepath = 'data/GTEPdata_2020_2024.db'
     n_stages = 5  # number od stages in the scenario tree
     stages = range(1, n_stages + 1)
-    t_per_stage = {}
-    for i in range(1, n_stages+1):
-        t_per_stage[i] = [i]
-    scenarios = ['M']
-    single_prob = {'M': 1.0}    
-    nodes, n_stage, parent_node, children_node, prob, sc_nodes = create_scenario_tree(stages, scenarios, single_prob)   
-    readData_single.read_data(filepath, curPath, stages, n_stage, t_per_stage, 1)
     rnew = ['wind-new', 'pv-new', 'csp-new']
     rn_r = [('pv-old', 'West'), ('pv-old', 'South'), ('pv-new', 'Northeast'), ('pv-new', 'West'), ('pv-new', 'Coastal'), ('pv-new', 'South'), ('pv-new', 'Panhandle'), ('csp-new', 'Northeast'), ('csp-new', 'West'), ('csp-new', 'Coastal'), ('csp-new', 'South'), ('csp-new', 'Panhandle'), ('wind-old', 'Northeast'), ('wind-old', 'West'), ('wind-old', 'Coastal'), ('wind-old', 'South'), ('wind-old', 'Panhandle'), ('wind-new', 'Northeast'), ('wind-new', 'West'), ('wind-new', 'Coastal'), ('wind-new', 'South'), ('wind-new', 'Panhandle')]
     th_r = [('coal-st-old1', 'Northeast'), ('coal-st-old1', 'West'), ('coal-st-old1', 'Coastal'), ('coal-st-old1', 'South'), ('coal-igcc-new', 'Northeast'), ('coal-igcc-new', 'West'), ('coal-igcc-new', 'Coastal'), ('coal-igcc-new', 'South'), ('coal-igcc-new', 'Panhandle'), ('coal-igcc-ccs-new', 'Northeast'), ('coal-igcc-ccs-new', 'West'), ('coal-igcc-ccs-new', 'Coastal'), ('coal-igcc-ccs-new', 'South'), ('coal-igcc-ccs-new', 'Panhandle'), ('ng-ct-old', 'Northeast'), ('ng-ct-old', 'West'), ('ng-ct-old', 'Coastal'), ('ng-ct-old', 'South'), ('ng-ct-old', 'Panhandle'), ('ng-cc-old', 'Northeast'), ('ng-cc-old', 'West'), ('ng-cc-old', 'Coastal'), ('ng-cc-old', 'South'), ('ng-st-old', 'Northeast'), ('ng-st-old', 'West'), ('ng-st-old', 'South'), ('ng-cc-new', 'Northeast'), ('ng-cc-new', 'West'), ('ng-cc-new', 'Coastal'), ('ng-cc-new', 'South'), ('ng-cc-new', 'Panhandle'), ('ng-cc-ccs-new', 'Northeast'), ('ng-cc-ccs-new', 'West'), ('ng-cc-ccs-new', 'Coastal'), ('ng-cc-ccs-new', 'South'), ('ng-cc-ccs-new', 'Panhandle'), ('ng-ct-new', 'Northeast'), ('ng-ct-new', 'West'), ('ng-ct-new', 'Coastal'), ('ng-ct-new', 'South'), ('ng-ct-new', 'Panhandle'), ('nuc-st-old', 'Northeast'), ('nuc-st-old', 'Coastal'), ('nuc-st-new', 'Northeast'), ('nuc-st-new', 'West'), ('nuc-st-new', 'Coastal'), ('nuc-st-new', 'South'), ('nuc-st-new', 'Panhandle')]
@@ -29,7 +21,6 @@ def load_cost_data(year=5):
     storage = ['Li_ion', 'Lead_acid', 'Flow']
     lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]    
     investment = pd.read_csv("repn_results/investmentdata/5yearsinvestment_NETL_no_reserve1-366_MIP.csv", index_col=0, header=0).iloc[:, :]
-
     data = investment.obj 
     #filter the data (domain reduction) && translate the data into cost domain
     for line in lines:
@@ -197,51 +188,4 @@ def select_extreme_days(cluster_results, cluster_obj=[], n=1, method="highest_co
         i += 1
 
     return cluster_results 
-
-# def select_extreme_days_input(cluster_results, n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[], clustering_method="kmedoid"):
-#     if method == "load_shedding_cost": #select the infeasible days with largest load shedding cost 
-#         days =  []#days selected
-#         if len(infeasible_days) <= n:
-#             days = infeasible_days
-#         else:       
-#             load_shedding_cost = np.array(load_shedding_cost)
-#             for index in load_shedding_cost.argsort()[-n:]:
-#                 days.append(infeasible_days[index])     
-#     num_days = len(np.unique(cluster_results["labels"]))
-#     i = 1
-#     for day in days:
-#         day_label = cluster_results["labels"][day-1] 
-#         #check is this day only has weight 1 
-#         if len(np.where(cluster_results["labels"] == day_label)[0]) == 1:
-#             raise NameError('the highest load shedding cost day already has weight 1')
-#         if clustering_method == "kmedoid" or clustering_method == "kmedoid_exact":
-#             if cluster_results['weights'][cluster_results['labels'][day-1]-1] != 1:
-#                 cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
-#                 cluster_results['medoids'].append(day)
-#                 cluster_results['weights'].append(1)
-#                 cluster_results["labels"][day-1] = num_days + i 
-#         i += 1
-
-#     return cluster_results 
-
-
-
-# # km = KMedoids(n_clusters=10, init='k-medoids++',max_iter=300000)
-# # km = KMedoids(n_clusters=10, init='random',max_iter=300000,random_state=0)
-
-# # label_km = km.fit_predict(data.to_numpy())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
