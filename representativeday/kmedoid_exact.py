@@ -1,6 +1,6 @@
 from pyomo.environ import *
 import numpy as np 
-def kmedoid_mip(X, ncluster, gap):
+def kmedoid_mip(X, ncluster, gap, config):
 	num_points = len(X)
 	dist_matrix = {}
 	for i in range(num_points):
@@ -29,10 +29,10 @@ def kmedoid_mip(X, ncluster, gap):
 	def obj(m):
 		return sum(m.z[i,j] * m.Dist[i,j] for i in m.I for j in m.I)
 	m.obj = Objective(rule=obj, sense=minimize)
-	opt = SolverFactory("cplex")
+	opt = SolverFactory(config.solver)
 	opt.options['mipgap'] = gap
-	opt.options['threads'] = 8
-	opt.solve(m, tee=True)
+	opt.options['threads'] = config.threads
+	opt.solve(m, tee=config.tee)
 
 	results = {'medoids':[], 'labels':[], 'weights':[]}
 	for i in range(num_points):

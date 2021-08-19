@@ -2,7 +2,7 @@ from pyomo.environ import *
 import numpy as np 
 #the formulation is taken from page 19 of Papageorgiou, D. J., & Trespalacios, F. (2018). 
 #Pseudo basic steps: bound improvement guarantees from Lagrangian decomposition in convex disjunctive programming. EURO Journal on Computational Optimization, 6(1), 55-83.
-def kmeans_miqcp(X, ncluster, gap):
+def kmeans_miqcp(X, ncluster, gap, config):
 	num_points = len(X)
 	ndim = len(X[0])
 	m = ConcreteModel()
@@ -42,10 +42,10 @@ def kmeans_miqcp(X, ncluster, gap):
 	def obj(m):
 		return sum(m.d[i] for i in m.I)
 	m.obj = Objective(rule=obj, sense=minimize)
-	opt = SolverFactory("cplex")
+	opt = SolverFactory(config.solver)
 	opt.options['mipgap'] = gap
-	opt.options['threads'] = 8
-	opt.solve(m, tee=True)
+	opt.options['threads'] = config.threads
+	opt.solve(m, tee=config.tee)
 
 	labels = []
 	for i in m.I:

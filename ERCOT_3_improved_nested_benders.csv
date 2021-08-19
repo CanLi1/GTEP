@@ -1,0 +1,75 @@
+Time,total_investment_cost,variable_operating_cost,fixed_operating_cost,startup_cost,thermal_generator_cost,extending_thermal_generator_cost,renewable_generator_cost,extending_renewable_generator_cost,storage_investment_cost,penalty_cost,renewable_capacity,thermal_capacity,transmission_line_cost,coal_capacity,natural_gas_capacity,nuclear_capacity,solar_capacity,wind_capacity,total_capacity,power_flow,solar_energy_generated,wind_energy_generated,nuclear_energy_generated,coal_energy_generated,natural_gas_energy_generated,total_energy_generated,Northeast coal,Northeast natural gas,Northeast nuc,Northeast solar,Northeast wind,West coal,West natural gas,West nuc,West solar,West wind,Coastal coal,Coastal natural gas,Coastal nuc,Coastal solar,Coastal wind,South coal,South natural gas,South nuc,South solar,South wind,Panhandle coal,Panhandle natural gas,Panhandle nuc,Panhandle solar,Panhandle wind
+1,609.4580166561133,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,24.795154339720455,3375.6886200000004,74398.4293,609.4580166561133,17397.000200000002,51837.4291,5164.0,663.1,19852.1908,77774.11792,"{'Northeast': {'Northeast': 0, 'West': 0.2312842454227097, 'Coastal': 0.0, 'South': 0.24981934939223066, 'Panhandle': 0}, 'West': {'Northeast': 1.4307177618625266, 'West': 0, 'Coastal': 0, 'South': 22.290960433623514, 'Panhandle': 0.5511370281715458}, 'Coastal': {'Northeast': 0, 'West': 0, 'Coastal': 0, 'South': 3.586054672985136, 'Panhandle': 0}, 'South': {'Northeast': 0.29923410475569984, 'West': 7.391237520120146, 'Coastal': 6.408234928431577, 'South': 0, 'Panhandle': 0}, 'Panhandle': {'Northeast': 27.011278976706777, 'West': 0.8389966712931294, 'Coastal': 0, 'South': 0, 'Panhandle': 0}}",1.06707256837557,97.80277021490616,13.825195361712826,15.720974029979677,215.02479798095274,343.4408101559268,8747.9997,20613.677499999998,2460.0,0.0,901.1002,650.0,3695.9001,0.0,399.4,9581.0884,2504.0,11082.7,2704.0,0.0,2047.4006,5495.0005,16086.151499999998,0.0,263.70000000000005,1768.8000000000002,0.0,359.0,0.0,0.0,5553.8016
+2,0.6224129075339181,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,16.08163039591734,3358.3734000000004,74398.4293,0.6224129075339181,17397.000200000002,51837.4291,5164.0,663.1,19736.755999999998,77756.8027,"{'Northeast': {'Northeast': 0, 'West': 0.1905634508690932, 'Coastal': 0.0, 'South': 0.12204005182654692, 'Panhandle': 0.005521095900896897}, 'West': {'Northeast': 1.168917077366599, 'West': 0, 'Coastal': 0, 'South': 22.031086118300927, 'Panhandle': 0.6994299173514491}, 'Coastal': {'Northeast': 0, 'West': 0, 'Coastal': 0, 'South': 4.578214945400714, 'Panhandle': 0}, 'South': {'Northeast': 0.3818389681500865, 'West': 7.617605996262687, 'Coastal': 5.248390701017325, 'South': 0, 'Panhandle': 0}, 'Panhandle': {'Northeast': 27.077179132967807, 'West': 0.8988478147630603, 'Coastal': 0, 'South': 0, 'Panhandle': 0}}",1.06707256837557,97.1345847558901,15.28184818124504,13.370847429786393,220.8001163312574,347.6544692665546,8747.9997,20613.677499999998,2460.0,0.0,901.1002,650.0,3695.9001,0.0,399.4,9465.6536,2504.0,11082.7,2704.0,0.0,2047.4006,5495.0005,16086.151499999998,0.0,263.70000000000005,1768.8000000000002,0.0,359.0,0.0,0.0,5553.8016
+3,1.2575658304379227,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,8.580881432908496,3323.74296,74398.4293,1.2575658304379227,17397.000200000002,51837.4291,5164.0,663.1,19505.8864,77722.17226,"{'Northeast': {'Northeast': 0, 'West': 0.2949078040159613, 'Coastal': 0.0, 'South': 0.13250062769739376, 'Panhandle': 0.015698566903417914}, 'West': {'Northeast': 1.3907666863602433, 'West': 0, 'Coastal': 0, 'South': 20.967561043371703, 'Panhandle': 0.5168519563067323}, 'Coastal': {'Northeast': 0, 'West': 0, 'Coastal': 0, 'South': 4.309871193700595, 'Panhandle': 0}, 'South': {'Northeast': 0.31280941927108075, 'West': 7.697480860128641, 'Coastal': 5.288953873630145, 'South': 0, 'Panhandle': 0}, 'Panhandle': {'Northeast': 26.769975678411967, 'West': 1.0276406508104023, 'Coastal': 0, 'South': 0, 'Panhandle': 0}}",1.06707256837557,95.79821383785797,17.30487984098462,13.073959170500194,224.65214948790714,351.89627490562515,8747.9997,20613.677499999998,2460.0,0.0,901.1002,650.0,3695.9001,0.0,399.4,9234.784,2504.0,11082.7,2704.0,0.0,2047.4006,5495.0005,16086.151499999998,0.0,263.70000000000005,1768.8000000000002,0.0,359.0,0.0,0.0,5553.8016
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+ at last year ,1,24
+ ,Northeast,West,Coastal,South,Panhandle
+load ,16756.334309146616,5177.2873413280195,13375.700855804012,11558.288828919036,0.0
+power generation,11294.940338934248,9088.91797505996,12651.02544862889,8315.951316574581,5516.776255999999
+power charged,0.0,0.0,0.0,0.0,0.0
+power discharged,0.0,0.0,0.0,0.0,0.0
+transmission power ,5461.393970212362,-3911.630633731939,724.6754071751211,3242.337512344454,-5516.776255999999
+curtailment ,0.0,0.0,0.0,0.0,0.0
+
+transmission at peak load 
+Coastal,South,-193.6153979037861
+Coastal,South,-193.61539790378606
+Coastal,South,-143.8292134637629
+Coastal,South,-193.61539790378606
+South,West,-487.98613867385086
+South,West,-487.98613867385086
+South,West,-487.98613867385086
+South,West,-487.98613867385086
+South,West,-487.98613867385086
+South,West,-487.98613867385086
+South,West,-35.94984105356673
+South,West,-501.57312321145156
+South,West,-501.57312321145156
+West,Northeast,8.702519402774984
+West,Northeast,8.702519402774984
+West,Northeast,8.702519402774987
+West,Northeast,8.702519402774989
+West,Northeast,109.5670725899472
+West,Northeast,109.5670725899472
+West,Panhandle,-25.22664428984459
+West,Panhandle,-25.22664428984459
+West,Panhandle,-25.22664428984459
+West,Panhandle,-25.22664428984459
+West,Panhandle,-25.22664428984459
+West,Panhandle,-25.22664428984459
+West,Panhandle,-56.5884475165731
+West,Panhandle,-44.78974780641812
+West,Panhandle,-56.5884475165731
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-385.5984457837928
+Northeast,Panhandle,-1737.063735367233
+
+total_investment_cost,611.337995394085
+nested benders LB,"{1: 660.6723226191718, 2: 661.0567399486315, 3: 661.7832092195947}"
+nested benders UB,"{1: 797.7041278515892, 2: 669.4489403864164, 3: 666.8774319872738}"
+nested benders walltime,56.331526041030884

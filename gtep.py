@@ -1,114 +1,51 @@
 __author__ = "Can Li"
 # this class is the interface for running all gtep models and algorithms
 
-import time
-import math
-import random
-from copy import deepcopy
-import os.path
-from pyomo.environ import *
-import csv
 
 import logging
 
 from pyomo.common.config import (
-    ConfigBlock, ConfigValue, In, PositiveFloat, PositiveInt
+	ConfigBlock, ConfigValue, In, PositiveFloat, PositiveInt
 )
 
-from scenarioTree import create_scenario_tree
+from config_options import _get_GTEP_config, check_config
+from representativeday.select_repn import select_repn_days
+from dataloader.dataloader import load_db_data
+from util import write_GTEP_results
+
+logger = logging.getLogger('gtep')
 
 class GTEP:
-    """interface for generation and transmission expansion planning models and algorithms
-    """	
+	"""interface for generation and transmission expansion planning models and algorithms
+	"""	
+	CONFIG = _get_GTEP_config()
+	 
 
-    CONFIG = ConfigBlock("GTEP")
-    CONFIG.declare("print_level", ConfigValue(
-        default=0,
-        domain=In([0, 1, 2, 3, 4]),
-        description="print level of log",
-        doc="Determine how verbose the solution process is printed to the screen"
-    ))
-    CONFIG.declare("solver", ConfigValue(
-        default="cplex",
-        domain=In(["cplex", "gurobi", "cbc"]),
-        description="solver",
-        doc="the solver used to solve the fullspace problem or the subproblems in the decomposition algorithms"
-    ))    
-
-    CONFIG.declare("time_limit", ConfigValue(
-        default=36000,
-        domain=PositiveFloat,
-        description="Time limit (seconds, default=36000)",
-        doc="Seconds allowed until the algorithm terminated. Note that the time limit "
-        "is for the time of the whole algorithm. you may want to set the time limit of the solvers"
-        "for each subproblem involved in the algorithm through solver options"
-    ))    
-
-#just use solver options at this level and leave the detailed config to different algorithms
-    CONFIG.declare("solver_options", ConfigBlock(
-        default=100,
-        domain=PositiveInt,
-
-        description="iteration limit for nested Benders",
-        doc="Maximum number of iteration for the nested Benders iteration algorithm"
-        "The algorithm will be forced terminate at this iteration limit"
-    )) 
-
-    CONFIG.declare("max_nested_benders_iteration", ConfigValue(
-        default=100,
-        domain=PositiveInt,
-        description="iteration limit for nested Benders",
-        doc="Maximum number of iteration for the nested Benders iteration algorithm"
-        "The algorithm will be forced terminate at this iteration limit"
-    )) 
-
-    CONFIG.declare("nested_benders_rel_gap", ConfigValue(
-        default=0.01,
-        domain=PositiveFloat,
-        description="relative optimality gap for nested Benders",
-        doc="Since the nested Benders decomposition algorithm does not have optimality guarantee"
-        ", a threshold for optimality gap need to be set. The algorithm will terminate"
-        "after it has reached the optimality gap tolerance"
-    ))        
-
-    CONFIG.declare("solver_options", ConfigBlock(
-        implicit=True,
-        description="options passed to the solver",
-        doc="options passed to the solver while executing the decomposition algorithms"
-    ))     
-
-	def __init__(self, data):
-		self.gtep_data = data 
-
-
-
-	def create_model(self, data, model_type):
-		if model_type == "GTEP":
-			import model.gtep_optBlocks_det as b
-			self.gtep_model = b.create_model(self.gtep_data)
-		elif model_type == "GEP":
-			import model.gep_optBlocks_det as b
-			self.gtep_model = b.create_model(self.gtep_data)
-
-		self.model_type = model_type
-		return self.gep_model
-
-	def solve_model(self, **kwds):
+	def __init__(self, **kwds):
 		self.config = self.CONFIG(kwds.pop('options', {}))
 		self.config.set_value(kwds)
+		check_config(self.config)
 
-		if algorithm == "benders" and self.model_type == "GTEP":
-			import algos.benders_cplex_gtep as benders
-			self.results = benders.solve(self.gtep_model, self.config)
-		elif algorithm == "benders" and self.model_type == "GEP":
-			import algos.benders_cplex_gep as benders
-			self.results = benders.solve(self.gtep_model, self.config)		
-		elif algorithm == "nested_benders" and self.model_type == "GTEP":
-			import algos.nested_benders_gtep as nested
-			self.results = nested.solve(self.gtep_model, self.config)
-		elif algorithm == "nested_benders" and self.model_type == "GEP":
-			import algos.nested_benders_gep as nested
-			self.results = nested.solve(self.gtep_model, self.config)		
+
+	def solve_model(self):
+		clustering_result = select_repn_days(self.config)
+		self.InvestData, self.OperationalData = load_db_data(clustering_result, self.config)
+		if self.config.algo == "benders":
+			from algos.deterministic_benders import benders_solve
+			self.m, self.opt, self.opt_results = benders_solve(self.config, self.InvestData, self.OperationalData)
+			self.algo_walltime = round(self.opt_results['Solver'][0]['Wallclock time'])		
+		elif self.config.algo == "nested_benders":
+			from algos.deterministic_nested import nested_benders_solve
+			self.m, cost_LB, cost_UB, elapsed_time = nested_benders_solve(self.config, self.InvestData, self.OperationalData)
+			self.algo_walltime = round(elapsed_time)
+			self.opt_results = {'cost LB': cost_LB, 'cost UB':cost_UB, 'Wallclock time': elapsed_time}
+		elif self.config.algo == "fullspace":
+			from algos.fullspace import fullspace_solve
+			self.m, self.opt, self.opt_results = fullspace_solve(self.config, self.InvestData, self.OperationalData)
+			self.algo_walltime = round(self.opt_results['Solver'][0]['Time'])					
+
+		self.config.logger.info("GTEP problem of the %s region in %s formulation is solved with %s in %s seconds" % (self.config.region, self.config.formulation, self.config.algo, self.algo_walltime))
+
 
 
 	def get_solver_time(self):
@@ -117,19 +54,9 @@ class GTEP:
 	def get_algorithm_log(self):
 		pass 
 
-	def write_all_results_to_csv(self):
-		pass
+	def write_gtep_results(self):
+		write_GTEP_results(self.m, self.InvestData, self.config, self.opt_results)
 
-	def write_generation_expansion_results_to_csv(self):
-		pass
-
-	def write_transmission_expansion_results_to_csv(self):
-		pass 
-
-	def write_cost_breakdown_to_csv(self):
-		pass 
-
-	def write_algorithm_log_to_csv(self):
-		pass 
-
-
+newinstance = GTEP(repn_day_method="cost", time_limit=20, algo="fullspace", clustering_algorithm = "kmedoid", num_repn_days=1, time_horizon=3, tee=False)
+newinstance.solve_model()
+newinstance.write_gtep_results()

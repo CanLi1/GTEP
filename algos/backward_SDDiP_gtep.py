@@ -4,22 +4,21 @@ from pyomo.environ import *
 from pyomo.opt import SolverStatus, TerminationCondition
 
 
-def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r, l_new):
+def backward_pass(stage, bl, n_stages, rn_r, th_r, j_r, l_new, config):
     if stage == n_stages:
         bl.alphafut.fix(0)
     else:
         bl.alphafut.unfix()
 
     # Solve the model
-    opt = SolverFactory('cplex')
+    opt = SolverFactory(config.solver)
     opt.options['relax_integrality'] = 1
     opt.options['timelimit'] = 6000
-    opt.options['threads'] = 1
-    results = opt.solve(bl, tee=False)# keepfiles=True)#, save_results=False)#
-    print("termination condition")
-    print(results.solver.termination_condition)
+    opt.options['threads'] = config.threads
+    results = opt.solve(bl, tee=config.tee)
     if results.solver.termination_condition != TerminationCondition.optimal:
         results = opt.solve(bl, tee=True, keepfiles=True)
+        config.logger.error("backward_pass nonoptimal")
         raise NameError('backward_pass nonoptimal')
 
     mltp_o_rn = {}

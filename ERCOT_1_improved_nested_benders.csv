@@ -1,0 +1,69 @@
+Time,total_investment_cost,variable_operating_cost,fixed_operating_cost,startup_cost,thermal_generator_cost,extending_thermal_generator_cost,renewable_generator_cost,extending_renewable_generator_cost,storage_investment_cost,penalty_cost,renewable_capacity,thermal_capacity,transmission_line_cost,coal_capacity,natural_gas_capacity,nuclear_capacity,solar_capacity,wind_capacity,total_capacity,power_flow,solar_energy_generated,wind_energy_generated,nuclear_energy_generated,coal_energy_generated,natural_gas_energy_generated,total_energy_generated,Northeast coal,Northeast natural gas,Northeast nuc,Northeast solar,Northeast wind,West coal,West natural gas,West nuc,West solar,West wind,Coastal coal,Coastal natural gas,Coastal nuc,Coastal solar,Coastal wind,South coal,South natural gas,South nuc,South solar,South wind,Panhandle coal,Panhandle natural gas,Panhandle nuc,Panhandle solar,Panhandle wind
+1,217.43328049694315,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,21.541540281591246,3375.6886200000004,73918.76086561737,217.43328049694315,17397.000200000002,51357.76066561737,5164.0,663.1,19852.1908,77294.44948561737,"{'Northeast': {'Northeast': 0, 'West': 0.19089571989926576, 'Coastal': 0.0, 'South': 0.14286478923248627, 'Panhandle': 0}, 'West': {'Northeast': 1.143779170115383, 'West': 0, 'Coastal': 0, 'South': 22.882301673626706, 'Panhandle': 0.6049561854752062}, 'Coastal': {'Northeast': 0, 'West': 0, 'Coastal': 0, 'South': 3.1676803398281574, 'Panhandle': 0}, 'South': {'Northeast': 0.21781025243641353, 'West': 7.382889494159838, 'Coastal': 7.157521899137262, 'South': 0, 'Panhandle': 0}, 'Panhandle': {'Northeast': 26.895653603210445, 'West': 0.9909487704800356, 'Coastal': 0, 'South': 0, 'Panhandle': 0}}",1.06707256837557,97.80277021490616,17.621634255259963,15.22873434076535,211.48308495037662,343.20329632968355,8747.9997,20613.677499999998,2460.0,0.0,901.1002,650.0,3695.9001,0.0,399.4,9581.0884,2504.0,10603.031565617368,2704.0,0.0,2047.4006,5495.0005,16086.151499999998,0.0,263.70000000000005,1768.8000000000002,0.0,359.0,0.0,0.0,5553.8016
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,South,West
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+1,Northeast,Panhandle
+ at last year ,1,24
+ ,Northeast,West,Coastal,South,Panhandle
+load ,16299.936098391649,5036.271732809358,13011.382155451374,11243.471623462097,0.0
+power generation,11102.129045333884,9427.23866999607,12066.551668083604,7478.365970700916,5516.776255999999
+power charged,0.0,0.0,0.0,0.0,0.0
+power discharged,0.0,0.0,0.0,0.0,0.0
+transmission power ,5197.807053057764,-4390.966937186712,944.8304873677707,3765.105652761178,-5516.776255999999
+curtailment ,0.0,0.0,0.0,0.0,0.0
+
+transmission at peak load 
+Coastal,South,-193.69669240101695
+Coastal,South,-170.043717763703
+Coastal,South,-193.69669240101695
+Coastal,South,-193.69669240101695
+Coastal,South,-193.69669240101695
+South,Northeast,-6.416563630473218
+South,Northeast,-6.416563630473218
+South,Northeast,-6.416563630473218
+South,Northeast,-6.416563630473218
+South,Northeast,-6.416563630473218
+South,Northeast,-6.416563630473218
+South,Northeast,-6.416563630473218
+South,Northeast,-6.416563630473218
+South,West,-807.3710434816526
+South,West,-807.3710434816526
+South,West,-807.3710434816526
+South,West,-807.3710434816526
+South,West,-621.7484136769003
+South,West,-807.3710434816526
+West,Northeast,42.22635836190368
+West,Panhandle,-34.68883962603541
+West,Panhandle,-34.68883962603541
+West,Panhandle,-32.35233525206946
+West,Panhandle,-34.68883962603541
+West,Panhandle,-34.68883962603541
+West,Panhandle,-34.68883962603541
+West,Panhandle,-34.68883962603541
+West,Panhandle,-34.68883962603541
+West,Panhandle,-34.68883962603541
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-431.3671650550531
+Northeast,Panhandle,-1324.6087182441684
+
+total_investment_cost,217.43328049694315

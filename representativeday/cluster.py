@@ -1,17 +1,9 @@
-import os
-import pandas as pd
-import deterministic.readData_single as readData_single
-import csv
+import pandas as pd 
+import csv 
 import numpy as np 
-
-from scenarioTree import create_scenario_tree
-
-
 #preprocess
-def load_cost_data(year=5):
-    curPath = os.path.abspath(os.path.curdir)
-    curPath = curPath.replace('/deterministic', '')
-    n_stages = 5  # number od stages in the scenario tree
+def load_cost_data(config):
+    n_stages = config.time_horizon
     stages = range(1, n_stages + 1)
     rnew = ['wind-new', 'pv-new', 'csp-new']
     rn_r = [('pv-old', 'West'), ('pv-old', 'South'), ('pv-new', 'Northeast'), ('pv-new', 'West'), ('pv-new', 'Coastal'), ('pv-new', 'South'), ('pv-new', 'Panhandle'), ('csp-new', 'Northeast'), ('csp-new', 'West'), ('csp-new', 'Coastal'), ('csp-new', 'South'), ('csp-new', 'Panhandle'), ('wind-old', 'Northeast'), ('wind-old', 'West'), ('wind-old', 'Coastal'), ('wind-old', 'South'), ('wind-old', 'Panhandle'), ('wind-new', 'Northeast'), ('wind-new', 'West'), ('wind-new', 'Coastal'), ('wind-new', 'South'), ('wind-new', 'Panhandle')]
@@ -20,7 +12,7 @@ def load_cost_data(year=5):
     region = ['Northeast', 'West', 'Coastal', 'South', 'Panhandle']
     storage = ['Li_ion', 'Lead_acid', 'Flow']
     lines = ["Coastal_South", "Coastal_Northeast", "South_Northeast", "South_West", "West_Northeast", "West_Panhandle", "Northeast_Panhandle"]    
-    investment = pd.read_csv("repn_results/investmentdata/5yearsinvestment_NETL_no_reserve1-366_MIP.csv", index_col=0, header=0).iloc[:, :]
+    investment = pd.read_csv("5yearsinvestment_NETL_no_reserve1-366_MIP.csv", index_col=0, header=0).iloc[:, :]
     data = investment.obj 
     #filter the data (domain reduction) && translate the data into cost domain
     for line in lines:
@@ -61,39 +53,39 @@ def load_cost_data(year=5):
     return data.drop(["obj"], axis=1).to_numpy(), data.obj.to_numpy()
 
 
-def load_input_data():
+def load_input_data(config):
     #load 
-    L_NE = pd.read_csv('NSRDB_wind/for_cluster/L_Northeast_2012.csv', index_col=0, header=0).iloc[:, 1]
-    L_W = pd.read_csv('NSRDB_wind/for_cluster/L_West_2012.csv', index_col=0, header=0).iloc[:, 1]
-    L_C = pd.read_csv('NSRDB_wind/for_cluster/L_Coastal_2012.csv', index_col=0, header=0).iloc[:, 1]
-    L_S = pd.read_csv('NSRDB_wind/for_cluster/L_South_2012.csv', index_col=0, header=0).iloc[:, 1]
+    L_NE = pd.read_csv('data/NSRDB_wind/for_cluster/L_Northeast_2012.csv', index_col=0, header=0).iloc[:, 1]
+    L_W = pd.read_csv('data/NSRDB_wind/for_cluster/L_West_2012.csv', index_col=0, header=0).iloc[:, 1]
+    L_C = pd.read_csv('data/NSRDB_wind/for_cluster/L_Coastal_2012.csv', index_col=0, header=0).iloc[:, 1]
+    L_S = pd.read_csv('data/NSRDB_wind/for_cluster/L_South_2012.csv', index_col=0, header=0).iloc[:, 1]
 
     #solar CSP
-    CF_CSP_NE = pd.read_csv('NSRDB_wind/for_cluster/CF_Northeast_CSP2012.csv', index_col=0, header=0
+    CF_CSP_NE = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Northeast_CSP2012.csv', index_col=0, header=0
                               ).iloc[:, 1]
-    CF_CSP_W = pd.read_csv('NSRDB_wind/for_cluster/CF_West_CSP2012.csv', index_col=0, header=0).iloc[:, 1]
-    CF_CSP_C = pd.read_csv('NSRDB_wind/for_cluster/CF_Coastal_CSP2012.csv', index_col=0, header=0).iloc[:, 1]
-    CF_CSP_S = pd.read_csv('NSRDB_wind/for_cluster/CF_South_CSP2012.csv', index_col=0, header=0).iloc[:, 1]
-    CF_CSP_PH = pd.read_csv('NSRDB_wind/for_cluster/CF_Panhandle_CSP2012.csv', index_col=0, header=0
+    CF_CSP_W = pd.read_csv('data/NSRDB_wind/for_cluster/CF_West_CSP2012.csv', index_col=0, header=0).iloc[:, 1]
+    CF_CSP_C = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Coastal_CSP2012.csv', index_col=0, header=0).iloc[:, 1]
+    CF_CSP_S = pd.read_csv('data/NSRDB_wind/for_cluster/CF_South_CSP2012.csv', index_col=0, header=0).iloc[:, 1]
+    CF_CSP_PH = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Panhandle_CSP2012.csv', index_col=0, header=0
                               ).iloc[:, 1]
 
     # -> solar PVSAT
-    CF_PV_NE = pd.read_csv('NSRDB_wind/for_cluster/CF_Northeast_PV2012.csv', index_col=0, header=0
+    CF_PV_NE = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Northeast_PV2012.csv', index_col=0, header=0
                              ).iloc[:, 1]
-    CF_PV_W = pd.read_csv('NSRDB_wind/for_cluster/CF_West_PV2012.csv', index_col=0, header=0).iloc[:, 1]
-    CF_PV_C = pd.read_csv('NSRDB_wind/for_cluster/CF_Coastal_PV2012.csv', index_col=0, header=0).iloc[:, 1]
-    CF_PV_S = pd.read_csv('NSRDB_wind/for_cluster/CF_South_PV2012.csv', index_col=0, header=0).iloc[:, 1]
-    CF_PV_PH = pd.read_csv('NSRDB_wind/for_cluster/CF_Panhandle_PV2012.csv', index_col=0, header=0
+    CF_PV_W = pd.read_csv('data/NSRDB_wind/for_cluster/CF_West_PV2012.csv', index_col=0, header=0).iloc[:, 1]
+    CF_PV_C = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Coastal_PV2012.csv', index_col=0, header=0).iloc[:, 1]
+    CF_PV_S = pd.read_csv('data/NSRDB_wind/for_cluster/CF_South_PV2012.csv', index_col=0, header=0).iloc[:, 1]
+    CF_PV_PH = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Panhandle_PV2012.csv', index_col=0, header=0
                              ).iloc[:, 1]
     # -> wind new (new turbines)
-    CF_wind_new_NE = pd.read_csv('NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv', index_col=0, header=0
+    CF_wind_new_NE = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv', index_col=0, header=0
                                    ).iloc[:, 1]
-    CF_wind_new_W = pd.read_csv('NSRDB_wind/for_cluster/CF_West_wind2012.csv', index_col=0, header=0).iloc[:, 1]
-    CF_wind_new_C = pd.read_csv('NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv', index_col=0, header=0
+    CF_wind_new_W = pd.read_csv('data/NSRDB_wind/for_cluster/CF_West_wind2012.csv', index_col=0, header=0).iloc[:, 1]
+    CF_wind_new_C = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv', index_col=0, header=0
                                   ).iloc[:, 1]
-    CF_wind_new_S = pd.read_csv('NSRDB_wind/for_cluster/CF_South_wind2012.csv', index_col=0, header=0
+    CF_wind_new_S = pd.read_csv('data/NSRDB_wind/for_cluster/CF_South_wind2012.csv', index_col=0, header=0
                                   ).iloc[:, 1]
-    CF_wind_new_PH = pd.read_csv('NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv', index_col=0, header=0
+    CF_wind_new_PH = pd.read_csv('data/NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv', index_col=0, header=0
                                    ).iloc[:, 1]
     input_data = [L_NE, L_W, L_C, L_S, CF_CSP_NE, CF_CSP_W, CF_CSP_C, CF_CSP_S, 
     CF_CSP_PH, CF_PV_NE, CF_PV_W, CF_PV_C, CF_PV_S, CF_PV_PH, CF_wind_new_NE, CF_wind_new_W, CF_wind_new_C, CF_wind_new_S, CF_wind_new_PH]
@@ -108,13 +100,12 @@ def load_input_data():
     return normalized_data.to_numpy().reshape(365, 24*19)   
 
 
-def run_cluster(data, method="kmedoid_exact", n_clusters=10):
-
+def run_cluster(data, config, method="kmedoid_exact", n_clusters=10):  
     
     from sklearn.cluster import KMeans
     if method == "kmedoid_exact":
-        from kmedoid_exact import kmedoid_mip 
-        result = kmedoid_mip(data, n_clusters, 0.001)
+        from representativeday.kmedoid_exact import kmedoid_mip 
+        result = kmedoid_mip(data, n_clusters, 0.001, config)
         return result
     labels = []
     indices = []
@@ -130,8 +121,8 @@ def run_cluster(data, method="kmedoid_exact", n_clusters=10):
         labels = km.labels_
         return {"labels":labels+1}     
     if method == "kmeans_exact":
-        from kmeans_exact import kmeans_miqcp
-        labels = kmeans_miqcp(data, n_clusters, 0.001)
+        from representativeday.kmeans_exact import kmeans_miqcp
+        labels = kmeans_miqcp(data, n_clusters, 0.001, config)
         return {"labels":labels+1}     
     count = [0] * n_clusters
     for s in labels:
