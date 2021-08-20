@@ -4,30 +4,7 @@ import numpy as np
 from pyomo.environ import *
 import pandas as pd
 import csv
-
-#pick solution from solution pool
-def pick_soln(opt):
-	best_thermal_capacity = 0 
-	best_soln = 0
-	m = opt._pyomo_model
-	print("number of solutions in solution pool", len(opt._solver_model.solution.pool.get_names()))
-	for soln in opt._solver_model.solution.pool.get_names():
-		if opt.results['Problem'][0]['Upper bound'] * 1.01 < opt._solver_model.solution.pool.get_objective_value(soln):
-			continue 
-		print(soln)
-		def get_var_value(var, opt=opt, soln=soln):
-			return opt._solver_model.solution.pool.get_values(soln, opt._pyomo_var_to_solver_var_map[var])
-		temp_thermal_capacity = sum(sum(m.Qg_np[th, r]* get_var_value(m.Bl[t].ngo_th[th, r, t]) for th, r in m.i_r if th in m.th) for t in m.stages)
-		if temp_thermal_capacity > best_thermal_capacity:
-			best_thermal_capacity = temp_thermal_capacity
-			best_soln = soln
-	#fix the variables in m to the values in best_soln
-	for i in m.stages:
-		for v1 in m.Bl[i].component_objects(Var):
-			for index in v1:
-				if v1[index].value != None:
-					new_value = opt._solver_model.solution.pool.get_values(best_soln, opt._pyomo_var_to_solver_var_map[v1[index]])
-					v1[index].fix(new_value)
+import dataloader.load_operational as SingleDayData
 
 
 #fix investment decisions
@@ -42,164 +19,18 @@ def fix_investment(ref_model, new_model):
 							v2[index].fix(v1[index].value)
 	return new_model
 
-def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_stage, load_shedding=False):
+def eval_investment_single_day(new_model, day, config, load_shedding=True):
+	n_stages = config.time_horizon	
+	t_per_stage = {}
+	for i in range(1, n_stages+1):
+		t_per_stage[i] = [i]	
 	new_model.n_d._initialize_from({1:365})
-	list_of_repr_days_per_scenario = list(range(1,(1+1)))
-	L_NE_1 = pd.read_csv('NSRDB_wind/for_cluster/L_Northeast_2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	L_NE_1.columns = list_of_repr_days_per_scenario
-	L_W_1 = pd.read_csv('NSRDB_wind/for_cluster/L_West_2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	L_W_1.columns = list_of_repr_days_per_scenario
-	L_C_1 = pd.read_csv('NSRDB_wind/for_cluster/L_Coastal_2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	L_C_1.columns = list_of_repr_days_per_scenario
-	L_S_1 = pd.read_csv('NSRDB_wind/for_cluster/L_South_2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	L_S_1.columns = list_of_repr_days_per_scenario
-	L_PH_1 = pd.read_csv('NSRDB_wind/for_cluster/L_South_2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1].multiply(0)
-	L_PH_1.columns = list_of_repr_days_per_scenario
+	SingleDayData.read_representative_days(config.time_horizon, [day], [365])
+	new_model.cf._initialize_from(SingleDayData.cf_by_scenario[0])						
+	new_model.L._initialize_from(SingleDayData.L_by_scenario[0])
 
-
-	L_1 = {}
-	# growth_rate = 0.014
-	growth_rate_high = 0.014
-	growth_rate_medium = 0.014
-	growth_rate_low = 0.014
-	for t in range(1, n_stages+1):
-		d_idx = 0
-		for d in list_of_repr_days_per_scenario:
-			s_idx = 0
-			for ss in range(24):
-				s = ss + 1
-				if t >= 15:
-					L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx] * (1 + growth_rate_medium * (t-1))
-					L_1['West', t, d, s] = L_W_1.iat[s_idx] * (1 + growth_rate_low * (t-1))
-					L_1['Coastal', t, d, s] = L_C_1.iat[s_idx]* (1 + growth_rate_high * (t-1))
-					L_1['South', t, d, s] = L_S_1.iat[s_idx]* (1 + growth_rate_high * (t-1))
-					L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx]* (1 + growth_rate_low * (t-1))
-				else:
-					L_1['Northeast', t, d, s] = L_NE_1.iat[s_idx] * (1 + growth_rate_medium * (t-1))
-					L_1['West', t, d, s] = L_W_1.iat[s_idx] * (1 + growth_rate_low * (t-1))
-					L_1['Coastal', t, d, s] = L_C_1.iat[s_idx]* (1 + growth_rate_high * (t-1))
-					L_1['South', t, d, s] = L_S_1.iat[s_idx]* (1 + growth_rate_high * (t-1))
-					L_1['Panhandle', t, d, s] = L_PH_1.iat[s_idx]* (1 + growth_rate_low * (t-1))                                 
-
-				s_idx += 1
-			d_idx += 1
-
-						   
-
-	L_by_scenario = [L_1]
-	# print(L_by_scenario)
-	globals()["L_by_scenario"] = L_by_scenario
-	L_by_scenario = [L_1]
-	# print(L_by_scenario)
-	globals()["L_by_scenario"] = L_by_scenario
-
-	# ############ CAPACITY FACTOR ############
-	# -> solar CSP
-	CF_CSP_NE_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Northeast_CSP2012.csv', index_col=0, header=0
-							  ).iloc[(day*24-24):(day*24), 1]
-	CF_CSP_NE_1.columns = list_of_repr_days_per_scenario
-	CF_CSP_W_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_West_CSP2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_CSP_W_1.columns = list_of_repr_days_per_scenario
-	CF_CSP_C_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Coastal_CSP2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_CSP_C_1.columns = list_of_repr_days_per_scenario
-	CF_CSP_S_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_South_CSP2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_CSP_S_1.columns = list_of_repr_days_per_scenario
-	CF_CSP_PH_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Panhandle_CSP2012.csv', index_col=0, header=0
-							  ).iloc[(day*24-24):(day*24), 1]
-	CF_CSP_PH_1.columns = list_of_repr_days_per_scenario
-
-	# -> solar PVSAT
-	CF_PV_NE_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Northeast_PV2012.csv', index_col=0, header=0
-							 ).iloc[(day*24-24):(day*24), 1]
-	CF_PV_NE_1.columns = list_of_repr_days_per_scenario
-	CF_PV_W_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_West_PV2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_PV_W_1.columns = list_of_repr_days_per_scenario
-	CF_PV_C_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Coastal_PV2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_PV_C_1.columns = list_of_repr_days_per_scenario
-	CF_PV_S_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_South_PV2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_PV_S_1.columns = list_of_repr_days_per_scenario
-	CF_PV_PH_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Panhandle_PV2012.csv', index_col=0, header=0
-							 ).iloc[(day*24-24):(day*24), 1]
-	CF_PV_PH_1.columns = list_of_repr_days_per_scenario
-
-	# -> wind (old turbines)
-	CF_wind_NE_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv', index_col=0, header=0
-							   ).iloc[(day*24-24):(day*24), 1]
-	CF_wind_NE_1.columns = list_of_repr_days_per_scenario
-	CF_wind_W_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_West_wind2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_wind_W_1.columns = list_of_repr_days_per_scenario
-	CF_wind_C_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_wind_C_1.columns = list_of_repr_days_per_scenario
-	CF_wind_S_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_South_wind2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_wind_S_1.columns = list_of_repr_days_per_scenario
-	CF_wind_PH_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv', index_col=0, header=0
-							   ).iloc[(day*24-24):(day*24), 1]
-	CF_wind_PH_1.columns = list_of_repr_days_per_scenario
-
-	# -> wind new (new turbines)
-	CF_wind_new_NE_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Northeast_wind2012.csv', index_col=0, header=0
-								   ).iloc[(day*24-24):(day*24), 1]
-	CF_wind_new_NE_1.columns = list_of_repr_days_per_scenario
-	CF_wind_new_W_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_West_wind2012.csv', index_col=0, header=0).iloc[(day*24-24):(day*24), 1]
-	CF_wind_new_W_1.columns = list_of_repr_days_per_scenario
-	CF_wind_new_C_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Coastal_wind2012.csv', index_col=0, header=0
-								  ).iloc[(day*24-24):(day*24), 1]
-	CF_wind_new_C_1.columns = list_of_repr_days_per_scenario
-	CF_wind_new_S_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_South_wind2012.csv', index_col=0, header=0
-								  ).iloc[(day*24-24):(day*24), 1]
-	CF_wind_new_S_1.columns = list_of_repr_days_per_scenario
-	CF_wind_new_PH_1 = pd.read_csv('NSRDB_wind/for_cluster/CF_Panhandle_wind2012.csv', index_col=0, header=0
-								   ).iloc[(day*24-24):(day*24), 1]
-	CF_wind_new_PH_1.columns = list_of_repr_days_per_scenario
-
-
-	cf_1 = {}
-	for t in range(1, n_stages+1):
-		d_idx = 0
-		for d in list_of_repr_days_per_scenario:
-			s_idx = 0
-			for ss in range(24):
-				s = ss + 1
-				for i in ['csp-new']:
-					cf_1[i, 'Northeast', t, d, s] = CF_CSP_NE_1.iat[s_idx]
-					cf_1[i, 'West', t, d, s] = CF_CSP_W_1.iat[s_idx]
-					cf_1[i, 'Coastal', t, d, s] = CF_CSP_C_1.iat[s_idx]
-					cf_1[i, 'South', t, d, s] = CF_CSP_S_1.iat[s_idx]
-					cf_1[i, 'Panhandle', t, d, s] = CF_CSP_PH_1.iat[s_idx]
-				for i in ['pv-old', 'pv-new']:
-					cf_1[i, 'Northeast', t, d, s] = CF_PV_NE_1.iat[s_idx]
-					cf_1[i, 'West', t, d, s] = CF_PV_W_1.iat[s_idx]
-					cf_1[i, 'Coastal', t, d, s] = CF_PV_C_1.iat[s_idx]
-					cf_1[i, 'South', t, d, s] = CF_PV_S_1.iat[s_idx]
-					cf_1[i, 'Panhandle', t, d, s] = CF_PV_PH_1.iat[s_idx]
-				for i in ['wind-old']:
-					cf_1[i, 'Northeast', t, d, s] = CF_wind_NE_1.iat[s_idx]
-					cf_1[i, 'West', t, d, s] = CF_wind_W_1.iat[s_idx]
-					cf_1[i, 'Coastal', t, d, s] = CF_wind_C_1.iat[s_idx]
-					cf_1[i, 'South', t, d, s] = CF_wind_S_1.iat[s_idx]
-					cf_1[i, 'Panhandle', t, d, s] = CF_wind_PH_1.iat[s_idx]
-				for i in ['wind-new']:
-					cf_1[i, 'Northeast', t, d, s] = CF_wind_new_NE_1.iat[s_idx]
-					cf_1[i, 'West', t, d, s] = CF_wind_new_W_1.iat[s_idx]
-					cf_1[i, 'Coastal', t, d, s] = CF_wind_new_C_1.iat[s_idx]
-					cf_1[i, 'South', t, d, s] = CF_wind_new_S_1.iat[s_idx]
-					cf_1[i, 'Panhandle', t, d, s] = CF_wind_new_PH_1.iat[s_idx]
-				s_idx += 1
-			d_idx += 1
-	cf_by_scenario = [cf_1]	
-
-	new_model.cf._initialize_from(cf_by_scenario[0])						
-	new_model.L._initialize_from(L_by_scenario[0])
-	# opt = SolverFactory("gurobi")
-	opt = SolverFactory("cplex")
-	# opt.options['mipgap'] = 0.001
-	# opt.options['TimeLimit'] = 36000
-	opt.options['threads'] = 1
-	# opt.options['emphasis numerical'] = 'y'
-	# opt.options['simplex tolerances feasibility'] = 0.01
-	# opt.options['feasibility'] = 1e-4
-	# opt.options['LPMethod'] = 4
-	# opt.options['solutiontype'] =2     
+	opt = SolverFactory(config.solver)
+	opt.options['threads'] = config.threads  
 
 	total_operating_cost = 0.0
 
@@ -209,10 +40,8 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
 			total_operating_cost += new_model.Bl[i].total_operating_cost.expr()
 		elif results.solver.termination_condition == TerminationCondition.infeasible:
 			total_operating_cost += 1e10
-			# opt.solve(new_model.Bl[i], tee=True, keepfiles=True)
 			break
 		else:
-			# opt.solve(new_model.Bl[i], tee=True, keepfiles=True)
 			raise Exception("the problem at a given time is not solved to optimality termination_condition is ", results.solver.termination_condition)    
 	operating_related_cost = {}
 	operating_related_cost["total_operating_cost"] = total_operating_cost      
@@ -253,7 +82,6 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
 			for i in range(1, n_stages+1):
 				new_model.Bl[i].obj.activate()
 				new_model.Bl[i].lobj.deactivate()                                               
-		print(operating_related_cost)
 		return operating_related_cost
 	variable_operating_cost = []
 	fixed_operating_cost =[]
@@ -305,8 +133,6 @@ def eval_investment_single_day(new_model, day, n_stages, readData_det, t_per_sta
 	operating_related_cost["coal_energy_generated" ] = np.sum(coal_energy_generated )
 	operating_related_cost["natural_gas_energy_generated"] = np.sum(natural_gas_energy_generated)
 	operating_related_cost["total_energy_generated"] = np.sum(total_energy_generated)
-	
-
 	
 	
 	return operating_related_cost
@@ -556,7 +382,8 @@ def write_GTEP_results(m,  InvestData, config, results = [], ub_problem={}, mode
 					if "upper_bound_obj" in ub_problem:
 						results_writer.writerow(["upper_bound_obj", ub_problem["upper_bound_obj"]])
 
-def write_repn_results(operating_cost, outputfile, cluster_results={}):
+def write_repn_results(operating_cost, config, cluster_results={}):
+	outputfile = config.region + "_" + str(config.time_horizon) + "_" + config.formulation + "_" + config.algo + ".csv"
 	with open(outputfile, 'a', newline='') as results_file:
 		results_writer = csv.writer(results_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 		results_writer.writerow([])

@@ -46,12 +46,19 @@ def _get_GTEP_config():
         doc="cluster algorithm used by the representative day selection"
     ))  
 
+    CONFIG.declare("max_extreme_day", ConfigValue(
+        default=8,
+        domain=PositiveInt,
+        description="max number of extreme days added",
+        doc="max number of extreme days added"
+    ))    
+
     CONFIG.declare("extreme_day_method", ConfigValue(
         default="load_shedding_cost",
         domain=In(["highest_cost_infeasible", "highest_cost", "load_shedding_cost", "kmedoid_exact"]),
         description="extreme day selection method",
         doc="extreme day selection method in case there are infeasible days"
-    ))         
+    ))              
 
     CONFIG.declare("repn_day_method", ConfigValue(
         default="input",
