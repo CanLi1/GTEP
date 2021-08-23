@@ -226,7 +226,7 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
     m.FOC = Param(m.i, m.t, default=0, initialize=InvestData.FOC)
     m.VOC = Param(m.i, m.t, default=0, initialize=InvestData.VOC)
     m.CCm = Param(m.i, default=0, initialize=InvestData.CCm)
-    m.DIC = Param(m.i, m.t, default=0, initialize=InvestData.DIC)
+    m.DIC = Param(m.i, m.t, initialize=InvestData.DIC)
     m.TIC = Param(m.l, m.t, default=0, initialize=InvestData.TIC)
     m.LEC = Param(m.i, default=0, initialize=InvestData.LEC)
     m.PEN = Param(m.t, default=0, initialize=InvestData.PEN)
@@ -785,19 +785,19 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
 
         b.obj = Objective(rule=obj_rule, sense=minimize)
 
-        # def min_RN_req(_b, t):
-        #     return sum(m.n_d[d] * 1.0000000 * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
-        #                for d in m.d for s in m.hours) \
-        #            + _b.RES_def[t] >= m.RES_min[t] * m.ED[t]
+        def min_RN_req(_b, t):
+            return sum(m.n_d[d] * 1.0000000 * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
+                       for d in m.d for s in m.hours) \
+                   + _b.RES_def[t] >= m.RES_min[t] * m.ED[t]
 
-        # b.min_RN_req = Constraint(t_per_stage[stage], rule=min_RN_req)
+        b.min_RN_req = Constraint(t_per_stage[stage], rule=min_RN_req)
 
-        # def min_reserve(_b, t):
-        #     return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
-        #            + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th) \
-        #            >= (1 + m.Rmin[t]) * m.L_max[t]
+        def min_reserve(_b, t):
+            return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
+                   + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th) \
+                   >= (1 + m.Rmin[t]) * m.L_max[t]
 
-        # b.min_reserve = Constraint(t_per_stage[stage], rule=min_reserve)
+        b.min_reserve = Constraint(t_per_stage[stage], rule=min_reserve)
 
         def inst_RN_UB(_b, rnew, t):
             return sum(_b.ngb_rn[rnew, r, t] for r in m.r) \

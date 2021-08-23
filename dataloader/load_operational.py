@@ -296,7 +296,7 @@ def read_representative_days_mean(len_t, labels):
 
 
     # Strategic uncertainty data
-def read_strategic_uncertainty(len_t, peak_load='L', tax='L'):
+def read_strategic_uncertainty(len_t, peak_load='L', tax='M'):
     # Different scenarios for PEAK LOAD:
     L_max_scenario = {'L': L_max, 'M': {t: 1.05 * L_max[t] for t in L_max}, 'H': {t: 1.2 * L_max[t] for t in L_max}}
     # print(L_max_scenario)

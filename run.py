@@ -1,4 +1,5 @@
 from gtep import *
-newinstance = GTEP(repn_day_method="cost", time_limit=30, tee=True, algo="fullspace", clustering_algorithm = "kmedoid", num_repn_days=1, time_horizon=1)
-newinstance.add_extremedays()
+newinstance = GTEP(repn_day_method="input", time_limit=100000, tee=True, algo="fullspace", clustering_algorithm = "kmeans", num_repn_days=4, time_horizon=20)
+# newinstance.solve_model()
+# newinstance.add_extremedays()
 # newinstance.write_gtep_results()

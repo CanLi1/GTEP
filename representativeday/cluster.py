@@ -119,11 +119,11 @@ def run_cluster(data, config, method="kmedoid_exact", n_clusters=10):
         km = KMeans(n_clusters=n_clusters, max_iter=300000, n_init=100, random_state=0)
         km.fit_predict(data)
         labels = km.labels_
-        return {"labels":list(labels+1)}     
+        return {"labels":labels+1}     
     if method == "kmeans_exact":
         from representativeday.kmeans_exact import kmeans_miqcp
         labels = kmeans_miqcp(data, n_clusters, 0.001, config)
-        return {"labels":labels+1}     
+        return {"labels":np.array(labels+1)}     
     count = [0] * n_clusters
     for s in labels:
         count[s] += 1
@@ -135,7 +135,7 @@ def run_cluster(data, config, method="kmedoid_exact", n_clusters=10):
     for i in range(n_clusters):
         sorted_count[i] = temp_count[indices[i]]
 
-    return {"medoids":list(indices+1), "weights":list(sorted_count), "labels":list(labels+1)}
+    return {"medoids":indices+1, "weights":sorted_count, "labels":labels+1}
 
 def select_extreme_days(cluster_results, cluster_obj=[], n=1, method="highest_cost", infeasible_days=[], load_shedding_cost=[], clustering_method="kmedoid"):
     if method == "highest_cost":
@@ -170,8 +170,8 @@ def select_extreme_days(cluster_results, cluster_obj=[], n=1, method="highest_co
             raise NameError('the' + method + ' day already has weight 1')        
         if clustering_method == "kmedoid" or clustering_method == "kmedoid_exact":
             cluster_results['weights'][cluster_results['labels'][day-1]-1] -= 1
-            cluster_results['medoids'].append(day)
-            cluster_results['weights'].append(1)
+            cluster_results['medoids'] = np.append(cluster_results['medoids'], day)
+            cluster_results['weights']= np.append(cluster_results['weights'], 1)
         cluster_results["labels"][day-1] = num_days + i 
         i += 1
 
