@@ -3,5 +3,6 @@ scipy
 pandas
 numpy
 python-csv
+idaes_pse
 sklearn
 scikit-learn-extra
