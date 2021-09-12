@@ -86,14 +86,9 @@
 In order to solve with a given algorithm, run the following line of code in run.py
 
 ```python
-create_and_run(model="GTEP", instance="ERCOT20year", algorithm="Benders", stochastic=[], verbose=True)
+from gtep import *
+newinstance = GTEP(repn_day_method="input", time_limit=100000, tee=True, algo="fullspace", clustering_algorithm = "kmeans", num_repn_days=15, time_horizon=5, formulation="improved")
+newinstance.solve_model()
+newinstance.write_gtep_results()
 ```
-The following table shows different options for each argument
-
-| Argument   | Description                                                                                          | Options                                                                                                                                                                                                                     |
-|------------|------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| model      | Select which model to create                                                                         | "GTEP": generation and transmission expansion. "GEP" generation expansion                                                                                                                                                   |
-| instance   | Select which instance to solve                                                                       | "ERCOT20year", "ERCOT15year"                                                                                                                                                                                                |
-| algorithm  | Select which algorithm to use. Note that for GTEP model, only "Benders" and "fullspace" recommended. | "fullspace", "Benders", "NestedBenders", "SDDP"                                                                                                                                                                             |
-| stochastic | Select which parameters are considered as stochastic. Only works for GEP models.                     | give a list of parameters. If the list is empty, then solve a deterministic model. Parameters that we can consider are "CarbonTax", "Load", "FuelPrice". Therefore, an  example input is ["CarbonTax", "Load", "FuelPrice"] |
-| verbose    | Decide if a verbose output file is written.                                                          | True, False                                                                                                                                                                                                                 |
+The options are shown in config
