@@ -39,8 +39,8 @@ def fullspace_solve(config, InvestData, OperationalData):
 	for stage in m.stages:
 		m.Bl[stage].obj.deactivate()
 		m.obj.expr += m.Bl[stage].obj.expr
-	a = TransformationFactory("core.relax_integrality")
-	a.apply_to(m)
+	# a = TransformationFactory("core.relax_integrality")
+	# a.apply_to(m)
 	opt = SolverFactory(config.solver)
 	opt.options['threads'] = config.threads
 	opt.options['timelimit'] = config.time_limit
