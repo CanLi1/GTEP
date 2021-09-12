@@ -82,6 +82,13 @@
 |     m.eff\_rate\_charge    |  efficiency rate to charge energy in storage unit j                                                                                                       |
 |     m.eff\_rate\_discharge |  efficiency rate to discharge energy in storage unit j                                                                                                    |
 |     m.storage\_lifetime   |  storage lifetime (years)                                                                                                                                 |
+<h1>Installation</h1>
+CPLEX has to be installed to run the Bender algorithm. Installation instructions can be found [here](https://or.stackexchange.com/questions/4366/downloading-and-setting-up-cplex-for-pyomo)
+
+The required python package can be found in requirements.txt. To install on linux, type
+```
+pip install -r requirements.txt
+```
 <h1>User Interface </h1>
 In order to solve with a given algorithm, run the following line of code in run.py
 
@@ -91,4 +98,4 @@ newinstance = GTEP(repn_day_method="input", time_limit=100000, tee=True, algo="f
 newinstance.solve_model()
 newinstance.write_gtep_results()
 ```
-The options are shown in config
+The options are shown in config_options.py
