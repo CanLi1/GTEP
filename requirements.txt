@@ -4,5 +4,5 @@ pandas
 numpy
 python-csv
 idaes_pse
-sklearn
+pip install -U scikit-learn
 scikit-learn-extra
