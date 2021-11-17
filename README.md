@@ -1,5 +1,5 @@
 ##Overview  
-GTEP is an open source software package implemented using Python/pyomo for generation and transmission expansion planning (GTEP) in power systems. GTEP includes a mixed-integer linear programming (MILP) model that considers both the long term investment decisions and the hourly unit commitment decisions. Several algorithms including Benders decomposition, nested Benders decomposition, are implemented.
+GTEP is an open source software package implemented using Python/pyomo for generation and transmission expansion planning (GTEP) in power systems. GTEP includes a mixed-integer linear programming (MILP) model that considers both the long term investment decisions and the hourly unit commitment decisions. Several algorithms including Benders decomposition and nested Benders decomposition, are implemented.
   
 The models and algorithms of GTEP are based on [Lara et al (2018)](https://www.sciencedirect.com/science/article/pii/S0377221718304466), [Li et al (2021)](https://www.sciencedirect.com/science/article/pii/S0377221721005397), and [Li et al (2021)](https://www.sciencedirect.com/science/article/pii/S0142061521009248).
 
@@ -67,7 +67,8 @@ Also known are: the generating units' nameplate (maximum) capacity; expected lif
 
 For the case of existing generators, their age at the beginning of the study horizon and location are also known. For the case of potential generators, the capital cost and the maximum yearly installation of each generation technology are also given. Also given is a set of potential storage units, with specified technology (e.g., lithium ion, lead-acid, and flow batteries), capital cost, power rating, rated energy capacity, charge and discharge efficiency, and storage lifetime. Additionally, the projected load demand is given for each location.
 
-We assume that the generators using the same type of technology are homogeneous, i.e., their design parameters are identical. For example, all the coal-st-old generators have the same parameters, which can be obtained by performing aggregation on the existing generators that use coal steam turbines. Note that although the renewable generators of the same technology have the same design parameters under our assumption, they can have different capacity factors depending on the weather conditions of the region in which they are installed. 
+We assume that the generators using the same type of technology are homogeneous, i.e., their design parameters are identical. For example, all the coal-st-old generators have the same parameters, which can be obtained by performing aggregation on the existing generators that use coal steam turbines. Note that although the renewable generators of the same technology have the same design parameters under our assumption, they can have different capacity factors depending on the weather conditions of the region in which they are installed.
+
 ###Transmission representation
 Given are existing and candidate transmission lines between any of the two neighboring buses. The susceptance, distance, and capacity of each transmission line are known. For the existing transmission lines, we assume that they will not reach their life expectancy during the planning horizon, i.e., we do not consider the retirement of transmission lines. For the candidate transmission lines, the capital cost of each transmission line is known. 
  
