@@ -8,26 +8,26 @@ def create_scenario_tree(stages, scenarios, single_prob):
     g = nx.DiGraph()
 
     # create nodes by stage
-    nodes = ['F']  # fake node such that origin also has a parent
-    node_origin = ['O']
+    nodes = ["F"]  # fake node such that origin also has a parent
+    node_origin = ["O"]
     n_stage = collections.OrderedDict()
     n_stage[1] = list(node_origin)
-    for i in range(2, len(stages)+1):
+    for i in range(2, len(stages) + 1):
         n_stage[i] = []
 
     # initialize parent nodes
     parent_node = collections.OrderedDict()
-    parent_node['O'] = 'F'
-    g.add_edge('F', 'O')
+    parent_node["O"] = "F"
+    g.add_edge("F", "O")
 
     # initialize children nodes
     children_node = collections.OrderedDict()
 
     # initialize transition probability
     prob = collections.OrderedDict()
-    prob['O'] = 1
+    prob["O"] = 1
     for i in stages[1:]:
-        for j in n_stage[i-1]:
+        for j in n_stage[i - 1]:
             children_node[j] = []
             for s in scenarios:
                 node = j + str(s)
@@ -52,4 +52,3 @@ def create_scenario_tree(stages, scenarios, single_prob):
     # print('number of scenarios:', len(n_stage[stages[-1]]))
 
     return nodes, n_stage, parent_node, children_node, prob, sc_nodes
-

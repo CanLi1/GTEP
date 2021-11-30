@@ -1,6 +1,6 @@
-# Generation and Transmission Expansion Planning 
+# Generation and Transmission Expansion Planning
 # IDAES project
-# author: Can Li 
+# author: Can Li
 # date: 10/09/2017
 # Model available at http://www.optimization-online.org/DB_FILE/2017/08/6162.pdf
 
@@ -8,12 +8,13 @@ from pyomo.environ import *
 import math
 
 
-
-def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, loadshedding=False):
+def create_model(
+    stages, t_per_stage, formulation, InvestData, OperationalData, loadshedding=False
+):
     m = ConcreteModel()
 
     # ################################## Declare of sets ##################################
-    '''
+    """
         Set Notation:
         m.r: regions
         m.i: generators
@@ -61,35 +62,132 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
         m.l_new: set of prospective transmission lines
 
         m.stage: set of stages in the scenario tree
-    '''
-    m.r = Set(initialize=['Northeast', 'West', 'Coastal', 'South', 'Panhandle'], ordered=True)
+    """
+    m.r = Set(
+        initialize=["Northeast", "West", "Coastal", "South", "Panhandle"], ordered=True
+    )
 
-    m.i = Set(initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old', 'wind-old',
-                          'wind-new', 'pv-new', 'csp-new', 'coal-igcc-new', 'coal-igcc-ccs-new',
-                          'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-old','nuc-st-new'], ordered=True)
-    m.th = Set(within=m.i, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new',
-                                       'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
-                                       'ng-ct-new','nuc-st-old', 'nuc-st-new'], ordered=True)
-    m.rn = Set(within=m.i, initialize=['pv-old', 'pv-new', 'csp-new', 'wind-old', 'wind-new'], ordered=True)
-    m.co = Set(within=m.th, initialize=['coal-st-old1', 'coal-igcc-new', 'coal-igcc-ccs-new'], ordered=True)
-    m.ng = Set(within=m.th, initialize=['ng-ct-old', 'ng-cc-old', 'ng-st-old', 'ng-cc-new', 'ng-cc-ccs-new',
-                                        'ng-ct-new'], ordered=True)
-    m.nu = Set(within=m.th, initialize=['nuc-st-old', 'nuc-st-new'], ordered=True)
-    m.pv = Set(within=m.rn, initialize=['pv-old', 'pv-new'], ordered=True)
-    m.csp = Set(within=m.rn, initialize=['csp-new'], ordered=True)
-    m.wi = Set(within=m.rn, initialize=['wind-old', 'wind-new'], ordered=True)
-    m.old = Set(within=m.i, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old', 'pv-old',
-                                        'wind-old','nuc-st-old'], ordered=True)
-    m.new = Set(within=m.i, initialize=['wind-new', 'pv-new', 'csp-new', 'coal-igcc-new',
-                                        'coal-igcc-ccs-new', 'ng-cc-new', 'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new'], ordered=True)
-    m.rold = Set(within=m.old, initialize=['pv-old', 'wind-old'], ordered=True)
-    m.rnew = Set(within=m.new, initialize=['wind-new', 'pv-new', 'csp-new'], ordered=True)
-    m.told = Set(within=m.old, initialize=['coal-st-old1', 'ng-ct-old', 'ng-cc-old', 'ng-st-old','nuc-st-old'],
-                 ordered=True)
+    m.i = Set(
+        initialize=[
+            "coal-st-old1",
+            "ng-ct-old",
+            "ng-cc-old",
+            "ng-st-old",
+            "pv-old",
+            "wind-old",
+            "wind-new",
+            "pv-new",
+            "csp-new",
+            "coal-igcc-new",
+            "coal-igcc-ccs-new",
+            "ng-cc-new",
+            "ng-cc-ccs-new",
+            "ng-ct-new",
+            "nuc-st-old",
+            "nuc-st-new",
+        ],
+        ordered=True,
+    )
+    m.th = Set(
+        within=m.i,
+        initialize=[
+            "coal-st-old1",
+            "coal-igcc-new",
+            "coal-igcc-ccs-new",
+            "ng-ct-old",
+            "ng-cc-old",
+            "ng-st-old",
+            "ng-cc-new",
+            "ng-cc-ccs-new",
+            "ng-ct-new",
+            "nuc-st-old",
+            "nuc-st-new",
+        ],
+        ordered=True,
+    )
+    m.rn = Set(
+        within=m.i,
+        initialize=["pv-old", "pv-new", "csp-new", "wind-old", "wind-new"],
+        ordered=True,
+    )
+    m.co = Set(
+        within=m.th,
+        initialize=["coal-st-old1", "coal-igcc-new", "coal-igcc-ccs-new"],
+        ordered=True,
+    )
+    m.ng = Set(
+        within=m.th,
+        initialize=[
+            "ng-ct-old",
+            "ng-cc-old",
+            "ng-st-old",
+            "ng-cc-new",
+            "ng-cc-ccs-new",
+            "ng-ct-new",
+        ],
+        ordered=True,
+    )
+    m.nu = Set(within=m.th, initialize=["nuc-st-old", "nuc-st-new"], ordered=True)
+    m.pv = Set(within=m.rn, initialize=["pv-old", "pv-new"], ordered=True)
+    m.csp = Set(within=m.rn, initialize=["csp-new"], ordered=True)
+    m.wi = Set(within=m.rn, initialize=["wind-old", "wind-new"], ordered=True)
+    m.old = Set(
+        within=m.i,
+        initialize=[
+            "coal-st-old1",
+            "ng-ct-old",
+            "ng-cc-old",
+            "ng-st-old",
+            "pv-old",
+            "wind-old",
+            "nuc-st-old",
+        ],
+        ordered=True,
+    )
+    m.new = Set(
+        within=m.i,
+        initialize=[
+            "wind-new",
+            "pv-new",
+            "csp-new",
+            "coal-igcc-new",
+            "coal-igcc-ccs-new",
+            "ng-cc-new",
+            "ng-cc-ccs-new",
+            "ng-ct-new",
+            "nuc-st-new",
+        ],
+        ordered=True,
+    )
+    m.rold = Set(within=m.old, initialize=["pv-old", "wind-old"], ordered=True)
+    m.rnew = Set(
+        within=m.new, initialize=["wind-new", "pv-new", "csp-new"], ordered=True
+    )
+    m.told = Set(
+        within=m.old,
+        initialize=[
+            "coal-st-old1",
+            "ng-ct-old",
+            "ng-cc-old",
+            "ng-st-old",
+            "nuc-st-old",
+        ],
+        ordered=True,
+    )
 
-    m.tnew = Set(within=m.new, initialize=['coal-igcc-new', 'coal-igcc-ccs-new', 'ng-cc-new',
-                                           'ng-cc-ccs-new', 'ng-ct-new','nuc-st-new'], ordered=True)
-    m.j = Set(initialize=['Li_ion', 'Lead_acid', 'Flow'], ordered=True)
+    m.tnew = Set(
+        within=m.new,
+        initialize=[
+            "coal-igcc-new",
+            "coal-igcc-ccs-new",
+            "ng-cc-new",
+            "ng-cc-ccs-new",
+            "ng-ct-new",
+            "nuc-st-new",
+        ],
+        ordered=True,
+    )
+    m.j = Set(initialize=["Li_ion", "Lead_acid", "Flow"], ordered=True)
 
     m.d = RangeSet(OperationalData.num_days)
     #  Misleading (seasons not used) but used because of structure of old data
@@ -99,7 +197,7 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
     m.t = RangeSet(stages)
     nlines = len(InvestData.tielines)
     m.l = RangeSet(nlines)
-    
+
     m.l_old = Set(within=m.l)
     m.l_new = RangeSet(nlines)
 
@@ -108,12 +206,11 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
     t_stage = [(t, stage) for stage in m.stages for t in t_per_stage[stage]]
     m.t_stage = Set(initialize=t_stage)
 
-
     # ################################## Import parameters ############################################
     m.Ng_old = Param(m.i, m.r, default=0, initialize=InvestData.Ng_old)
 
     def i_r_filter(m, i, r):
-        return (i in m.new ) or (i in m.old and m.Ng_old[i, r] != 0)
+        return (i in m.new) or (i in m.old and m.Ng_old[i, r] != 0)
 
     m.i_r = Set(initialize=m.i * m.r, filter=i_r_filter, ordered=True)
 
@@ -127,19 +224,24 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
 
     m.th_r = Set(initialize=m.th * m.r, filter=th_r_filter, ordered=True)
 
-    #if there is a transmission line between region 
+    # if there is a transmission line between region
     def l_rr_filter(m, l, r, rr):
-        return (r == InvestData.tielines[l-1]['Near Area Name']) and (rr == InvestData.tielines[l-1]['Far Area Name'])
-    m.l_rr = Set(initialize=m.l * m.r * m.r, filter=l_rr_filter, ordered=True)    
+        return (r == InvestData.tielines[l - 1]["Near Area Name"]) and (
+            rr == InvestData.tielines[l - 1]["Far Area Name"]
+        )
+
+    m.l_rr = Set(initialize=m.l * m.r * m.r, filter=l_rr_filter, ordered=True)
 
     def l_er_filter(m, l, r):
-        return r == InvestData.tielines[l-1]['Far Area Name']
-    m.l_er = Set(initialize=m.l*m.r, filter=l_er_filter, ordered=True)
+        return r == InvestData.tielines[l - 1]["Far Area Name"]
+
+    m.l_er = Set(initialize=m.l * m.r, filter=l_er_filter, ordered=True)
 
     def l_sr_filter(m, l, r):
-        return r == InvestData.tielines[l-1]['Near Area Name']
-    m.l_sr = Set(initialize=m.l*m.r, filter=l_sr_filter, ordered=True)    
-    '''
+        return r == InvestData.tielines[l - 1]["Near Area Name"]
+
+    m.l_sr = Set(initialize=m.l * m.r, filter=l_sr_filter, ordered=True)
+    """
     Parameter notation
 
     m.L: load demand in region r in sub-period s of representative day d of year t (MW)
@@ -195,13 +297,29 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
     m.eff_rate_discharge: efficiency rate to discharge energy in storage unit j
     m.storage_lifetime: storage lifetime (years)
 
-    '''
+    """
 
-# m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=InvestData.L)
-    m.L = Param(m.r, m.t, m.d, m.hours, default=0, initialize=OperationalData.L_by_scenario[0], mutable=True) 
+    # m.L = Param(m.r, m.t, m.d, m.hours, default=0, mutable=True)  # initialize=InvestData.L)
+    m.L = Param(
+        m.r,
+        m.t,
+        m.d,
+        m.hours,
+        default=0,
+        initialize=OperationalData.L_by_scenario[0],
+        mutable=True,
+    )
     m.n_d = Param(m.d, default=0, mutable=True, initialize=OperationalData.n_ss)
     m.L_max = Param(m.t, default=0, initialize=OperationalData.L_max)
-    m.cf = Param(m.i, m.r, m.t, m.d, m.hours, mutable=True, initialize=OperationalData.cf_by_scenario[0])
+    m.cf = Param(
+        m.i,
+        m.r,
+        m.t,
+        m.d,
+        m.hours,
+        mutable=True,
+        initialize=OperationalData.cf_by_scenario[0],
+    )
     m.Qg_np = Param(m.i_r, default=0, initialize=InvestData.Qg_np)
     m.Ng_max = Param(m.i_r, default=0, initialize=InvestData.Ng_max, mutable=True)
     m.Qinst_UB = Param(m.i, m.t, default=0, initialize=InvestData.Qinst_UB)
@@ -231,23 +349,24 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
     m.LEC = Param(m.i, default=0, initialize=InvestData.LEC)
     m.PEN = Param(m.t, default=0, initialize=InvestData.PEN)
     m.PENc = Param(default=0, initialize=InvestData.PENc)
-    m.tx_CO2 = Param(m.t, default=0, mutable=True, initialize=OperationalData.tx_CO2)   
+    m.tx_CO2 = Param(m.t, default=0, mutable=True, initialize=OperationalData.tx_CO2)
     m.RES_min = Param(m.t, default=0, initialize=InvestData.RES_min)
     m.hs = Param(initialize=InvestData.hs, default=1)
     m.ir = Param(initialize=InvestData.ir, default=0)
 
-    #transmission
+    # transmission
     m.suceptance = Param(m.l, initialize=0, mutable=True)
     for i in range(len(InvestData.tielines)):
-        m.suceptance[i+1] = InvestData.tielines[i]['B']
+        m.suceptance[i + 1] = InvestData.tielines[i]["B"]
 
     m.line_capacity = Param(m.l, initialize=0, mutable=True)
     for i in range(len(InvestData.tielines)):
-        m.line_capacity[i+1] = InvestData.tielines[i]['Capacity']    
-
+        m.line_capacity[i + 1] = InvestData.tielines[i]["Capacity"]
 
     # Storage
-    m.storage_inv_cost = Param(m.j, m.t, default=0, initialize=InvestData.storage_inv_cost)
+    m.storage_inv_cost = Param(
+        m.j, m.t, default=0, initialize=InvestData.storage_inv_cost
+    )
     m.P_min_charge = Param(m.j, default=0, initialize=InvestData.P_min_charge)
     m.P_max_charge = Param(m.j, default=0, initialize=InvestData.P_max_charge)
     m.P_min_discharge = Param(m.j, default=0, initialize=InvestData.P_min_discharge)
@@ -255,12 +374,13 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
     m.min_storage_cap = Param(m.j, default=0, initialize=InvestData.min_storage_cap)
     m.max_storage_cap = Param(m.j, default=0, initialize=InvestData.max_storage_cap)
     m.eff_rate_charge = Param(m.j, default=0, initialize=InvestData.eff_rate_charge)
-    m.eff_rate_discharge = Param(m.j, default=0, initialize=InvestData.eff_rate_discharge)
+    m.eff_rate_discharge = Param(
+        m.j, default=0, initialize=InvestData.eff_rate_discharge
+    )
     m.storage_lifetime = Param(m.j, default=0, initialize=InvestData.storage_lifetime)
 
     # Block of Equations per time period
     def planning_block_rule(b, stage):
-
         def bound_P(_b, i, r, t, d, s):
             if i in m.old:
                 return 0, m.Qg_np[i, r] * m.Ng_old[i, r]
@@ -268,14 +388,13 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
                 return 0, m.Qg_np[i, r] * m.Ng_max[i, r]
 
         def bound_Pflow(_b, l, t, d, s):
-             return -m.line_capacity[l], m.line_capacity[l]
-        
+            return -m.line_capacity[l], m.line_capacity[l]
+
         def bound_Pflow_plus(_b, l, t, d, s):
-             return 0, m.line_capacity[l]             
+            return 0, m.line_capacity[l]
 
         def bound_Pflow_minus(_b, l, t, d, s):
-             return 0, m.line_capacity[l]
-
+            return 0, m.line_capacity[l]
 
         def bound_o_rn(_b, rn, r, t):
             if rn in m.rold:
@@ -348,10 +467,8 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
                 return 0, 0
             else:
                 return -3.14159, 3.14159
-    
 
-
-        '''
+        """
         Variables notation:
         b.P: power output of generation cluster i in region r during sub-period s of representative day d of year t (MW)
         b.cu: curtailment slack generation in region r during sub-period s of representative day d of year t (MW)
@@ -394,67 +511,132 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
         b.d_theta_minus: nonnegative variable, angle difference between the angles at receiving end and sending end of transmission line l during sub-period s of representative day d of year t (MW)
         b.d_theta_1: disaggregated variable in the hull formulation, angle difference between the angles at sending end and receiving end of transmission line l during sub-period s of representative day d of year t (MW) if the transmission line l exists in year t
         b.d_theta_2: disaggregated variable in the hull formulation, angle difference between the angles at sending end and receiving end of transmission line l during sub-period s of representative day d of year t (MW) if the transmission line l does not exist in year t
-        '''
+        """
 
         b.ntb = Var(m.l_new, t_per_stage[stage], within=Binary)
         b.nte = Var(m.l_new, t_per_stage[stage], within=Binary)
-        b.nte_prev = Var(m.l_new, bounds=(0,1), domain=NonNegativeReals)
-        #variables for different formulation of transmission 
+        b.nte_prev = Var(m.l_new, bounds=(0, 1), domain=NonNegativeReals)
+        # variables for different formulation of transmission
         if formulation == "standard":
-            b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)        
+            b.theta = Var(
+                m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta
+            )
             b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
         elif formulation == "improved":
-            b.d_theta_plus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=(0, 3.14159))
-            b.d_theta_minus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=(0, 3.14159))
-            b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta) 
-            b.d_P_flow_plus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow_plus)
-            b.d_P_flow_minus = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow_minus)
+            b.d_theta_plus = Var(
+                m.l, t_per_stage[stage], m.d, m.hours, bounds=(0, 3.14159)
+            )
+            b.d_theta_minus = Var(
+                m.l, t_per_stage[stage], m.d, m.hours, bounds=(0, 3.14159)
+            )
+            b.theta = Var(
+                m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta
+            )
+            b.d_P_flow_plus = Var(
+                m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow_plus
+            )
+            b.d_P_flow_minus = Var(
+                m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow_minus
+            )
             b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
         elif formulation == "hull":
-            b.theta = Var(m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)        
-            b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)            
-            b.d_theta_1 = Var(m.l_new, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)        
-            b.d_theta_2 = Var(m.l_new, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta)                   
-        b.P = Var(m.i_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals, bounds=bound_P)
-        b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours,within=NonNegativeReals)
+            b.theta = Var(
+                m.r, t_per_stage[stage], m.d, m.hours, within=Reals, bounds=bound_theta
+            )
+            b.P_flow = Var(m.l, t_per_stage[stage], m.d, m.hours, bounds=bound_Pflow)
+            b.d_theta_1 = Var(
+                m.l_new,
+                t_per_stage[stage],
+                m.d,
+                m.hours,
+                within=Reals,
+                bounds=bound_theta,
+            )
+            b.d_theta_2 = Var(
+                m.l_new,
+                t_per_stage[stage],
+                m.d,
+                m.hours,
+                within=Reals,
+                bounds=bound_theta,
+            )
+        b.P = Var(
+            m.i_r,
+            t_per_stage[stage],
+            m.d,
+            m.hours,
+            within=NonNegativeReals,
+            bounds=bound_P,
+        )
+        b.cu = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         b.RES_def = Var(t_per_stage[stage], within=NonNegativeReals)
-        b.Q_spin = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
-        b.Q_Qstart = Var(m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
-        b.ngr_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_r_rn, domain=NonNegativeReals)
+        b.Q_spin = Var(
+            m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals
+        )
+        b.Q_Qstart = Var(
+            m.th_r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals
+        )
+        b.ngr_rn = Var(
+            m.rn_r, t_per_stage[stage], bounds=bound_r_rn, domain=NonNegativeReals
+        )
 
-
-        #rnew does not occur in the logic constraints
+        # rnew does not occur in the logic constraints
         for t in t_per_stage[stage]:
             for rnew, r in m.rn_r:
                 if rnew in m.rnew:
                     b.ngr_rn[rnew, r, t].fix(0.0)
-      
 
-        b.nge_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_e_rn, domain=NonNegativeReals)
+        b.nge_rn = Var(
+            m.rn_r, t_per_stage[stage], bounds=bound_e_rn, domain=NonNegativeReals
+        )
 
         for t in t_per_stage[stage]:
             for rnew, r in m.rn_r:
                 if rnew in m.rnew:
                     b.nge_rn[rnew, r, t].fix(0.0)
 
-        b.ngr_th = Var(m.th_r, t_per_stage[stage], bounds=bound_r_th, domain=NonNegativeIntegers)
+        b.ngr_th = Var(
+            m.th_r, t_per_stage[stage], bounds=bound_r_th, domain=NonNegativeIntegers
+        )
 
         for t in t_per_stage[stage]:
             for tnew, r in m.th_r:
                 if tnew in m.tnew:
                     b.ngr_th[tnew, r, t].fix(0.0)
-      
 
-        b.nge_th = Var(m.th_r, t_per_stage[stage], bounds=bound_e_th, domain=NonNegativeIntegers)
+        b.nge_th = Var(
+            m.th_r, t_per_stage[stage], bounds=bound_e_th, domain=NonNegativeIntegers
+        )
 
         for t in t_per_stage[stage]:
             for tnew, r in m.th_r:
                 if tnew in m.tnew:
                     b.nge_th[tnew, r, t].fix(0.0)
 
-        b.u = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)
-        b.su = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)
-        b.sd = Var(m.th_r, t_per_stage[stage], m.d, m.hours, bounds=bound_UC, domain=NonNegativeIntegers)
+        b.u = Var(
+            m.th_r,
+            t_per_stage[stage],
+            m.d,
+            m.hours,
+            bounds=bound_UC,
+            domain=NonNegativeIntegers,
+        )
+        b.su = Var(
+            m.th_r,
+            t_per_stage[stage],
+            m.d,
+            m.hours,
+            bounds=bound_UC,
+            domain=NonNegativeIntegers,
+        )
+        b.sd = Var(
+            m.th_r,
+            t_per_stage[stage],
+            m.d,
+            m.hours,
+            bounds=bound_UC,
+            domain=NonNegativeIntegers,
+        )
         for th, r, t, d, s in m.th_r * t_per_stage[stage] * m.d * m.hours:
             if s == 1:
                 b.sd[th, r, t, d, s].fix(0.0)
@@ -462,36 +644,48 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
                 b.sd[th, r, t, d, s].unfix()
         b.alphafut = Var(within=Reals, domain=NonNegativeReals)
 
-        b.ngo_rn = Var(m.rn_r, t_per_stage[stage], bounds=bound_o_rn, domain=NonNegativeReals)
-        b.ngb_rn = Var(m.rn_r, t_per_stage[stage],  domain=NonNegativeReals)
+        b.ngo_rn = Var(
+            m.rn_r, t_per_stage[stage], bounds=bound_o_rn, domain=NonNegativeReals
+        )
+        b.ngb_rn = Var(m.rn_r, t_per_stage[stage], domain=NonNegativeReals)
 
         for t in t_per_stage[stage]:
             for rold, r in m.rn_r:
                 if rold in m.rold:
                     b.ngb_rn[rold, r, t].fix(0.0)
 
-        b.ngo_th = Var(m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers)
-        b.ngb_th = Var(m.th_r, t_per_stage[stage],  domain=NonNegativeIntegers)     
+        b.ngo_th = Var(
+            m.th_r, t_per_stage[stage], bounds=bound_o_th, domain=NonNegativeIntegers
+        )
+        b.ngb_th = Var(m.th_r, t_per_stage[stage], domain=NonNegativeIntegers)
         for t in t_per_stage[stage]:
-            for th, r in m.th_r: 
+            for th, r in m.th_r:
                 if th in m.told:
-                    b.ngb_th[th, r, t].fix(0.0)           
+                    b.ngb_th[th, r, t].fix(0.0)
 
         b.ngo_rn_prev = Var(m.rn_r, bounds=bound_o_rn_prev, domain=NonNegativeReals)
         b.ngo_th_prev = Var(m.th_r, bounds=bound_o_th_prev, domain=NonNegativeReals)
 
         # Storage related Variables
-        b.p_charged = Var(m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
-        b.p_discharged = Var(m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
-        b.p_storage_level = Var(m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
-        b.p_storage_level_end_hour = Var(m.j,m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
+        b.p_charged = Var(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals
+        )
+        b.p_discharged = Var(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals
+        )
+        b.p_storage_level = Var(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals
+        )
+        b.p_storage_level_end_hour = Var(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals
+        )
         b.nsr = Var(m.j, m.r, t_per_stage[stage], within=NonNegativeReals)
         b.nsb = Var(m.j, m.r, t_per_stage[stage], within=NonNegativeReals)
         b.nso = Var(m.j, m.r, t_per_stage[stage], within=NonNegativeReals)
 
         b.nso_prev = Var(m.j, m.r, within=NonNegativeReals)
 
-        b.L_shed = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals) 
+        b.L_shed = Var(m.r, t_per_stage[stage], m.d, m.hours, within=NonNegativeReals)
         if not loadshedding:
             for t in t_per_stage[stage]:
                 for r in m.r:
@@ -499,250 +693,568 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
                         for s in m.hours:
                             b.L_shed[r, t, d, s].fix(0.0)
 
-            
-
-        ####################### add constraints related to transmission ####################### 
+        ####################### add constraints related to transmission #######################
         if formulation == "standard":
+
             def dc_power_flow_old(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[InvestData.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[InvestData.tielines[l-1]['Far Area Name'], t, d, s])
-            b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
+                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (
+                    _b.theta[InvestData.tielines[l - 1]["Near Area Name"], t, d, s]
+                    - _b.theta[InvestData.tielines[l - 1]["Far Area Name"], t, d, s]
+                )
+
+            b.dc_power_flow_old = Constraint(
+                m.l_old, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old
+            )
 
             def dc_power_flow_new_lo(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
-                (_b.theta[InvestData.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[InvestData.tielines[l-1]['Far Area Name'], t, d, s])\
-                >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]
-            b.dc_power_flow_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lo)
+                return (
+                    _b.P_flow[l, t, d, s]
+                    - m.suceptance[l]
+                    * (
+                        _b.theta[InvestData.tielines[l - 1]["Near Area Name"], t, d, s]
+                        - _b.theta[InvestData.tielines[l - 1]["Far Area Name"], t, d, s]
+                    )
+                    >= -(1 - _b.nte[l, t]) * 5 * m.line_capacity[l]
+                )
+
+            b.dc_power_flow_new_lo = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lo
+            )
 
             def dc_power_flow_new_up(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
-                (_b.theta[InvestData.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[InvestData.tielines[l-1]['Far Area Name'], t, d, s])\
-                <= (1- _b.nte[l, t]) * 5 * m.line_capacity[l]
-            b.dc_power_flow_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_up)        
+                return (
+                    _b.P_flow[l, t, d, s]
+                    - m.suceptance[l]
+                    * (
+                        _b.theta[InvestData.tielines[l - 1]["Near Area Name"], t, d, s]
+                        - _b.theta[InvestData.tielines[l - 1]["Far Area Name"], t, d, s]
+                    )
+                    <= (1 - _b.nte[l, t]) * 5 * m.line_capacity[l]
+                )
+
+            b.dc_power_flow_new_up = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_up
+            )
 
             def power_flow_bounds_new_lo(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] >= - m.line_capacity[l] * _b.nte[l, t]
-            b.power_flow_bounds_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo)
+                return _b.P_flow[l, t, d, s] >= -m.line_capacity[l] * _b.nte[l, t]
+
+            b.power_flow_bounds_new_lo = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo
+            )
 
             def power_flow_bounds_new_up(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
-            b.power_flow_bounds_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up)
+                return _b.P_flow[l, t, d, s] <= m.line_capacity[l] * _b.nte[l, t]
+
+            b.power_flow_bounds_new_up = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up
+            )
         elif formulation == "improved":
+
             def dc_power_flow_old(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[InvestData.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[InvestData.tielines[l-1]['Far Area Name'], t, d, s])
-            b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
+                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (
+                    _b.theta[InvestData.tielines[l - 1]["Near Area Name"], t, d, s]
+                    - _b.theta[InvestData.tielines[l - 1]["Far Area Name"], t, d, s]
+                )
+
+            b.dc_power_flow_old = Constraint(
+                m.l_old, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old
+            )
 
             def dc_power_flow_new_lb1(_b, l, t, d, s):
-                return _b.d_P_flow_plus[l, t, d, s] - m.suceptance[l] * \
-                _b.d_theta_plus[l, t, d, s]\
-                >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]             
-            b.dc_power_flow_new_lb1 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lb1)
-            
+                return (
+                    _b.d_P_flow_plus[l, t, d, s]
+                    - m.suceptance[l] * _b.d_theta_plus[l, t, d, s]
+                    >= -(1 - _b.nte[l, t]) * 5 * m.line_capacity[l]
+                )
+
+            b.dc_power_flow_new_lb1 = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lb1
+            )
+
             def dc_power_flow_new_ub1(_b, l, t, d, s):
-                return _b.d_P_flow_plus[l, t, d, s] - m.suceptance[l] * \
-                _b.d_theta_plus[l, t, d, s]\
-                <= 0 
-            b.dc_power_flow_new_ub1 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_ub1)
+                return (
+                    _b.d_P_flow_plus[l, t, d, s]
+                    - m.suceptance[l] * _b.d_theta_plus[l, t, d, s]
+                    <= 0
+                )
+
+            b.dc_power_flow_new_ub1 = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_ub1
+            )
 
             def dc_power_flow_new_lb2(_b, l, t, d, s):
-                return _b.d_P_flow_minus[l, t, d, s] - m.suceptance[l] * \
-                _b.d_theta_minus[l, t, d, s]\
-                >= -(1- _b.nte[l, t]) * 5 * m.line_capacity[l]             
-            b.dc_power_flow_new_lb2 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lb2)
-            
+                return (
+                    _b.d_P_flow_minus[l, t, d, s]
+                    - m.suceptance[l] * _b.d_theta_minus[l, t, d, s]
+                    >= -(1 - _b.nte[l, t]) * 5 * m.line_capacity[l]
+                )
+
+            b.dc_power_flow_new_lb2 = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_lb2
+            )
+
             def dc_power_flow_new_ub2(_b, l, t, d, s):
-                return _b.d_P_flow_minus[l, t, d, s] - m.suceptance[l] * \
-                _b.d_theta_minus[l, t, d, s]\
-                <= 0 
-            b.dc_power_flow_new_ub2 = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_ub2)    
+                return (
+                    _b.d_P_flow_minus[l, t, d, s]
+                    - m.suceptance[l] * _b.d_theta_minus[l, t, d, s]
+                    <= 0
+                )
+
+            b.dc_power_flow_new_ub2 = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new_ub2
+            )
 
             def P_flow_def(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] == _b.d_P_flow_plus[l, t, d, s] - _b.d_P_flow_minus[l, t, d, s]
-            b.P_flow_def = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=P_flow_def)
+                return (
+                    _b.P_flow[l, t, d, s]
+                    == _b.d_P_flow_plus[l, t, d, s] - _b.d_P_flow_minus[l, t, d, s]
+                )
+
+            b.P_flow_def = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=P_flow_def
+            )
 
             def d_theta_def(_b, l, t, d, s):
-                return _b.theta[InvestData.tielines[l-1]['Near Area Name'], t, d, s] - \
-                _b.theta[InvestData.tielines[l-1]['Far Area Name'], t, d, s] == _b.d_theta_plus[l, t, d, s] - _b.d_theta_minus[l, t, d, s]
-            b.d_theta_def = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_def)                
+                return (
+                    _b.theta[InvestData.tielines[l - 1]["Near Area Name"], t, d, s]
+                    - _b.theta[InvestData.tielines[l - 1]["Far Area Name"], t, d, s]
+                    == _b.d_theta_plus[l, t, d, s] - _b.d_theta_minus[l, t, d, s]
+                )
+
+            b.d_theta_def = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_def
+            )
 
             def d_power_flow_bounds_new_plus(_b, l, t, d, s):
-                return _b.d_P_flow_plus[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
-            b.d_power_flow_bounds_new_plus = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_power_flow_bounds_new_plus)
+                return _b.d_P_flow_plus[l, t, d, s] <= m.line_capacity[l] * _b.nte[l, t]
+
+            b.d_power_flow_bounds_new_plus = Constraint(
+                m.l_new,
+                t_per_stage[stage],
+                m.d,
+                m.hours,
+                rule=d_power_flow_bounds_new_plus,
+            )
 
             def d_power_flow_bounds_new_minus(_b, l, t, d, s):
-                return _b.d_P_flow_minus[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
-            b.d_power_flow_bounds_new_minus = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_power_flow_bounds_new_minus)                     
+                return (
+                    _b.d_P_flow_minus[l, t, d, s] <= m.line_capacity[l] * _b.nte[l, t]
+                )
+
+            b.d_power_flow_bounds_new_minus = Constraint(
+                m.l_new,
+                t_per_stage[stage],
+                m.d,
+                m.hours,
+                rule=d_power_flow_bounds_new_minus,
+            )
         elif formulation == "hull":
+
             def dc_power_flow_old(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (_b.theta[InvestData.tielines[l-1]['Near Area Name'], t, d, s] - _b.theta[InvestData.tielines[l-1]['Far Area Name'], t, d, s])
-            b.dc_power_flow_old = Constraint(m.l_old,  t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old)
+                return _b.P_flow[l, t, d, s] == m.suceptance[l] * (
+                    _b.theta[InvestData.tielines[l - 1]["Near Area Name"], t, d, s]
+                    - _b.theta[InvestData.tielines[l - 1]["Far Area Name"], t, d, s]
+                )
+
+            b.dc_power_flow_old = Constraint(
+                m.l_old, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_old
+            )
 
             def dc_power_flow_new(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] - m.suceptance[l] * \
-                _b.d_theta_1[l, t, d, s]\
-                == 0 
-            b.dc_power_flow_new = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new)
+                return (
+                    _b.P_flow[l, t, d, s] - m.suceptance[l] * _b.d_theta_1[l, t, d, s]
+                    == 0
+                )
+
+            b.dc_power_flow_new = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=dc_power_flow_new
+            )
 
             def d_theta_1_bound_ub(_b, l, t, d, s):
                 return _b.d_theta_1[l, t, d, s] <= _b.nte[l, t] * 3.14159
-            b.d_theta_1_bound_ub = Constraint(m.l, t_per_stage[stage], m.d, m.hours, rule=d_theta_1_bound_ub)       
+
+            b.d_theta_1_bound_ub = Constraint(
+                m.l, t_per_stage[stage], m.d, m.hours, rule=d_theta_1_bound_ub
+            )
 
             def d_theta_1_bound_lb(_b, l, t, d, s):
-                return _b.d_theta_1[l, t, d, s] >= - _b.nte[l, t] * 3.14159
-            b.d_theta_1_bound_lb = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_1_bound_lb)   
+                return _b.d_theta_1[l, t, d, s] >= -_b.nte[l, t] * 3.14159
+
+            b.d_theta_1_bound_lb = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_1_bound_lb
+            )
 
             def d_theta_2_bound_ub(_b, l, t, d, s):
-                return _b.d_theta_2[l, t, d, s] <= (1-_b.nte[l, t]) * 3.14159
-            b.d_theta_2_bound_ub = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_2_bound_ub)       
+                return _b.d_theta_2[l, t, d, s] <= (1 - _b.nte[l, t]) * 3.14159
+
+            b.d_theta_2_bound_ub = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_2_bound_ub
+            )
 
             def d_theta_2_bound_lb(_b, l, t, d, s):
-                return _b.d_theta_2[l, t, d, s] >= - (1- _b.nte[l, t]) * 3.14159
-            b.d_theta_2_bound_lb = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_2_bound_lb)  
+                return _b.d_theta_2[l, t, d, s] >= -(1 - _b.nte[l, t]) * 3.14159
+
+            b.d_theta_2_bound_lb = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_2_bound_lb
+            )
 
             def d_theta_aggregate(_b, l, t, d, s):
-                return _b.theta[InvestData.tielines[l-1]['Near Area Name'], t, d, s] - \
-                _b.theta[InvestData.tielines[l-1]['Far Area Name'], t, d, s] ==   _b.d_theta_1[l, t, d, s] +  _b.d_theta_2[l, t, d, s]       
-            b.d_theta_aggregate = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_aggregate)         
+                return (
+                    _b.theta[InvestData.tielines[l - 1]["Near Area Name"], t, d, s]
+                    - _b.theta[InvestData.tielines[l - 1]["Far Area Name"], t, d, s]
+                    == _b.d_theta_1[l, t, d, s] + _b.d_theta_2[l, t, d, s]
+                )
+
+            b.d_theta_aggregate = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=d_theta_aggregate
+            )
 
             def power_flow_bounds_new_lo(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] >= - m.line_capacity[l] * _b.nte[l, t]
-            b.power_flow_bounds_new_lo = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo)
+                return _b.P_flow[l, t, d, s] >= -m.line_capacity[l] * _b.nte[l, t]
+
+            b.power_flow_bounds_new_lo = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_lo
+            )
 
             def power_flow_bounds_new_up(_b, l, t, d, s):
-                return _b.P_flow[l, t, d, s] <=  m.line_capacity[l] * _b.nte[l, t]
-            b.power_flow_bounds_new_up = Constraint(m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up)               
+                return _b.P_flow[l, t, d, s] <= m.line_capacity[l] * _b.nte[l, t]
+
+            b.power_flow_bounds_new_up = Constraint(
+                m.l_new, t_per_stage[stage], m.d, m.hours, rule=power_flow_bounds_new_up
+            )
 
         def transmission_line_balance(_b, l, t):
             if t == 1:
                 return _b.nte[l, t] == _b.ntb[l, t]
             elif t != t_per_stage[stage][0]:
-                return _b.nte[l,t] == _b.nte[l, t-1] + _b.ntb[l, t]
+                return _b.nte[l, t] == _b.nte[l, t - 1] + _b.ntb[l, t]
             else:
-                return _b.nte[l,t] ==  _b.nte_prev[l] + _b.ntb[l, t]
-        b.transmission_line_balance = Constraint(m.l_new, t_per_stage[stage], rule=transmission_line_balance)     
+                return _b.nte[l, t] == _b.nte_prev[l] + _b.ntb[l, t]
+
+        b.transmission_line_balance = Constraint(
+            m.l_new, t_per_stage[stage], rule=transmission_line_balance
+        )
 
         def symmetrybreaking_line(_b, l, t):
-            if l%10 != 1:
-                return _b.nte[l,t] >= _b.nte[l-1,t]
+            if l % 10 != 1:
+                return _b.nte[l, t] >= _b.nte[l - 1, t]
             else:
                 return Constraint.Skip
-        b.symmetrybreaking_line = Constraint(m.l_new, t_per_stage[stage], rule=symmetrybreaking_line)
 
-        ####################### end constraints related to transmission ####################### 
-        #show costs breakdown 
-      
+        b.symmetrybreaking_line = Constraint(
+            m.l_new, t_per_stage[stage], rule=symmetrybreaking_line
+        )
+
+        ####################### end constraints related to transmission #######################
+        # show costs breakdown
+
         def variable_operating_cost(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
-                                                              + m.EF_CO2[i] * m.tx_CO2[t] * m.hr[i, r]) * _b.P[
-                                                                 i, r, t, d, s]
-                                                             for i, r in m.i_r)
-                                       for d in m.d for s in m.hours) )   for t in t_per_stage[stage])* 10 ** (-6)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.n_d[d]
+                        * 1.0000000
+                        * sum(
+                            (
+                                m.VOC[i, t]
+                                + m.hr[i, r] * m.P_fuel[i, t]
+                                + m.EF_CO2[i] * m.tx_CO2[t] * m.hr[i, r]
+                            )
+                            * _b.P[i, r, t, d, s]
+                            for i, r in m.i_r
+                        )
+                        for d in m.d
+                        for s in m.hours
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.variable_operating_cost = Expression(rule=variable_operating_cost)
 
-
         def fixed_operating_cost(_b):
-            return sum(m.if_[t] * (sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
-                                                                            _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
-                                   + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
-                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-6)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.FOC[rn, t] * m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t]
+                        for rn, r in m.rn_r
+                    )
+                    + sum(
+                        m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
+                        for th, r in m.th_r
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.fixed_operating_cost = Expression(rule=fixed_operating_cost)
 
-
         def startup_cost(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
-                                         * (m.f_start[th] * m.P_fuel[th, t]
-                                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t] + m.C_start[th])
-                                   for th, r in m.th_r for d in m.d for s in m.hours))   for t in t_per_stage[stage])* 10 ** (-6)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.n_d[d]
+                        * 1.0000000
+                        * _b.su[th, r, t, d, s]
+                        * m.Qg_np[th, r]
+                        * (
+                            m.f_start[th] * m.P_fuel[th, t]
+                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t]
+                            + m.C_start[th]
+                        )
+                        for th, r in m.th_r
+                        for d in m.d
+                        for s in m.hours
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.startup_cost = Expression(rule=startup_cost)
 
         def load_shedding_cost(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * _b.L_shed[r, t, d, s] * 1e5 for d in m.d for s in m.hours for r in m.r))   for t in t_per_stage[stage])* 10 ** (-6)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.n_d[d] * 1.0000000 * _b.L_shed[r, t, d, s] * 1e5
+                        for d in m.d
+                        for s in m.hours
+                        for r in m.r
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.load_shedding_cost = Expression(rule=load_shedding_cost)
 
         def renewable_generator_cost(_b):
-            return sum(m.if_[t] * (sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
-                                         for rnew, r in m.rn_r if rnew in m.rnew))   for t in t_per_stage[stage])* 10 ** (-6)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.DIC[rnew, t]
+                        * m.CCm[rnew]
+                        * m.Qg_np[rnew, r]
+                        * _b.ngb_rn[rnew, r, t]
+                        for rnew, r in m.rn_r
+                        if rnew in m.rnew
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.renewable_generator_cost = Expression(rule=renewable_generator_cost)
 
-
-
         def thermal_generator_cost(_b):
-            return sum(m.if_[t] * (sum(m.DIC[tnew, t] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[tnew, r, t]
-                                         for tnew, r in m.th_r if tnew in m.tnew))   for t in t_per_stage[stage])* 10 ** (-6)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.DIC[tnew, t]
+                        * m.CCm[tnew]
+                        * m.Qg_np[tnew, r]
+                        * _b.ngb_th[tnew, r, t]
+                        for tnew, r in m.th_r
+                        if tnew in m.tnew
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.thermal_generator_cost = Expression(rule=thermal_generator_cost)
 
         def extending_renewable_generator_cost(_b):
-            return sum(m.if_[t] * (sum(m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
-                                         for rn, r in m.rn_r))   for t in t_per_stage[stage])* 10 ** (-6)
-        b.extending_renewable_generator_cost = Expression(rule=extending_renewable_generator_cost)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
+                        for rn, r in m.rn_r
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
 
+        b.extending_renewable_generator_cost = Expression(
+            rule=extending_renewable_generator_cost
+        )
 
         def extending_thermal_generator_cost(_b):
-            return sum(m.if_[t] * (sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
-                                         for th, r in m.th_r))   for t in t_per_stage[stage])* 10 ** (-6)
-        b.extending_thermal_generator_cost = Expression(rule=extending_thermal_generator_cost)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
+                        for th, r in m.th_r
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
+        b.extending_thermal_generator_cost = Expression(
+            rule=extending_thermal_generator_cost
+        )
 
         def transmission_line_cost(_b):
-            return sum(m.if_[t] * sum(m.TIC[l,t] * _b.ntb[l,t] for l in m.l) for t in t_per_stage[stage])* 10 ** (-6)
+            return sum(
+                m.if_[t] * sum(m.TIC[l, t] * _b.ntb[l, t] for l in m.l)
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.transmission_line_cost = Expression(rule=transmission_line_cost)
 
         def storage_investment_cost(_b):
-            return sum(m.if_[t] * (sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
-                                         for j in m.j for r in m.r))   for t in t_per_stage[stage])* 10 ** (-6)  
-        b.storage_investment_cost = Expression(rule=storage_investment_cost)       
-        
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.storage_inv_cost[j, t]
+                        * m.max_storage_cap[j]
+                        * _b.nsb[j, r, t]
+                        for j in m.j
+                        for r in m.r
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
+        b.storage_investment_cost = Expression(rule=storage_investment_cost)
+
         def penalty_cost(_b):
-            return sum(m.if_[t] * (m.PEN[t] * _b.RES_def[t]
-                                   + m.PENc * sum(_b.cu[r, t, d, s]
-                                                  for r in m.r for d in m.d for s in m.hours))   for t in t_per_stage[stage])  * 10 ** (-6)
-        b.penalty_cost = Expression(rule=penalty_cost)   
+            return sum(
+                m.if_[t]
+                * (
+                    m.PEN[t] * _b.RES_def[t]
+                    + m.PENc
+                    * sum(_b.cu[r, t, d, s] for r in m.r for d in m.d for s in m.hours)
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
+        b.penalty_cost = Expression(rule=penalty_cost)
 
         def renewable_capacity(_b):
-            return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) 
+            return sum(
+                m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn]
+                for rn, r in m.i_r
+                if rn in m.rn
+            )
+
         b.renewable_capacity = Expression(rule=renewable_capacity)
 
         def thermal_capacity(_b):
-            return sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th)   
+            return sum(
+                m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th
+            )
+
         b.thermal_capacity = Expression(rule=thermal_capacity)
 
         def total_capacity(_b):
-            return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
-                   + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th)
-        b.total_capacity = Expression(rule=total_capacity)   
+            return sum(
+                m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn]
+                for rn, r in m.i_r
+                if rn in m.rn
+            ) + sum(
+                m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th
+            )
+
+        b.total_capacity = Expression(rule=total_capacity)
 
         def total_investment_cost(_b):
-            return   sum(m.if_[t] * ( sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
-                                         for rnew, r in m.rn_r if rnew in m.rnew)
-                                   + sum(m.DIC[tnew, t] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[tnew, r, t]
-                                         for tnew, r in m.th_r if tnew in m.tnew)
-                                   + sum(m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
-                                         for rn, r in m.rn_r)
-                                   + sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
-                                         for th, r in m.th_r)
-                                  + sum(m.TIC[l,t] * _b.ntb[l, t] for l in m.l_new)
-                                   + sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
-                                         for j in m.j for r in m.r)
-                                  )
-                      for t in t_per_stage[stage]) \
-                   * 10 ** (-6)
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.DIC[rnew, t]
+                        * m.CCm[rnew]
+                        * m.Qg_np[rnew, r]
+                        * _b.ngb_rn[rnew, r, t]
+                        for rnew, r in m.rn_r
+                        if rnew in m.rnew
+                    )
+                    + sum(
+                        m.DIC[tnew, t]
+                        * m.CCm[tnew]
+                        * m.Qg_np[tnew, r]
+                        * _b.ngb_th[tnew, r, t]
+                        for tnew, r in m.th_r
+                        if tnew in m.tnew
+                    )
+                    + sum(
+                        m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
+                        for rn, r in m.rn_r
+                    )
+                    + sum(
+                        m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
+                        for th, r in m.th_r
+                    )
+                    + sum(m.TIC[l, t] * _b.ntb[l, t] for l in m.l_new)
+                    + sum(
+                        m.storage_inv_cost[j, t]
+                        * m.max_storage_cap[j]
+                        * _b.nsb[j, r, t]
+                        for j in m.j
+                        for r in m.r
+                    )
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.total_investment_cost = Expression(rule=total_investment_cost)
 
         def total_operating_cost(_b):
-             return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
-                                                              + m.EF_CO2[i] * m.tx_CO2[t] * m.hr[i, r]) * _b.P[
-                                                                 i, r, t, d, s]
-                                                             for i, r in m.i_r)
-                                       for d in m.d for s in m.hours) +sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
-                                                                            _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
-                                   + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
-                                         for th, r in m.th_r)
-                                   + sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
-                                         * (m.f_start[th] * m.P_fuel[th, t]
-                                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t] + m.C_start[th])
-                                         for th, r in m.th_r for d in m.d for s in m.hours)    + m.PEN[t] * _b.RES_def[t]                                 
-                                   + m.PENc * sum(_b.cu[r, t, d, s]
-                                                  for r in m.r for d in m.d for s in m.hours) )
-                      for t in t_per_stage[stage]) \
-                   * 10 ** (-6)                                                                                                                       
+            return sum(
+                m.if_[t]
+                * (
+                    sum(
+                        m.n_d[d]
+                        * 1.0000000
+                        * sum(
+                            (
+                                m.VOC[i, t]
+                                + m.hr[i, r] * m.P_fuel[i, t]
+                                + m.EF_CO2[i] * m.tx_CO2[t] * m.hr[i, r]
+                            )
+                            * _b.P[i, r, t, d, s]
+                            for i, r in m.i_r
+                        )
+                        for d in m.d
+                        for s in m.hours
+                    )
+                    + sum(
+                        m.FOC[rn, t] * m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t]
+                        for rn, r in m.rn_r
+                    )
+                    + sum(
+                        m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
+                        for th, r in m.th_r
+                    )
+                    + sum(
+                        m.n_d[d]
+                        * 1.0000000
+                        * _b.su[th, r, t, d, s]
+                        * m.Qg_np[th, r]
+                        * (
+                            m.f_start[th] * m.P_fuel[th, t]
+                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t]
+                            + m.C_start[th]
+                        )
+                        for th, r in m.th_r
+                        for d in m.d
+                        for s in m.hours
+                    )
+                    + m.PEN[t] * _b.RES_def[t]
+                    + m.PENc
+                    * sum(_b.cu[r, t, d, s] for r in m.r for d in m.d for s in m.hours)
+                )
+                for t in t_per_stage[stage]
+            ) * 10 ** (-6)
+
         b.total_operating_cost = Expression(rule=total_operating_cost)
         b.vobj = Objective(rule=total_operating_cost, sense=minimize)
         b.vobj.deactivate()
@@ -750,177 +1262,346 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
         b.lobj = Objective(rule=load_shedding_cost, sense=minimize)
         b.lobj.deactivate()
 
-
         def obj_rule(_b):
-            return sum(m.if_[t] * (sum(m.n_d[d] * 1.0000000 * sum((m.VOC[i, t] + m.hr[i, r] * m.P_fuel[i, t]
-                                                              + m.EF_CO2[i] * m.tx_CO2[t] * m.hr[i, r]) * _b.P[
-                                                                 i, r, t, d, s]
-                                                             for i, r in m.i_r)
-                                       for d in m.d for s in m.hours) + sum(m.FOC[rn, t] * m.Qg_np[rn, r] *
-                                                                            _b.ngo_rn[rn, r, t] for rn, r in m.rn_r)
-                                   + sum(m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
-                                         for th, r in m.th_r)
-                                   + sum(m.n_d[d] * 1.0000000 * _b.su[th, r, t, d, s] * m.Qg_np[th, r]
-                                         * (m.f_start[th] * m.P_fuel[th, t]
-                                            + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t] + m.C_start[th])
-                                         for th, r in m.th_r for d in m.d for s in m.hours)
-                                   + sum(m.DIC[rnew, t] * m.CCm[rnew] * m.Qg_np[rnew, r] * _b.ngb_rn[rnew, r, t]
-                                         for rnew, r in m.rn_r if rnew in m.rnew)
-                                   + sum(m.DIC[tnew, t] * m.CCm[tnew] * m.Qg_np[tnew, r] * _b.ngb_th[tnew, r, t]
-                                         for tnew, r in m.th_r if tnew in m.tnew)
-                                   + sum(m.DIC[rn, t] * m.LEC[rn] * m.Qg_np[rn, r] * _b.nge_rn[rn, r, t]
-                                         for rn, r in m.rn_r)
-                                   + sum(m.DIC[th, t] * m.LEC[th] * m.Qg_np[th, r] * _b.nge_th[th, r, t]
-                                         for th, r in m.th_r)
-                                  + sum(m.TIC[l,t] * _b.ntb[l, t] for l in m.l_new)
-                                   + sum(m.storage_inv_cost[j, t] * m.max_storage_cap[j] * _b.nsb[j, r, t]
-                                         for j in m.j for r in m.r)
-                                   + m.PEN[t] * _b.RES_def[t]
-                                   + m.PENc * sum(_b.cu[r, t, d, s]
-                                                  for r in m.r for d in m.d for s in m.hours)
-                                                  +  sum( _b.L_shed[r, t, d, s] for r in m.r for d in m.d for s in m.hours  for r in m.r )* 1e5 )
-                      for t in t_per_stage[stage]) \
-                   * 10 ** (-6) \
-                   + _b.alphafut
+            return (
+                sum(
+                    m.if_[t]
+                    * (
+                        sum(
+                            m.n_d[d]
+                            * 1.0000000
+                            * sum(
+                                (
+                                    m.VOC[i, t]
+                                    + m.hr[i, r] * m.P_fuel[i, t]
+                                    + m.EF_CO2[i] * m.tx_CO2[t] * m.hr[i, r]
+                                )
+                                * _b.P[i, r, t, d, s]
+                                for i, r in m.i_r
+                            )
+                            for d in m.d
+                            for s in m.hours
+                        )
+                        + sum(
+                            m.FOC[rn, t] * m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t]
+                            for rn, r in m.rn_r
+                        )
+                        + sum(
+                            m.FOC[th, t] * m.Qg_np[th, r] * _b.ngo_th[th, r, t]
+                            for th, r in m.th_r
+                        )
+                        + sum(
+                            m.n_d[d]
+                            * 1.0000000
+                            * _b.su[th, r, t, d, s]
+                            * m.Qg_np[th, r]
+                            * (
+                                m.f_start[th] * m.P_fuel[th, t]
+                                + m.f_start[th] * m.EF_CO2[th] * m.tx_CO2[t]
+                                + m.C_start[th]
+                            )
+                            for th, r in m.th_r
+                            for d in m.d
+                            for s in m.hours
+                        )
+                        + sum(
+                            m.DIC[rnew, t]
+                            * m.CCm[rnew]
+                            * m.Qg_np[rnew, r]
+                            * _b.ngb_rn[rnew, r, t]
+                            for rnew, r in m.rn_r
+                            if rnew in m.rnew
+                        )
+                        + sum(
+                            m.DIC[tnew, t]
+                            * m.CCm[tnew]
+                            * m.Qg_np[tnew, r]
+                            * _b.ngb_th[tnew, r, t]
+                            for tnew, r in m.th_r
+                            if tnew in m.tnew
+                        )
+                        + sum(
+                            m.DIC[rn, t]
+                            * m.LEC[rn]
+                            * m.Qg_np[rn, r]
+                            * _b.nge_rn[rn, r, t]
+                            for rn, r in m.rn_r
+                        )
+                        + sum(
+                            m.DIC[th, t]
+                            * m.LEC[th]
+                            * m.Qg_np[th, r]
+                            * _b.nge_th[th, r, t]
+                            for th, r in m.th_r
+                        )
+                        + sum(m.TIC[l, t] * _b.ntb[l, t] for l in m.l_new)
+                        + sum(
+                            m.storage_inv_cost[j, t]
+                            * m.max_storage_cap[j]
+                            * _b.nsb[j, r, t]
+                            for j in m.j
+                            for r in m.r
+                        )
+                        + m.PEN[t] * _b.RES_def[t]
+                        + m.PENc
+                        * sum(
+                            _b.cu[r, t, d, s] for r in m.r for d in m.d for s in m.hours
+                        )
+                        + sum(
+                            _b.L_shed[r, t, d, s]
+                            for r in m.r
+                            for d in m.d
+                            for s in m.hours
+                            for r in m.r
+                        )
+                        * 1e5
+                    )
+                    for t in t_per_stage[stage]
+                )
+                * 10 ** (-6)
+                + _b.alphafut
+            )
 
         b.obj = Objective(rule=obj_rule, sense=minimize)
 
         def min_RN_req(_b, t):
-            return sum(m.n_d[d] * 1.0000000 * ( sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn) - sum(_b.cu[r, t, d, s] for r in m.r)) \
-                       for d in m.d for s in m.hours) \
-                   + _b.RES_def[t] >= m.RES_min[t] * m.ED[t]
+            return (
+                sum(
+                    m.n_d[d]
+                    * 1.0000000
+                    * (
+                        sum(_b.P[rn, r, t, d, s] for rn, r in m.i_r if rn in m.rn)
+                        - sum(_b.cu[r, t, d, s] for r in m.r)
+                    )
+                    for d in m.d
+                    for s in m.hours
+                )
+                + _b.RES_def[t]
+                >= m.RES_min[t] * m.ED[t]
+            )
 
         b.min_RN_req = Constraint(t_per_stage[stage], rule=min_RN_req)
 
         def min_reserve(_b, t):
-            return sum(m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn] for rn, r in m.i_r if rn in m.rn) \
-                   + sum(m.Qg_np[th, r] * _b.ngo_th[th, r, t] for th, r in m.i_r if th in m.th) \
-                   >= (1 + m.Rmin[t]) * m.L_max[t]
+            return (
+                sum(
+                    m.Qg_np[rn, r] * _b.ngo_rn[rn, r, t] * m.q_v[rn]
+                    for rn, r in m.i_r
+                    if rn in m.rn
+                )
+                + sum(
+                    m.Qg_np[th, r] * _b.ngo_th[th, r, t]
+                    for th, r in m.i_r
+                    if th in m.th
+                )
+                >= (1 + m.Rmin[t]) * m.L_max[t]
+            )
 
         b.min_reserve = Constraint(t_per_stage[stage], rule=min_reserve)
 
         def inst_RN_UB(_b, rnew, t):
-            return sum(_b.ngb_rn[rnew, r, t] for r in m.r) \
-                   <= m.Qinst_UB[rnew, t] / sum(m.Qg_np[rnew, r] / len(m.r) for r in m.r)
+            return sum(_b.ngb_rn[rnew, r, t] for r in m.r) <= m.Qinst_UB[rnew, t] / sum(
+                m.Qg_np[rnew, r] / len(m.r) for r in m.r
+            )
 
         b.inst_RN_UB = Constraint(m.rnew, t_per_stage[stage], rule=inst_RN_UB)
 
         def inst_TH_UB(_b, tnew, t):
-            return sum(_b.ngb_th[tnew, r, t] for r in m.r) \
-                   <= m.Qinst_UB[tnew, t] / sum(m.Qg_np[tnew, r] / len(m.r) for r in m.r)
+            return sum(_b.ngb_th[tnew, r, t] for r in m.r) <= m.Qinst_UB[tnew, t] / sum(
+                m.Qg_np[tnew, r] / len(m.r) for r in m.r
+            )
 
         b.inst_TH_UB = Constraint(m.tnew, t_per_stage[stage], rule=inst_TH_UB)
 
         def en_bal(_b, r, t, d, s):
-            return sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r) \
-                   + sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_er) -\
-                         sum(_b.P_flow[l, t, d, s] for l in m.l if (l,r) in m.l_sr ) \
-                   + sum(_b.p_discharged[j, r, t, d, s] for j in m.j)  + _b.L_shed[r, t, d, s]\
-                   == m.L[r, t, d, s] + sum(_b.p_charged[j, r, t, d, s] for j in m.j) + _b.cu[r, t, d, s]        
+            return (
+                sum(_b.P[i, r, t, d, s] for i in m.i if (i, r) in m.i_r)
+                + sum(_b.P_flow[l, t, d, s] for l in m.l if (l, r) in m.l_er)
+                - sum(_b.P_flow[l, t, d, s] for l in m.l if (l, r) in m.l_sr)
+                + sum(_b.p_discharged[j, r, t, d, s] for j in m.j)
+                + _b.L_shed[r, t, d, s]
+                == m.L[r, t, d, s]
+                + sum(_b.p_charged[j, r, t, d, s] for j in m.j)
+                + _b.cu[r, t, d, s]
+            )
 
         b.en_bal = Constraint(m.r, t_per_stage[stage], m.d, m.hours, rule=en_bal)
 
         def capfactor(_b, rn, r, t, d, s):
-            return _b.P[rn, r, t, d, s] == m.Qg_np[rn, r] * m.cf[rn, r, t, d, s] \
-                   * _b.ngo_rn[rn, r, t]
+            return (
+                _b.P[rn, r, t, d, s]
+                == m.Qg_np[rn, r] * m.cf[rn, r, t, d, s] * _b.ngo_rn[rn, r, t]
+            )
 
-        b.capfactor = Constraint(m.rn_r, t_per_stage[stage], m.d, m.hours, rule=capfactor)
+        b.capfactor = Constraint(
+            m.rn_r, t_per_stage[stage], m.d, m.hours, rule=capfactor
+        )
 
         def min_output(_b, th, r, t, d, s):
-            return _b.u[th, r, t, d, s] * m.Pg_min[th] * m.Qg_np[th, r] <= _b.P[th, r, t, d, s]
+            return (
+                _b.u[th, r, t, d, s] * m.Pg_min[th] * m.Qg_np[th, r]
+                <= _b.P[th, r, t, d, s]
+            )
 
-        b.min_output = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, rule=min_output)
+        b.min_output = Constraint(
+            m.th_r, t_per_stage[stage], m.d, m.hours, rule=min_output
+        )
 
         def max_output(_b, th, r, t, d, s):
-            return _b.u[th, r, t, d, s] * m.Qg_np[th, r] >= _b.P[th, r, t, d, s] \
-                   + _b.Q_spin[th, r, t, d, s]
+            return (
+                _b.u[th, r, t, d, s] * m.Qg_np[th, r]
+                >= _b.P[th, r, t, d, s] + _b.Q_spin[th, r, t, d, s]
+            )
 
-        b.max_output = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, rule=max_output)
+        b.max_output = Constraint(
+            m.th_r, t_per_stage[stage], m.d, m.hours, rule=max_output
+        )
 
         def unit_commit1(_b, th, r, t, d, s, s_):
             if s_ == s - 1:
-                return _b.u[th, r, t, d, s] == _b.u[th, r, t, d, s_] + _b.su[th, r, t, d, s] \
-                       - _b.sd[th, r, t, d, s]
+                return (
+                    _b.u[th, r, t, d, s]
+                    == _b.u[th, r, t, d, s_]
+                    + _b.su[th, r, t, d, s]
+                    - _b.sd[th, r, t, d, s]
+                )
             return Constraint.Skip
 
-        b.unit_commit1 = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, m.hours, rule=unit_commit1)
+        b.unit_commit1 = Constraint(
+            m.th_r, t_per_stage[stage], m.d, m.hours, m.hours, rule=unit_commit1
+        )
 
         def ramp_up(_b, th, r, t, d, s, s_):
             if (th, r) in m.i_r and th in m.th and (s_ == s - 1):
-                return _b.P[th, r, t, d, s] - _b.P[th, r, t, d, s_] <= m.Ru_max[th] * 1.0000000 * \
-                       m.Qg_np[th, r] * (_b.u[th, r, t, d, s] - _b.su[th, r, t, d, s]) + \
-                       max(m.Pg_min[th], m.Ru_max[th] * 1.0000000) * m.Qg_np[th, r] * _b.su[th, r, t, d, s]
+                return (
+                    _b.P[th, r, t, d, s] - _b.P[th, r, t, d, s_]
+                    <= m.Ru_max[th]
+                    * 1.0000000
+                    * m.Qg_np[th, r]
+                    * (_b.u[th, r, t, d, s] - _b.su[th, r, t, d, s])
+                    + max(m.Pg_min[th], m.Ru_max[th] * 1.0000000)
+                    * m.Qg_np[th, r]
+                    * _b.su[th, r, t, d, s]
+                )
             return Constraint.Skip
 
-        b.ramp_up = Constraint(m.th, m.r, t_per_stage[stage], m.d, m.hours, m.hours, rule=ramp_up)
+        b.ramp_up = Constraint(
+            m.th, m.r, t_per_stage[stage], m.d, m.hours, m.hours, rule=ramp_up
+        )
 
         def ramp_down(_b, th, r, t, d, s, s_):
             if s_ == s - 1:
-                return _b.P[th, r, t, d, s_] - _b.P[th, r, t, d, s] <= m.Rd_max[th] * 1.0000000 * \
-                       m.Qg_np[th, r] * (_b.u[th, r, t, d, s] - _b.su[th, r, t, d, s]) + \
-                       max(m.Pg_min[th], m.Rd_max[th] * 1.0000000) * m.Qg_np[th, r] * _b.sd[th, r, t, d, s]
+                return (
+                    _b.P[th, r, t, d, s_] - _b.P[th, r, t, d, s]
+                    <= m.Rd_max[th]
+                    * 1.0000000
+                    * m.Qg_np[th, r]
+                    * (_b.u[th, r, t, d, s] - _b.su[th, r, t, d, s])
+                    + max(m.Pg_min[th], m.Rd_max[th] * 1.0000000)
+                    * m.Qg_np[th, r]
+                    * _b.sd[th, r, t, d, s]
+                )
             return Constraint.Skip
 
-        b.ramp_down = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, m.hours, rule=ramp_down)
+        b.ramp_down = Constraint(
+            m.th_r, t_per_stage[stage], m.d, m.hours, m.hours, rule=ramp_down
+        )
 
         def total_op_reserve(_b, r, t, d, s):
-            return sum(_b.Q_spin[th, r, t, d, s] + _b.Q_Qstart[th, r, t, d, s] for th in m.th if (th, r) in m.th_r) \
-                   >= 0.075 * m.L[r, t, d, s]
+            return (
+                sum(
+                    _b.Q_spin[th, r, t, d, s] + _b.Q_Qstart[th, r, t, d, s]
+                    for th in m.th
+                    if (th, r) in m.th_r
+                )
+                >= 0.075 * m.L[r, t, d, s]
+            )
 
-        b.total_op_reserve = Constraint(m.r, t_per_stage[stage], m.d, m.hours, rule=total_op_reserve)
+        b.total_op_reserve = Constraint(
+            m.r, t_per_stage[stage], m.d, m.hours, rule=total_op_reserve
+        )
 
         def total_spin_reserve(_b, r, t, d, s):
-            return sum(_b.Q_spin[th, r, t, d, s] for th in m.th if (th, r) in m.th_r) >= 0.015 * m.L[r, t, d, s]
+            return (
+                sum(_b.Q_spin[th, r, t, d, s] for th in m.th if (th, r) in m.th_r)
+                >= 0.015 * m.L[r, t, d, s]
+            )
 
-        b.total_spin_reserve = Constraint(m.r, t_per_stage[stage], m.d, m.hours, rule=total_spin_reserve)
+        b.total_spin_reserve = Constraint(
+            m.r, t_per_stage[stage], m.d, m.hours, rule=total_spin_reserve
+        )
 
         def reserve_cap_1(_b, th, r, t, d, s):
-            return _b.Q_spin[th, r, t, d, s] <= m.Qg_np[th, r] * m.frac_spin[th] * _b.u[th, r, t, d, s]
+            return (
+                _b.Q_spin[th, r, t, d, s]
+                <= m.Qg_np[th, r] * m.frac_spin[th] * _b.u[th, r, t, d, s]
+            )
 
-        b.reserve_cap_1 = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, rule=reserve_cap_1)
+        b.reserve_cap_1 = Constraint(
+            m.th_r, t_per_stage[stage], m.d, m.hours, rule=reserve_cap_1
+        )
 
         def reserve_cap_2(_b, th, r, t, d, s):
-            return _b.Q_Qstart[th, r, t, d, s] <= m.Qg_np[th, r] * m.frac_Qstart[th] * \
-                   (_b.ngo_th[th, r, t] - _b.u[th, r, t, d, s])
+            return _b.Q_Qstart[th, r, t, d, s] <= m.Qg_np[th, r] * m.frac_Qstart[th] * (
+                _b.ngo_th[th, r, t] - _b.u[th, r, t, d, s]
+            )
 
-        b.reserve_cap_2 = Constraint(m.th_r, t_per_stage[stage], m.d, m.hours, rule=reserve_cap_2)
+        b.reserve_cap_2 = Constraint(
+            m.th_r, t_per_stage[stage], m.d, m.hours, rule=reserve_cap_2
+        )
 
         def logic_RN_1(_b, rn, r, t):
             if t == 1:
-                return _b.ngb_rn[rn, r, t] - _b.ngr_rn[rn, r, t] == _b.ngo_rn[rn, r, t] - \
-                       m.Ng_old[rn, r]
+                return (
+                    _b.ngb_rn[rn, r, t] - _b.ngr_rn[rn, r, t]
+                    == _b.ngo_rn[rn, r, t] - m.Ng_old[rn, r]
+                )
             elif t != t_per_stage[stage][0]:
-                return _b.ngb_rn[rn, r, t] - _b.ngr_rn[rn, r, t] == _b.ngo_rn[rn, r, t] - \
-                       _b.ngo_rn[rn, r, t - 1]
+                return (
+                    _b.ngb_rn[rn, r, t] - _b.ngr_rn[rn, r, t]
+                    == _b.ngo_rn[rn, r, t] - _b.ngo_rn[rn, r, t - 1]
+                )
             else:
-                return _b.ngb_rn[rn, r, t] - _b.ngr_rn[rn, r, t] == _b.ngo_rn[rn, r, t] - \
-                       _b.ngo_rn_prev[rn, r]
+                return (
+                    _b.ngb_rn[rn, r, t] - _b.ngr_rn[rn, r, t]
+                    == _b.ngo_rn[rn, r, t] - _b.ngo_rn_prev[rn, r]
+                )
 
         b.logic_RN_1 = Constraint(m.rn_r, t_per_stage[stage], rule=logic_RN_1)
 
         def logic_TH_1(_b, th, r, t):
             if t == 1:
-                return _b.ngb_th[th, r, t] - _b.ngr_th[th, r, t] == _b.ngo_th[th, r, t] - \
-                       m.Ng_old[th, r]
+                return (
+                    _b.ngb_th[th, r, t] - _b.ngr_th[th, r, t]
+                    == _b.ngo_th[th, r, t] - m.Ng_old[th, r]
+                )
             elif t != t_per_stage[stage][0]:
-                return _b.ngb_th[th, r, t] - _b.ngr_th[th, r, t] == _b.ngo_th[th, r, t] - \
-                       _b.ngo_th[th, r, t - 1]
+                return (
+                    _b.ngb_th[th, r, t] - _b.ngr_th[th, r, t]
+                    == _b.ngo_th[th, r, t] - _b.ngo_th[th, r, t - 1]
+                )
             else:
-                return _b.ngb_th[th, r, t] - _b.ngr_th[th, r, t] == _b.ngo_th[th, r, t] - \
-                       _b.ngo_th_prev[th, r]
+                return (
+                    _b.ngb_th[th, r, t] - _b.ngr_th[th, r, t]
+                    == _b.ngo_th[th, r, t] - _b.ngo_th_prev[th, r]
+                )
 
         b.logic_TH_1 = Constraint(m.th_r, t_per_stage[stage], rule=logic_TH_1)
 
         def logic_ROld_2(_b, rold, r, t):
             if rold in m.rold:
-                return _b.ngr_rn[rold, r, t] + _b.nge_rn[rold, r, t] == m.Ng_r[rold, r, t]
+                return (
+                    _b.ngr_rn[rold, r, t] + _b.nge_rn[rold, r, t] == m.Ng_r[rold, r, t]
+                )
             return Constraint.Skip
 
         b.logic_ROld_2 = Constraint(m.rn_r, t_per_stage[stage], rule=logic_ROld_2)
 
         def logic_TOld_2(_b, told, r, t):
             if told in m.told:
-                return _b.ngr_th[told, r, t] + _b.nge_th[told, r, t] == m.Ng_r[told, r, t]
+                return (
+                    _b.ngr_th[told, r, t] + _b.nge_th[told, r, t] == m.Ng_r[told, r, t]
+                )
             return Constraint.Skip
 
         b.logic_TOld_2 = Constraint(m.th_r, t_per_stage[stage], rule=logic_TOld_2)
@@ -935,66 +1616,111 @@ def create_model(stages, t_per_stage, formulation, InvestData, OperationalData, 
             if t == 1:
                 return _b.nsb[j, r, t] - _b.nsr[j, r, t] == _b.nso[j, r, t]
             elif t != t_per_stage[stage][0]:
-                return _b.nsb[j, r, t] - _b.nsr[j, r, t] == _b.nso[j, r, t] - _b.nso[j, r, t - 1]
+                return (
+                    _b.nsb[j, r, t] - _b.nsr[j, r, t]
+                    == _b.nso[j, r, t] - _b.nso[j, r, t - 1]
+                )
             else:
-                return _b.nsb[j, r, t] - _b.nsr[j, r, t] == _b.nso[j, r, t] - _b.nso_prev[j, r]
+                return (
+                    _b.nsb[j, r, t] - _b.nsr[j, r, t]
+                    == _b.nso[j, r, t] - _b.nso_prev[j, r]
+                )
 
-        b.storage_units_balance = Constraint(m.j, m.r, t_per_stage[stage], rule=storage_units_balance)
+        b.storage_units_balance = Constraint(
+            m.j, m.r, t_per_stage[stage], rule=storage_units_balance
+        )
 
         def min_charge(_b, j, r, t, d, s):
             return m.P_min_charge[j] * _b.nso[j, r, t] <= _b.p_charged[j, r, t, d, s]
 
-        b.min_charge = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=min_charge)
+        b.min_charge = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=min_charge
+        )
 
         def max_charge(_b, j, r, t, d, s):
             return _b.p_charged[j, r, t, d, s] <= m.P_max_charge[j] * _b.nso[j, r, t]
 
-        b.max_charge = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=max_charge)
+        b.max_charge = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=max_charge
+        )
 
         def min_discharge(_b, j, r, t, d, s):
-            return m.P_min_discharge[j] * _b.nso[j, r, t] <= _b.p_discharged[j, r, t, d, s]
+            return (
+                m.P_min_discharge[j] * _b.nso[j, r, t] <= _b.p_discharged[j, r, t, d, s]
+            )
 
-        b.min_discharge = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=min_discharge)
+        b.min_discharge = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=min_discharge
+        )
 
         def max_discharge(_b, j, r, t, d, s):
-            return _b.p_discharged[j, r, t, d, s] <= m.P_max_discharge[j] * _b.nso[j, r, t]
+            return (
+                _b.p_discharged[j, r, t, d, s] <= m.P_max_discharge[j] * _b.nso[j, r, t]
+            )
 
-        b.max_discharge = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=max_discharge)
+        b.max_discharge = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=max_discharge
+        )
 
         def min_storage_level(_b, j, r, t, d, s):
-            return m.min_storage_cap[j] * _b.nso[j, r, t] <= _b.p_storage_level[j, r, t, d, s]
+            return (
+                m.min_storage_cap[j] * _b.nso[j, r, t]
+                <= _b.p_storage_level[j, r, t, d, s]
+            )
 
-        b.min_storage_level = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=min_storage_level)
+        b.min_storage_level = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=min_storage_level
+        )
 
         def max_storage_level(_b, j, r, t, d, s):
-            return _b.p_storage_level[j, r, t, d, s] <= m.max_storage_cap[j] * _b.nso[j, r, t]
+            return (
+                _b.p_storage_level[j, r, t, d, s]
+                <= m.max_storage_cap[j] * _b.nso[j, r, t]
+            )
 
-        b.max_storage_level = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=max_storage_level)
+        b.max_storage_level = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=max_storage_level
+        )
 
         def storage_balance(_b, j, r, t, d, s, s_):
             if s_ == s - 1 and s > 1:
-                return _b.p_storage_level[j, r, t, d, s] == _b.p_storage_level[j, r, t, d, s_] \
-                       + m.eff_rate_charge[j] * _b.p_charged[j, r, t, d, s] \
-                       - (1 / m.eff_rate_discharge[j]) * _b.p_discharged[j, r, t, d, s]
+                return (
+                    _b.p_storage_level[j, r, t, d, s]
+                    == _b.p_storage_level[j, r, t, d, s_]
+                    + m.eff_rate_charge[j] * _b.p_charged[j, r, t, d, s]
+                    - (1 / m.eff_rate_discharge[j]) * _b.p_discharged[j, r, t, d, s]
+                )
             return Constraint.Skip
 
-        b.storage_balance = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, m.hours, rule=storage_balance)
+        b.storage_balance = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, m.hours, rule=storage_balance
+        )
 
         def storage_balance_1HR(_b, j, r, t, d, s):
             if s == 1:
-                return _b.p_storage_level[j, r, t, d, s] == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t] \
-                       + m.eff_rate_charge[j] * _b.p_charged[j, r, t, d, s] \
-                       - (1 / m.eff_rate_discharge[j]) * _b.p_discharged[j, r, t, d, s]
+                return (
+                    _b.p_storage_level[j, r, t, d, s]
+                    == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t]
+                    + m.eff_rate_charge[j] * _b.p_charged[j, r, t, d, s]
+                    - (1 / m.eff_rate_discharge[j]) * _b.p_discharged[j, r, t, d, s]
+                )
             return Constraint.Skip
 
-        b.storage_balance_1HR = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=storage_balance_1HR)
+        b.storage_balance_1HR = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=storage_balance_1HR
+        )
 
         def storage_heuristic(_b, j, r, t, d, s):
             if s == m.hours.last():
-                return _b.p_storage_level[j, r, t, d, s] == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t]
+                return (
+                    _b.p_storage_level[j, r, t, d, s]
+                    == 0.5 * m.max_storage_cap[j] * _b.nso[j, r, t]
+                )
             return Constraint.Skip
 
-        b.storage_heuristic = Constraint(m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=storage_heuristic)
+        b.storage_heuristic = Constraint(
+            m.j, m.r, t_per_stage[stage], m.d, m.hours, rule=storage_heuristic
+        )
 
         b.link_equal1 = ConstraintList()
 
