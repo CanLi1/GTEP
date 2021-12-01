@@ -5,7 +5,7 @@ import models.gtep_optBlocks_det as b
 from pyomo.environ import *
 
 
-def fullspace_solve(config, InvestData, OperationalData):
+def create_model(config, InvestData, OperationalData):
     n_stages = config.time_horizon
     formulation = config.formulation
     t_per_stage = {}
@@ -56,6 +56,12 @@ def fullspace_solve(config, InvestData, OperationalData):
     for stage in m.stages:
         m.Bl[stage].obj.deactivate()
         m.obj.expr += m.Bl[stage].obj.expr
+
+    return m
+
+
+def fullspace_solve(config, InvestData, OperationalData):
+    m = create_model(config, InvestData, OperationalData)
     # a = TransformationFactory("core.relax_integrality")
     # a.apply_to(m)
     opt = SolverFactory(config.solver)
